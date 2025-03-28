@@ -21,7 +21,7 @@ function fit_map(
     ss::PoissonProcessStats,
 ) where {R<:Real}
     (; α, β) = prior
-    posterior_nb_events = [sum(ss.marks .== i) for i in 1:length(α)] .+ α
+    posterior_nb_events = [sum(==(i), ss.marks) for i in 1:length(α)] .+ α
     posterior_duration = ss.duration + β
     λ = convert(Vector{R}, posterior_nb_events ./ posterior_duration)
     return pptype(sum(λ), Categorical(λ ./ sum(λ)))
