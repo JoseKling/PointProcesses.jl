@@ -24,7 +24,16 @@ end
 
 ## Alias 
 const UnivariatePoissonProcess{R<:Real} = PoissonProcess{R,Dirac{Nothing}}
+
+function Base.show(io::IO, pp::UnivariatePoissonProcess)
+    return print(io, "UnivariatePoissonProcess($(pp.λ))")
+end
+
 const MultivariatePoissonProcess{R<:Real} = PoissonProcess{R,Categorical{R,Vector{R}}}
+
+function Base.show(io::IO, pp::MultivariatePoissonProcess)
+    return print(io, "MultivariatePoissonProcess($(pp.λ * probs(pp.mark_dist)))")
+end
 
 ## Constructors
 function PoissonProcess(λ::Real, mark_dist; check_args::Bool=true)
