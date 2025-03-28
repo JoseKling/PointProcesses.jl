@@ -35,8 +35,5 @@ DocMeta.setdocmeta!(PointProcesses, :DocTestSetup, :(using PointProcesses); recu
         @testset verbose = true "Marked" begin
             include("marked_poisson_process.jl")
         end
-        @testset verbose = true "Multivariate as marked" begin
-            include("multivariate_as_marked.jl")
-        end
     end
 end

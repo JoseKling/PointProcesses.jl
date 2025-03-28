@@ -80,9 +80,7 @@ fit_map
 ## Poisson processes
 
 ```@docs
-AbstractPoissonProcess
 PoissonProcess
-PoissonProcessPrior
 ```
 
 ### Multivariate
@@ -90,12 +88,6 @@ PoissonProcessPrior
 ```@docs
 MultivariatePoissonProcess
 MultivariatePoissonProcessPrior
-```
-
-### Marked
-
-```@docs
-MarkedPoissonProcess
 ```
 
 ## Index

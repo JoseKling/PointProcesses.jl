@@ -23,9 +23,8 @@ function Base.show(io::IO, pp::PoissonProcess)
 end
 
 ## Alias 
-# TODO : uncomment
-# const UnivariatePoissonProcess{R<:Real} = PoissonProcess{R, Dirac{Nothing}}
-# const MultivariatePoissonProcess{R<:Real} = PoissonProcess{R, Categorical{R,Vector{R}}}
+const UnivariatePoissonProcess{R<:Real} = PoissonProcess{R,Dirac{Nothing}}
+const MultivariatePoissonProcess{R<:Real} = PoissonProcess{R,Categorical{R,Vector{R}}}
 
 ## Constructors
 function PoissonProcess(λ::Real, mark_dist; check_args::Bool=true)
@@ -63,10 +62,8 @@ PoissonProcess() = PoissonProcess(1.0)
 ## Access
 ground_intensity(pp::PoissonProcess) = pp.λ
 mark_distribution(pp::PoissonProcess) = pp.mark_dist
-# TODO: Replace PoissonProcess{R,Categorical{R,Vector{R}}} by
-# MultivariatePoissonProcess{R}
-# when everything else is OK
-function intensity_vector(pp::PoissonProcess{R,Categorical{R,Vector{R}}}) where {R}
+
+function intensity_vector(pp::MultivariatePoissonProcess{R}) where {R}
     return ground_intensity(pp) .* probs(mark_distribution(pp))
 end
 

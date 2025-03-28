@@ -49,7 +49,7 @@ export simulate_ogata
 export AbstractPoissonProcess
 export MultivariatePoissonProcess, MultivariatePoissonProcessPrior
 export MarkedPoissonProcess
-export PoissonProcess, PoissonProcessPrior
+export PoissonProcess
 
 # Includes
 
@@ -62,15 +62,6 @@ include("poisson/poisson_process.jl")
 include("poisson/suffstats.jl")
 include("poisson/prior.jl")
 include("poisson/fit.jl")
-include("poisson/abstract_poisson_process.jl")
 include("poisson/simulation.jl")
-
-include("poisson/multivariate/multivariate_poisson_process.jl")
-include("poisson/multivariate/suffstats.jl")
-include("poisson/multivariate/prior.jl")
-include("poisson/multivariate/fit.jl")
-
-include("poisson/marked/marked_poisson_process.jl")
-include("poisson/marked/fit.jl")
 
 end

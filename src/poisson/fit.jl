@@ -14,13 +14,10 @@ function StatsAPI.fit(pptype::Type{<:PoissonProcess}, args...; kwargs...)
 end
 
 ## Bayesian fit (only for MultivariatePoissonProcess)
-# TODO: Replace PoissonProcess{R,Categorical{R,Vector{R}}} by
-# MultivariatePoissonProcess{R}
-# when everything else is OK
 
 function fit_map(
-    pptype::Type{PoissonProcess{R,Categorical{R,Vector{R}}}},
-    prior::PoissonProcessPrior,
+    pptype::Type{MultivariatePoissonProcess{R}},
+    prior::MultivariatePoissonProcessPrior,
     ss::PoissonProcessStats,
 ) where {R<:Real}
     (; α, β) = prior
@@ -31,8 +28,8 @@ function fit_map(
 end
 
 function fit_map(
-    pptype::Type{<:PoissonProcess{R,Categorical{R,Vector{R}}} where {R<:Real}},
-    prior::PoissonProcessPrior,
+    pptype::Type{<:MultivariatePoissonProcess{R} where {R<:Real}},
+    prior::MultivariatePoissonProcessPrior,
     args...;
     kwargs...,
 )
