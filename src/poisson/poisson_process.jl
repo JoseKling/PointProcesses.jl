@@ -52,14 +52,21 @@ function PoissonProcess(λ::Integer, mark_dist; check_args::Bool=true)
 end
 
 function PoissonProcess(λ::Vector{R}; check_args::Bool=true) where {R<:Real}
-    check_args &&
-        any(λ .< zero(λ)) &&
-        throw(
-            DomainError(
-                "λ = $λ",
-                "PoissonProcess: the condition λ ≥ 0 is not satisfied for all dimensions.",
-            ),
-        )
+    if check_args
+        if any(λ .< zero(λ))
+            throw(
+                DomainError(
+                    "λ = $λ",
+                    "PoissonProcess: the condition λ ≥ 0 is not satisfied for all dimensions.",
+                ),
+            )
+        end
+        if sum(λ) == 0
+            return PoissonProcess(
+                0, Categorical(ones(length(λ)) / length(λ)); check_args=check_args
+            )
+        end
+    end
     return PoissonProcess(sum(λ), Categorical(λ / sum(λ)); check_args=check_args)
 end
 
