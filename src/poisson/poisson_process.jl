@@ -23,12 +23,26 @@ function Base.show(io::IO, pp::PoissonProcess)
 end
 
 ## Alias 
+"""
+    UnivariatePoissonProcess{R}
+
+Homogeneous univariate temporal Poisson process with scalar intensity `λ::R`.
+
+`UnivariatePoissonProcess{R}` is simply a type alias for `PoissonProcess{R,Dirac{Nothing}}`.
+"""
 const UnivariatePoissonProcess{R<:Real} = PoissonProcess{R,Dirac{Nothing}}
 
 function Base.show(io::IO, pp::UnivariatePoissonProcess)
     return print(io, "UnivariatePoissonProcess($(pp.λ))")
 end
 
+"""
+    MultivariatePoissonProcess{R}
+
+Homogeneous multivariate temporal Poisson process with marginal intensities of type `R`.
+
+`MultivariatePoissonProcess{R}` is simply a type alias for `PoissonProcess{R,Categorical{R,Vector{R}}}`.
+"""
 const MultivariatePoissonProcess{R<:Real} = PoissonProcess{R,Categorical{R,Vector{R}}}
 
 function Base.show(io::IO, pp::MultivariatePoissonProcess)
