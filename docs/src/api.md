@@ -83,6 +83,12 @@ fit_map
 PoissonProcess
 ```
 
+### Univariate
+
+```@docs
+UnivariatePoissonProcess
+```
+
 ### Multivariate
 
 ```@docs
