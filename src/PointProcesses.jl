@@ -46,10 +46,9 @@ export simulate_ogata
 
 ## Models
 
-export AbstractPoissonProcess
-export MultivariatePoissonProcess, MultivariatePoissonProcessPrior
-export MarkedPoissonProcess
 export PoissonProcess
+export UnivariatePoissonProcess
+export MultivariatePoissonProcess, MultivariatePoissonProcessPrior
 
 # Includes
 
