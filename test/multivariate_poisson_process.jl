@@ -9,9 +9,9 @@ using Test
 
 rng = Random.seed!(63)
 
-pp = MultivariatePoissonProcess(rand(rng, 10))
-bpp = BoundedPointProcess(MultivariatePoissonProcess(rand(rng, 10)), 0.0, 1000.0)
-pp0 = MultivariatePoissonProcess(zeros(10))
+pp = PoissonProcess(rand(rng, 10))
+bpp = BoundedPointProcess(PoissonProcess(rand(rng, 10)), 0.0, 1000.0)
+pp0 = PoissonProcess(zeros(10))
 bpp0 = BoundedPointProcess(pp0, 0.0, 1000.0)
 
 h1 = rand(rng, pp, 0.0, 1000.0)
@@ -34,7 +34,7 @@ pp_est3 = fit_map(MultivariatePoissonProcess{Float32}, prior, [h1, h2])
 l = logdensityof(pp, h1)
 l_est = logdensityof(pp_est1, h1)
 
-f1(λ) = logdensityof(MultivariatePoissonProcess(λ), h1)
+f1(λ) = logdensityof(PoissonProcess(λ), h1)
 gf = ForwardDiff.gradient(f1, 3 * ones(10))
 # gz = Zygote.gradient(f1, 3 * ones(10))[1]
 
