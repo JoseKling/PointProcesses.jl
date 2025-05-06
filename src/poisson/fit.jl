@@ -28,11 +28,11 @@ function fit_map(
 end
 
 function fit_map(
-    pptype::Type{<:MultivariatePoissonProcess{R} where {R<:Real}},
+    pptype::Type{MultivariatePoissonProcess{R}},
     prior::MultivariatePoissonProcessPrior,
     args...;
     kwargs...,
-)
+) where {R<:Real}
     ss = suffstats(pptype, args..., kwargs...)
     return fit_map(pptype, prior, ss)
 end
