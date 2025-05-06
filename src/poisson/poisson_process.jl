@@ -15,7 +15,17 @@ Homogeneous temporal Poisson process with arbitrary mark distribution.
 struct PoissonProcess{R<:Real,D} <: AbstractPointProcess
     λ::R
     mark_dist::D
-    PoissonProcess{R,D}(λ::R, mark_dist::D) where {R,D} = new{R,D}(λ, mark_dist)
+
+    function PoissonProcess(λ::R, mark_dist::D; check_args::Bool=true) where {R<:Real,D}
+        check_args &&
+            λ < zero(λ) &&
+            throw(
+                DomainError(
+                    "λ = $λ", "PoissonProcess: the ground intensity λ must be non negative."
+                ),
+            )
+        return new{R,D}(λ, mark_dist)
+    end
 end
 
 function Base.show(io::IO, pp::PoissonProcess)
@@ -50,21 +60,6 @@ function Base.show(io::IO, pp::MultivariatePoissonProcess)
 end
 
 ## Constructors
-function PoissonProcess(λ::Real, mark_dist; check_args::Bool=true)
-    check_args &&
-        λ < zero(λ) &&
-        throw(
-            DomainError(
-                "λ = $λ", "PoissonProcess: the ground intensity λ must be non negative."
-            ),
-        )
-    return PoissonProcess{typeof(λ),typeof(mark_dist)}(λ, mark_dist)
-end
-
-function PoissonProcess(λ::Integer, mark_dist; check_args::Bool=true)
-    return PoissonProcess(float(λ), mark_dist; check_args=check_args)
-end
-
 function PoissonProcess(λ::Vector{R}; check_args::Bool=true) where {R<:Real}
     if check_args
         if any(λ .< zero(λ))
@@ -77,7 +72,7 @@ function PoissonProcess(λ::Vector{R}; check_args::Bool=true) where {R<:Real}
         end
         if sum(λ) == 0
             return PoissonProcess(
-                0, Categorical(ones(length(λ)) / length(λ)); check_args=check_args
+                0.0, Categorical(ones(length(λ)) / length(λ)); check_args=check_args
             )
         end
     end
@@ -105,12 +100,6 @@ end
 function log_intensity(pp::PoissonProcess, m)
     return log(ground_intensity(pp)) + logdensityof(mark_distribution(pp), m)
 end
-
-### Conversions
-function Base.convert(::Type{PoissonProcess{R,D}}, pp::PoissonProcess) where {R<:Real,D}
-    return PoissonProcess(R(pp.λ), pp.mark_dist)
-end
-Base.convert(::Type{PoissonProcess{R,D}}, pp::PoissonProcess{R,D}) where {R<:Real,D} = pp
 
 ## Implementing AbstractPointProcess interface
 
