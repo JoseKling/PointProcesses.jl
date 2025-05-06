@@ -88,6 +88,11 @@ PoissonProcess() = PoissonProcess(1.0)
 ground_intensity(pp::PoissonProcess) = pp.λ
 mark_distribution(pp::PoissonProcess) = pp.mark_dist
 
+"""
+    intensity_vector(pp<:MultivariatePoissonProcess)
+
+Compute the vector of the marginal intensities `λ` for a multivariate Poisson process.
+"""
 function intensity_vector(pp::MultivariatePoissonProcess{R}) where {R}
     return ground_intensity(pp) .* probs(mark_distribution(pp))
 end

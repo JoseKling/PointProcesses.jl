@@ -47,6 +47,7 @@ BoundedPointProcess
 intensity
 ground_intensity
 log_intensity
+intensity_vector
 ```
 
 ### Marks
