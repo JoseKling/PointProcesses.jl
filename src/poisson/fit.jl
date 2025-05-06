@@ -24,7 +24,7 @@ function fit_map(
     posterior_nb_events = [sum(==(i), ss.marks) for i in 1:length(α)] .+ α
     posterior_duration = ss.duration + β
     λ = convert(Vector{R}, posterior_nb_events ./ posterior_duration)
-    return pptype(sum(λ), Categorical(λ ./ sum(λ)))
+    return PoissonProcess(sum(λ), Categorical(λ ./ sum(λ)))
 end
 
 function fit_map(
