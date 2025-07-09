@@ -1,6 +1,6 @@
 # PointProcesses.jl
 
-Welcome to the documentation of [PointProcesses.jl](https://github.com/gdalle/PointProcesses.jl), a package for modeling, simulation and inference with temporal point processes.
+Welcome to the documentation of [PointProcesses.jl](https://github.com/JoseKling/PointProcesses.jl), a package for modeling, simulation and inference with temporal point processes.
 
 ## Getting started
 
@@ -13,7 +13,7 @@ import Pkg; Pkg.add("PointProcesses")
 To install the current development version, run this code instead:
 
 ```julia
-import Pkg; Pkg.add(url="https://github.com/gdalle/PointProcesses.jl")
+import Pkg; Pkg.add(url="https://github.com/JoseKling/PointProcesses.jl")
 ```
 
 ## Mathematical background
