@@ -8,11 +8,11 @@ DocMeta.setdocmeta!(PointProcesses, :DocTestSetup, :(using PointProcesses); recu
 
 makedocs(;
     modules=[PointProcesses],
-    authors="Guillaume Dalle",
+    authors="Guillaume Dalle, José Kling",
     sitename="PointProcesses.jl",
     format=Documenter.HTML(),
     pages=["Home" => "index.md", "API reference" => "api.md"],
     plugins=[bib],
 )
 
-deploydocs(; repo="github.com/gdalle/PointProcesses.jl", devbranch="main")
+deploydocs(; repo="github.com/JoseKling/PointProcesses.jl", devbranch="main")

@@ -11,11 +11,14 @@ authors:
   - given-names: Guillaume
     family-names: Dalle
     orcid: 'https://orcid.org/0000-0003-4866-1687'
+  - given-names: José Carlos
+    family-names: Fontanesi Kling
+    orcid: 'https://orcid.org/0000-0002-7783-8114'
 identifiers:
   - type: doi
     value: 10.5281/zenodo.8157372
     description: Zenodo
-repository-code: 'https://github.com/gdalle/PointProcesses.jl'
-url: 'https://gdalle.github.io/PointProcesses.jl/'
+repository-code: 'https://github.com/JoseKling/PointProcesses.jl'
+url: 'https://josekling.github.io/PointProcesses.jl/'
 abstract: ' A package for temporal point process modeling, simulation and inference'
 license: MIT
