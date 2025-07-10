@@ -44,3 +44,11 @@ end
 function Base.rand(pp::AbstractPointProcess, args...; kwargs...)
     return rand(default_rng(), pp, args...; kwargs...)
 end
+
+# Internal function for simulating homogeneous Poisson processes
+function simulate_poisson(rng::AbstractRNG, λ, T)
+    n = rand(rng, Poisson(λ * T))
+    times = rand(rng, n) .* T
+    sort!(times)
+    return times
+end

@@ -17,7 +17,7 @@ DocMeta.setdocmeta!(PointProcesses, :DocTestSetup, :(using PointProcesses); recu
         Aqua.test_all(PointProcesses; ambiguities=false, deps_compat=(; check_extras=false))
     end
     @testset verbose = false "Formatting" begin
-        @test format(PointProcesses; verbose=false, overwrite=false)
+        @test format(PointProcesses; verbose=true, overwrite=false)
     end
     @testset verbose = false "Doctests" begin
         doctest(PointProcesses)
@@ -35,5 +35,8 @@ DocMeta.setdocmeta!(PointProcesses, :DocTestSetup, :(using PointProcesses); recu
         @testset verbose = true "Marked" begin
             include("marked_poisson_process.jl")
         end
+    end
+    @testset verbose = true "Hawkes" begin
+        include("hawkes.jl")
     end
 end
