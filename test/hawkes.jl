@@ -1,7 +1,7 @@
 # Constructor
 @test HawkesProcess(1, 1, 1) isa HawkesProcess{Int}
 @test HawkesProcess(1, 1, 1.0) isa HawkesProcess{Float64}
-@test_throws DomainError HawkesProcess(-1, 1, 1) 
+@test_throws DomainError HawkesProcess(-1, 1, 1)
 
 hp = HawkesProcess(1, 1, 2)
 h = History([1.0, 2.0, 4.0], ["a", "b", "c"], 0.0, 5.0)

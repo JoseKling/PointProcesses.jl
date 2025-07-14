@@ -3,8 +3,9 @@ struct HawkesProcess{T<:Real} <: AbstractPointProcess
     α::T
     ω::T
 
-    function HawkesProcess(μ::T1, α::T2, ω::T3) where {T1, T2, T3}
-        any((μ, α, ω) .< 0) && throw(DomainError((μ, α, ω), "All parameters must be non-negative."))
+    function HawkesProcess(μ::T1, α::T2, ω::T3) where {T1,T2,T3}
+        any((μ, α, ω) .< 0) &&
+            throw(DomainError((μ, α, ω), "All parameters must be non-negative."))
         T = promote_type(T1, T2, T3)
         (μ_T, α_T, ω_T) = convert.(T, (μ, α, ω))
         new{T}(μ_T, α_T, ω_T)
