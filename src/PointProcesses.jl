@@ -14,7 +14,8 @@ using Distributions: fit, suffstats
 using LinearAlgebra: dot
 using Random: rand
 using Random: AbstractRNG, default_rng
-using StatsAPI: StatsAPI, fit
+using StatsAPI: StatsAPI, fit, HypothesisTest, pvalue
+using HypothesisTests: ExactOneSampleKSTest, ksstats
 
 ## Hidden names
 
@@ -25,6 +26,7 @@ using StatsAPI: StatsAPI, fit
 export logdensityof, densityof # DensityInterface
 export fit # StatsAPI
 export fit_map
+export HypothesisTest, pvalue
 
 ## History
 
@@ -49,6 +51,11 @@ export AbstractPoissonProcess
 export MultivariatePoissonProcess, MultivariatePoissonProcessPrior
 export MarkedPoissonProcess
 
+## Hypothesis testset
+
+export Statistic, KSDistance
+export BootstrapTest, NoBootstrapTest
+
 # Includes
 
 include("history.jl")
@@ -67,4 +74,8 @@ include("poisson/multivariate/fit.jl")
 include("poisson/marked/marked_poisson_process.jl")
 include("poisson/marked/fit.jl")
 
+include("HypothesisTests/Statistics.jl")
+include("HypothesisTests/Statistics/KSDistance.jl")
+include("HypothesisTests/PPGoFTests/BootstrapTest.jl")
+include("HypothesisTests/PPGoFTests/NoBootstrapTest.jl")
 end
