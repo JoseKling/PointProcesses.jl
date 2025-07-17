@@ -8,7 +8,7 @@ using Test
 rng = Random.seed!(63)
 
 intensities = rand(rng, 10)
-bpp = BoundedPointProcess(MultivariatePoissonProcess(intensities), 0.0, 1000.0)
+bpp = BoundedPointProcess(PoissonProcess(intensities), 0.0, 1000.0)
 h = rand(rng, bpp)
 
 @test min_time(bpp) == 0.0
