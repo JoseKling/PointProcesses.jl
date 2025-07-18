@@ -58,4 +58,3 @@ end
 function Base.rand(pp::AbstractPointProcess, args...; kwargs...)
     return rand(default_rng(), pp, args...; kwargs...)
 end
-
