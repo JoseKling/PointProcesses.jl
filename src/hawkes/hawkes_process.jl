@@ -13,7 +13,7 @@ struct HawkesProcess{T<:Real} <: AbstractPointProcess
 end
 
 function Base.rand(rng::AbstractRNG, hp::HawkesProcess, tmin, tmax)
-    sim = tmin .+ simulate_poisson_times(rng, hp.μ, tmax - tmin) # Simulate Poisson process with base rate
+    sim = simulate_poisson_times(rng, hp.μ, tmin, tmax) # Simulate Poisson process with base rate
     sim_desc = generate_descendants(rng, sim, tmax, hp.α, hp.ω) # Recursively generates descendants from first events
     append!(sim, sim_desc)
     sort!(sim)
@@ -50,7 +50,7 @@ function StatsAPI.fit(
     rng::AbstractRNG,
     ::Type{HawkesProcess},
     h::History;
-    step_tol::Float64=1e-3,
+    step_tol::Float64=1e-4,
     max_iter::Int=1000,
 )
     N = nb_events(h)
@@ -58,14 +58,14 @@ function StatsAPI.fit(
     T = duration(h)
     norm_ts = h.times .* (N / T) # Average inter-event time equal to 1. Numerical stability
     n_iters = 0
-    error = step_tol + 1.0
+    step = step_tol + 1.0
     lambda_ts = zeros(N)
     # Step 1 - Choose initial guess such that Λ(T) ≈ N. After normalization, T → N
     μ = 0.2 + (0.6 * rand(rng)) # μ should not be too close to 0 or 1. μ = 1 → the base rate already accounts for all events
     ψ = (1 - μ) # ψ = α / β is the integral of the activation function. Λ(t) ≈ μt + ψN_t
     t90 = 0.5 + (1.5 * rand(rng)) # t90 is the time it takes for the activation function to decay by 90%. Set to t90 ∈ [1/2, 2]
     ω = log(10.0) * t90 # ω is the parameter corresponding to t90.
-    while (error >= step_tol) && (n_iters < max_iter)
+    while (step >= step_tol) && (n_iters < max_iter)
         # Step 2
         lambda_ts[1] = 0.0
         @inbounds for i in 2:N
@@ -86,7 +86,7 @@ function StatsAPI.fit(
             end
         end
         # Steps 4 and 5
-        error = max(abs(μ - (1 - (D / N))), abs(ψ - (D / N)), abs(ω - (D / div)))
+        step = max(abs(μ - (1 - (D / N))), abs(ψ - (D / N)), abs(ω - (D / div)))
         n_iters += 1
         μ, ψ, ω = 1 - (D / N), D / N, D / div # Update parameters for the next iteration
     end
@@ -154,11 +154,12 @@ function generate_descendants(rng::AbstractRNG, immigrants::Vector, T, α, ω)
     descendants = eltype(immigrants)[]
     next_gen = immigrants
     while ~isempty(next_gen)
+        # OPTIMIZE: Can this be improved by avoiding allocations of `curr_gen` and `next_gen`? Or does the compiler take care of that?
         curr_gen = copy(next_gen) # The current generation from which we simulate the next one
         next_gen = eltype(immigrants)[] # Gathers all the descendants from the current generation
         for parent in curr_gen # Generate the descendants for each individual event with the inverse method
             activation_integral = (α / ω) * (1.0 - exp(ω * (parent - T)))
-            sim_transf = simulate_poisson_times(rng, 1.0, activation_integral)
+            sim_transf = simulate_poisson_times(rng, 1.0, 0.0, activation_integral)
             @. sim_transf = parent - ((1.0 / ω) * log(1.0 - ((ω / α) * sim_transf))) # Inverse of integral of the activation function
             append!(next_gen, sim_transf)
         end

@@ -30,8 +30,23 @@ h_sim = rand(hp, 0.0, 10.0)
 @test issorted(h_sim.times)
 @test isa(h_sim, History{Nothing,Float64})
 # Estimation
-hp_est = fit(HawkesProcess, h_sim)
+h_fit_times = parse.(Float64, split(read("hawkes_times.txt", String)[2:end-1], ", "))
+h_fit = History(h_fit_times, fill(nothing, length(h_fit_times)), 0.0, 1.0)
+hp_est = fit(HawkesProcess, h_fit)
 @test isa(hp_est, HawkesProcess)
+n_sims = 1000
+params = zeros(n_sims, 3)
+for i in 1:n_sims
+  fit_est = fit(HawkesProcess, h_fit)
+  params[i, :] .= [fit_est.μ, fit_est.α, fit_est.ω]
+end
+median_est = vec(median(params, dims=1))
+var_est = vec(var(params, dims=1))
+# [112.318, 63.4261, 144.67] is the median over 10.000 estimations on this same data
+@test all(isapprox.(median_est, [112.318, 63.4261, 144.67]; rtol=0.01))
+# [0.0791, 0.00196, 0.196] is the variance over 10.000 estimations on this same data
+@test all(isapprox.(var_est, [0.0791, 0.00196, 0.196]; rtol=0.5))
+
 # logdensityof
 @test logdensityof(hp, h) ≈
     sum(log.(hp.μ .+ (hp.α .* [0, exp(-hp.ω), exp(-hp.ω * 2) + exp(-hp.ω * 3)]))) -
