@@ -1,6 +1,9 @@
-#     simulate_poisson_times(rng, λ, tmin, tmax)
-# Simulate the event times of a homogeneous Poisson process with parameter λ on the interval [tmin, tmax).
-# Internal function to use in all other simulation algorithms.
+#=
+    simulate_poisson_times(rng, λ, tmin, tmax)
+
+Simulate the event times of a homogeneous Poisson process with parameter λ on the interval [tmin, tmax).
+Internal function to use in all other simulation algorithms.
+=#
 function simulate_poisson_times(rng::AbstractRNG, λ, tmin, tmax)
     N = rand(rng, Poisson(λ * (tmax - tmin)))
     times = rand(rng, Uniform(tmin, tmax), N)
@@ -11,10 +14,10 @@ end
 """
     simulate_ogata(rng, pp, tmin, tmax)
 
-simulate a temporal point process `pp` on interval `[tmin, tmax)` using ogata's algorithm.
+Simulate a temporal point process `pp` on interval `[tmin, tmax)` using Ogata's algorithm.
 
-# technical remark
-to infer the type of the marks, the implementation assumes that there is method of `mark_distribution` without the argument `h` such that it corresponds to the distribution of marks in case the history is empty.
+# Technical Remark
+To infer the type of the marks, the implementation assumes that there is method of `mark_distribution` without the argument `h` such that it corresponds to the distribution of marks in case the history is empty.
 """
 function simulate_ogata(
     rng::AbstractRNG, pp::AbstractPointProcess, tmin::T, tmax::T

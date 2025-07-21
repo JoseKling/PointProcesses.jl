@@ -96,6 +96,12 @@ MultivariatePoissonProcessPrior
 MarkedPoissonProcess
 ```
 
+## Hawkes Process
+
+```@docs
+HawkesProcess
+```
+
 ## Index
 
 ```@index

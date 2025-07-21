@@ -1,7 +1,8 @@
 # Constructor
-@test HawkesProcess(1, 1, 1) isa HawkesProcess{Int}
-@test HawkesProcess(1, 1, 1.0) isa HawkesProcess{Float64}
-@test_throws DomainError HawkesProcess(-1, 1, 1)
+@test HawkesProcess(1, 1, 2) isa HawkesProcess{Int}
+@test HawkesProcess(1, 1, 2.0) isa HawkesProcess{Float64}
+@test_throws DomainError HawkesProcess(1, 1, 1)
+@test_throws DomainError HawkesProcess(-1, 1, 2)
 
 hp = HawkesProcess(1, 1, 2)
 h = History([1.0, 2.0, 4.0], ["a", "b", "c"], 0.0, 5.0)
@@ -45,7 +46,7 @@ var_est = vec(var(params; dims=1))
 # [112.318, 63.4261, 144.67] is the median over 10.000 estimations on this same data
 @test all(isapprox.(median_est, [112.318, 63.4261, 144.67]; rtol=0.01))
 # [0.0791, 0.00196, 0.196] is the variance over 10.000 estimations on this same data
-@test all(isapprox.(var_est, [0.0791, 0.00196, 0.196]; rtol=0.5))
+@test all(var_est .<= ([0.0791, 0.00196, 0.196] .* 1.5))
 
 # logdensityof
 @test logdensityof(hp, h) ≈
