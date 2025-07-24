@@ -78,37 +78,36 @@ therefore, the interval of the process is transformed from T to N. Also, in equa
 """
 function StatsAPI.fit(
     rng::AbstractRNG,
-    ::Type{HawkesProcess{HP}},
-    h::History{M,H};
-    step_tol=1e-3,
+    ::Type{HawkesProcess{T}},
+    h::History;
+    step_tol=1e-6,
     max_iter::Int=1000,
-) where {HP<:Real,H<:Real,M}
-    PT = promote_type(HP, H)
-    N = nb_events(h)
-    N == 0 && return HawkesProcess(zero(PT), zero(PT), zero(PT))
-    T = duration(h)
-    norm_ts = PT.(h.times .* (N / T)) # Average inter-event time equal to 1. Numerical stability
+) where {T<:Real}
+    n = nb_events(h)
+    n == 0 && return HawkesProcess(zero(T), zero(T), zero(T))
+    tmax = T(duration(h))
+    norm_ts = T.(h.times .* (n / tmax)) # Average inter-event time equal to 1. Numerical stability
     n_iters = 0
-    step = step_tol + one(PT)
-    lambda_ts = zeros(PT, N)
-    # Step 1 - Choose initial guess such that Λ(T) ≈ N. After normalization, T → N
-    μ = PT(0.2) + (PT(0.6) * rand(rng, PT)) # μ should not be too close to 0 or 1. μ = 1 → the base rate already accounts for all events
-    ψ = (one(PT) - μ) # ψ = α / β is the integral of the activation function. Λ(t) ≈ μt + ψN_t
-    t90 = PT(0.5) + (PT(1.5) * rand(rng, PT)) # t90 is the time it takes for the activation function to decay by 90%. Set to t90 ∈ [1/2, 2]
-    ω = log(PT(10)) * t90 # ω is the parameter corresponding to t90.
+    step = step_tol + one(T)
+    lambda_ts = zeros(T, n)
+    # Step 1 - Choose initial guess such that Λ(T) ≈ n. After normalization, T → n
+    μ = T(0.2) + (T(0.6) * rand(rng, T)) # μ should not be too close to 0 or 1. μ = 1 → the base rate already accounts for all events
+    ψ = (one(T) - μ) # ψ = α / β is the integral of the activation function. Λ(t) ≈ μt + ψN_t
+    t90 = T(0.5) + (T(1.5) * rand(rng, T)) # t90 is the time it takes for the activation function to decay by 90%. Set to t90 ∈ [1/2, 2]
+    ω = log(T(10)) * t90 # ω is the parameter corresponding to t90.
     while (step >= step_tol) && (n_iters < max_iter)
         # Step 2
-        lambda_ts[1] = zero(PT)
-        for i in 2:N
+        lambda_ts[1] = zero(T)
+        for i in 2:n
             lambda_ts[i] =
-                exp(-ω * (norm_ts[i] - norm_ts[i - 1])) * (one(PT) + lambda_ts[i - 1])
+                exp(-ω * (norm_ts[i] - norm_ts[i - 1])) * (one(T) + lambda_ts[i - 1])
         end
         lambda_ts .*= (ψ * ω)
         lambda_ts .+= μ
         # Step 3
-        D = zero(PT) # Expected number of descendants
-        div = zero(PT) # Needed to calculate the new parameters for the next iteration
-        for i in 2:N
+        D = zero(T) # Expected number of descendants
+        div = zero(T) # Needed to calculate the new parameters for the next iteration
+        for i in 2:n
             for j in 1:(i - 1)
                 diffs = norm_ts[i] - norm_ts[j]
                 D_ij = (ψ * ω * exp(-ω * diffs)) / lambda_ts[i] # Probability that t_i is a descendant of t_j
@@ -117,41 +116,38 @@ function StatsAPI.fit(
             end
         end
         # Steps 4 and 5
-        step = max(abs(μ - (one(PT) - (D / N))), abs(ψ - (D / N)), abs(ω - (D / div)))
+        step = max(abs(μ - (one(T) - (D / n))), abs(ψ - (D / n)), abs(ω - (D / div)))
         n_iters += 1
-        μ, ψ, ω = one(PT) - (D / N), D / N, D / div # Update parameters for the next iteration
+        μ, ψ, ω = one(T) - (D / n), D / n, D / div # Update parameters for the next iteration
     end
     n_iters >= max_iter &&
         @warn("Maximum number of iterations reached without convergence.")
-    return HawkesProcess(μ * (N / T), ψ * ω * (N / T), ω * (N / T)) # Unnormalize parameters
+    return HawkesProcess(μ * (n / tmax), ψ * ω * (n / tmax), ω * (n / tmax)) # Unnormalize parameters
 end
 
-function StatsAPI.fit(
-    HP::Type{HawkesProcess{T}}, h::History; step_tol=1e-3, max_iter::Int=1000
-) where {T<:Real}
-    return fit(default_rng(), HP, h; step_tol=step_tol, max_iter=max_iter)
+function StatsAPI.fit(HP::Type{HawkesProcess{T}}, h::History; kwargs...) where {T<:Real}
+    return fit(default_rng(), HP, h; kwargs...)
 end
 
-# The standard output type of this method is `HawkesProcess{Float64}`
-function StatsAPI.fit(
-    HP::Type{HawkesProcess}, h::History; step_tol=1e-3, max_iter::Int=1000
-)
-    return fit(default_rng(), HP{Float64}, h; step_tol=step_tol, max_iter=max_iter)
+# Type parameter for `HawkesProcess` was not explicitly provided
+function StatsAPI.fit(HP::Type{HawkesProcess}, h::History{M,H}; kwargs...) where {M,H<:Real}
+    T = promote_type(Float64, H)
+    return fit(default_rng(), HP{T}, h; kwargs...)
 end
 
-function time_change(hp::HawkesProcess, h::History)
-    N = nb_events(h)
-    A = zeros(N + 1) # Array A in Ozaki (1979)
-    @inbounds for i in 2:N
+function time_change(hp::HawkesProcess, h::History{M,T}) where {M,T<:Real}
+    n = nb_events(h)
+    A = zeros(T, n + 1) # Array A in Ozaki (1979)
+    @inbounds for i in 2:n
         A[i] = exp(-hp.ω * (h.times[i] - h.times[i - 1])) * (1 + A[i - 1])
     end
     A[end] = exp(-hp.ω * (h.tmax - h.times[end])) * (1 + A[end - 1]) # Used to calculate the integral of the intensity at every event time
-    times = hp.μ .* (h.times .- h.tmin) # Transformation with respect to base rate
+    times = T.(hp.μ .* (h.times .- h.tmin)) # Transformation with respect to base rate
     T_base = hp.μ * duration(h) # Contribution of base rate to total length of time re-scaled process
     for i in eachindex(times)
         times[i] += (hp.α / hp.ω) * ((i - 1) - A[i]) # Add contribution of activation functions
     end
-    return History(times, h.marks, 0.0, T_base + ((hp.α / hp.ω) * (N - A[end]))) # A time re-scaled process starts at t=0
+    return History(times, h.marks, zero(T), T(T_base + ((hp.α / hp.ω) * (n - A[end])))) # A time re-scaled process starts at t=0
 end
 
 function ground_intensity(hp::HawkesProcess, h::History, t)
@@ -161,7 +157,7 @@ end
 
 function integrated_ground_intensity(hp::HawkesProcess, h::History, tmin, tmax)
     times = event_times(h, h.tmin, tmax)
-    integral = 0.0
+    integral = 0
     for ti in times
         # Integral of activation function. 'max(tmin - ti, 0)' corrects for events that occurred
         # inside or outside the interval [tmin, tmax].
@@ -190,17 +186,19 @@ with intensity λ(t) = α exp(-ω(t - t_g)) with the inverse method.
 gen_{n+1} is the set of all events simulated from all events in gen_n.
 The algorithm stops when the simulation from one generation results in no further events.
 =#
-function generate_descendants(rng::AbstractRNG, immigrants::Vector, T, α, ω)
-    descendants = eltype(immigrants)[]
+function generate_descendants(
+    rng::AbstractRNG, immigrants::Vector{T}, tmax, α, ω
+) where {T<:Real}
+    descendants = T[]
     next_gen = immigrants
     while !isempty(next_gen)
         # OPTIMIZE: Can this be improved by avoiding allocations of `curr_gen` and `next_gen`? Or does the compiler take care of that?
         curr_gen = copy(next_gen) # The current generation from which we simulate the next one
         next_gen = eltype(immigrants)[] # Gathers all the descendants from the current generation
         for parent in curr_gen # Generate the descendants for each individual event with the inverse method
-            activation_integral = (α / ω) * (1.0 - exp(ω * (parent - T)))
-            sim_transf = simulate_poisson_times(rng, 1.0, 0.0, activation_integral)
-            @. sim_transf = parent - ((1.0 / ω) * log(1.0 - ((ω / α) * sim_transf))) # Inverse of integral of the activation function
+            activation_integral = (α / ω) * (one(T) - exp(ω * (parent - tmax)))
+            sim_transf = simulate_poisson_times(rng, one(T), zero(T), activation_integral)
+            @. sim_transf = parent - (inv(ω) * log(one(T) - ((ω / α) * sim_transf))) # Inverse of integral of the activation function
             append!(next_gen, sim_transf)
         end
         append!(descendants, next_gen)

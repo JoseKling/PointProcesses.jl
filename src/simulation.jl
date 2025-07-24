@@ -6,7 +6,7 @@ Internal function to use in all other simulation algorithms.
 =#
 function simulate_poisson_times(rng::AbstractRNG, λ, tmin, tmax)
     N = rand(rng, Poisson(λ * (tmax - tmin)))
-    times = rand(rng, Uniform(tmin, tmax), N)
+    times = [rand(rng, Uniform(tmin, tmax)) for _ in 1:N] # rand(rng, Uniform(tmin, tmax), N) always outputs a `Float64`
     sort!(times)
     return times
 end
