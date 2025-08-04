@@ -13,7 +13,7 @@ against a specified distribution `D` after appropriate time rescaling.
 BootstrapTest(KSDistance{Exponential}, HawkesProcess, hisotry)
 ```
 """
-struct KSDistance{D<:UnivariateDistribution} end
+struct KSDistance{D<:UnivariateDistribution} <: Statistic end
 KSDistance(D::Type{<:UnivariateDistribution}) = KSDistance{D}()
 
 """
@@ -42,8 +42,8 @@ and the standard exponential distribution.
 ks_stat = statistic(KSDistance(Exponential), hawkes_process, history)
 ```
 """
-function statistic(::KSDistance{Exponential}, pp::AbstractPointProcess, h::History)
-    (length(h.times) < 2) && return 1.0 # If `h` has only 2 elements, than there are no interevent times
+function statistic(::Type{KSDistance{Exponential}}, pp::AbstractPointProcess, h::History)
+    (length(h.times) < 2) && return one(typeof(h.tmax)) # If `h` has only 2 elements, than there are no interevent times
     X = diff(time_change(pp, h).times) # X → sorted time re-scaled inter event times
     sort!(X)
     return ksstats(X, Exponential)[2]
@@ -75,9 +75,8 @@ and the uniform distribution on the transformed time interval [0, Λ(T)].
 s = statistic(KSDistance(Uniform), HawkesProcess, history)
 ```
 """
-function statistic(::KSDistance{Uniform}, pp::AbstractPointProcess, h::History)
-    (length(h.times) < 1) && return 1.0 # No events ⇒ maximum distance
+function statistic(::Type{KSDistance{Uniform}}, pp::AbstractPointProcess, h::History)
+    (length(h.times) < 1) && return one(typeof(h.tmax)) # No events ⇒ maximum distance
     transf = time_change(pp, h).times # transf → time re-scaled event times
     return ksstats(transf.times, Uniform(transf.tmin, transf.tmax))[2]
 end
-

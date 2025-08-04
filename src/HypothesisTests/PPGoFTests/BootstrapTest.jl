@@ -34,7 +34,9 @@ which would incorrectly suggest absolute certainty in rejecting the null hypothe
 
 - `Float64`: p-value in [0, 1], where small values provide evidence against the null hypothesis
 """
-pvalue(bs::BootstrapTest) = (count(>=(bs.stat), bs.sim_stats) + 1) / (bs.n_sims + 1)
+function StatsAPI.pvalue(bs::BootstrapTest)
+    (count(>=(bs.stat), bs.sim_stats) + 1) / (bs.n_sims + 1)
+end
 
 """
     BootstrapTest(S::Type{<:Statistic}, pp::Type{<:AbstractPointProcess}, h::History; n_sims=1000) -> BootstrapTest
@@ -75,7 +77,9 @@ test = BootstrapTest(KSExponential, HawkesProcess(1.0, 1.0, 2.0), history; n_sim
 p = pvalue(test)
 ```
 """
-function BootstrapTest(S::Type{<:Statistic}, PP::Type{<:AbstractPointProcess}, h::History; n_sims=1000)
+function BootstrapTest(
+    S::Type{<:Statistic}, PP::Type{<:AbstractPointProcess}, h::History; n_sims=1000
+)
     pp_est = estimate(PP, h)
     stat = statistic(S, pp_est, h)
     sim_stats = Vector{Float64}(undef, n_sims)

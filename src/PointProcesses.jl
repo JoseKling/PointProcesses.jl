@@ -74,7 +74,7 @@ include("poisson/multivariate/fit.jl")
 include("poisson/marked/marked_poisson_process.jl")
 include("poisson/marked/fit.jl")
 
-include("HypothesisTests/Statistics.jl")
+include("HypothesisTests/ppgoftest_statistic.jl")
 include("HypothesisTests/Statistics/KSDistance.jl")
 include("HypothesisTests/PPGoFTests/BootstrapTest.jl")
 include("HypothesisTests/PPGoFTests/NoBootstrapTest.jl")

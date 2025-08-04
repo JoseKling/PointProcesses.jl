@@ -34,7 +34,9 @@ which would incorrectly suggest absolute certainty in rejecting the null hypothe
 
 - `Float64`: p-value in [0, 1], where small values provide evidence against the null hypothesis
 """
-pvalue(nbs::NoBootstrapTest) = (count(>=(nbs.stat), nbs.sim_stats) + 1) / (nbs.n_sims + 1)
+function StatsAPI.pvalue(nbs::NoBootstrapTest)
+    (count(>=(nbs.stat), nbs.sim_stats) + 1) / (nbs.n_sims + 1)
+end
 
 """
     NoBootstrapTest(S::Type{<:Statistic}, pp::Type{<:AbstractPointProcess}, h::History; n_sims=1000) -> NoBootstrapTest
@@ -81,17 +83,28 @@ test = NoBootstrapTest(KSExponential, HawkesProcess, history; n_sims=1000)
 p = pvalue(test)
 ```
 """
-function NoBootstrapTest(S::Type{<:Statistic}, PP::Type{<:AbstractPointProcess}, h::History; n_sims=1000)
-    pp_est = estimate(PP, h)
+function NoBootstrapTest(
+    rng::AbstractRNG,
+    S::Type{<:Statistic},
+    PP::Type{<:AbstractPointProcess},
+    h::History;
+    n_sims=1000,
+)
+    pp_est = fit(PP, h)
     stat = statistic(S, pp_est, h)
-    sim_stats = Vector{Float64}(undef, n_sims)
+    sim_stats = Vector{typeof(stat)}(undef, n_sims)
     Threads.@threads for i in 1:n_sims
-        sim = simulate(pp_est, h.tmin, h.tmax)
+        sim = rand(rng, pp_est, h.tmin, h.tmax)
         sim_stats[i] = statistic(S, pp_est, sim)
     end
     return NoBootstrapTest(n_sims, stat, sim_stats)
 end
 
+function NoBootstrapTest(
+    S::Type{<:Statistic}, PP::Type{<:AbstractPointProcess}, h::History; kwargs...
+)
+    NoBootstrapTest(default_rng(), S, pp, h; kwargs...)
+end
 """
     NoBootstrapTest(S::Type{<:Statistic}, pp::AbstractPointProcess, h::History; n_sims=1000) -> NoBootstrapTest
 
@@ -133,12 +146,24 @@ test = NoBootstrapTest(KSExponential, known_process, history; n_sims=1000)
 p = pvalue(test)
 ```
 """
-function NoBootstrapTest(S::Type{<:Statistic}, pp::AbstractPointProcess, h::History; n_sims=1000)
+function NoBootstrapTest(
+    rng::AbstractRNG,
+    S::Type{<:Statistic},
+    pp::AbstractPointProcess,
+    h::History;
+    n_sims=1000,
+)
     stat = statistic(S, pp, h)
-    sim_stats = Vector{Float64}(undef, n_sims)
+    sim_stats = Vector{typeof(stat)}(undef, n_sims)
     Threads.@threads for i in 1:n_sims
-        sim = simulate(pp, h.tmin, h.tmax)
+        sim = rand(rng, pp, h.tmin, h.tmax)
         sim_stats[i] = statistic(S, pp, sim)
     end
     return NoBootstrapTest(n_sims, stat, sim_stats)
+end
+
+function NoBootstrapTest(
+    S::Type{<:Statistic}, pp::AbstractPointProcess, h::History; kwargs...
+)
+    NoBootstrapTest(default_rng(), S, pp, h; kwargs...)
 end
