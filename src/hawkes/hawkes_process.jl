@@ -47,7 +47,7 @@ function Base.rand(rng::AbstractRNG, hp::HawkesProcess, tmin, tmax)
 end
 
 """
-    StatsAPI.fit(rng, ::HawkesProcess, h::History; step_tol::Float64 = 1e-3, max_iter::Int = 1000)
+    StatsAPI.fit(rng, ::Type{HawkesProcess{T}}, h::History; step_tol::Float64 = 1e-6, max_iter::Int = 1000) where {T<:Real}
 
 Expectation-Maximization algorithm from [E. Lewis, G. Mohler (2011)](https://arxiv.org/pdf/1801.08273)).
 The relevant calculations are in page 4, equations 6-13.
@@ -70,7 +70,7 @@ The algorithm consists in the following steps:
         ω = D / div
 5. If convergence criterion is met, return updated parameters, otherwise, back to step 2.
 
-Notice that in the implementation the process is normalized so the average inter-event time is equal to 1 and, 
+Notice that, in the implementation, the process is normalized so the average inter-event time is equal to 1 and, 
 therefore, the interval of the process is transformed from T to N. Also, in equation (8) in the paper,
 
 ∑_{i=1:n} pᵢᵢ = ∑_{i=1:n} (1 - ∑_{j < i} Dᵢⱼ) = N - D.
