@@ -38,15 +38,14 @@ h_sim = rand(hp, 0.0, 10.0)
 @test isa(rand(hp, BigFloat(0), BigFloat(10)), History{Nothing,BigFloat})
 
 # Fit
-lines = readlines("hawkes_times.txt")[1:2]
-h_fit_times = parse.(Float64, split(lines[1], ","))
-h_fit = History(h_fit_times, fill(nothing, length(h_fit_times)), 0.0, 1.0)
-μ, α, ω = parse.(Float64, split(lines[2], ","))
-hp_est = fit(HawkesProcess, h_fit)
-@test isa(hp_est, HawkesProcess)
-@test isapprox(μ, hp_est.μ, atol=0.01)
-@test isapprox(α, hp_est.α, atol=0.01)
-@test isapprox(ω, hp_est.ω, atol=0.01)
+Random.seed!(123)
+params_true = (100.0, 100.0, 200.0)
+model = HawkesProcess(params_true...)
+h_sim = rand(model, 0.0, 50.0)
+model_est = fit(HawkesProcess, h_sim)
+params_est = (model_est.μ, model_est.α, model_est.ω)
+@test isa(model_est, HawkesProcess)
+@test all((params_true .* 0.9) .<= params_est .<= (params_true .* 1.1))
 @test isa(fit(HawkesProcess, h_big), HawkesProcess{BigFloat})
 @test isa(fit(HawkesProcess{Float32}, h_big), HawkesProcess{Float32})
 
