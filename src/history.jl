@@ -10,14 +10,33 @@ Linear event histories with marks of type `M` and temporal locations of type `T`
 - `tmin::T`: start time
 - `tmax::T`: end time
 """
-mutable struct History{M,T<:Real}
+struct History{T<:Real, M}
     times::Vector{T}
-    marks::Vector{M}
     tmin::T
     tmax::T
+    marks::Vector{M}
+
+    function History(times, tmin, tmax, marks=fill(nothing, length(times)); check=true)
+        if check
+            tmin >= tmax && throw(DomainError((tmin, tmax), "End of interval must be strictly larger than the start."))
+            length(marks) != length(times) && throw(DimensionMismatch("There must be the same number of events and marks."))
+            perm = sortperm(times)
+            times .= times[perm]
+            marks .= marks[perm]
+            if times[1] < tmin || times[end] >= tmax
+                @warn "Events outside of provided interval were discarded."
+                il = searchsortedfirst(times, tmin)
+                ir = searchsortedfirst(times, tmax) - 1
+                times = times[il: ir]
+                marks = marks[il: ir]
+            end
+        end
+        T = promote_type(eltype(times), typeof(tmin), typeof(tmax))
+        return new{T, eltype(marks)}(times, tmin, tmax, marks)
+    end
 end
 
-History(; times, marks, tmin, tmax) = History(times, marks, tmin, tmax)
+History(; times, tmin, tmax, marks=fill(nothing, length(times)), check=true) = History(times, tmin, tmax, marks; check)
 
 function Base.show(io::IO, h::History{M,T}) where {M,T}
     return print(
@@ -33,11 +52,25 @@ Return the sorted vector of event times for `h`.
 event_times(h::History) = h.times
 
 """
+    event_times(h, tmin, tmax)
+
+Return the sorted vector of event times between `tmin` and `tmax` in `h`.
+"""
+event_times(h::History, tmin, tmax) = @view h.times[searchsortedfirst(h.times, tmin): searchsortedfirst(h.times, tmax) - 1]
+
+"""
     event_marks(h)
 
 Return the vector of event marks for `h`, sorted according to their event times.
 """
 event_marks(h::History) = h.marks
+
+"""
+    event_marks(h, tmin, tmax)
+
+Return the sorted vector of marks of events between `tmin` and `tmax` in `h`.
+"""
+event_marks(h::History, tmin, tmax) = @view h.marks[searchsortedfirst(h.times, tmin): searchsortedfirst(h.times, tmax) - 1]
 
 """
     min_time(h)
@@ -72,10 +105,10 @@ Base.length(h::History) = nb_events(h)
 
 Count events in `h` during the interval `[tmin, tmax)`.
 """
-function nb_events(h::History{M,T}, tmin, tmax) where {M,T}
+function nb_events(h::History, tmin, tmax)
     i_min = searchsortedfirst(event_times(h), tmin)
-    i_max = searchsortedlast(event_times(h), tmax - eps(tmax))
-    return i_max - i_min + 1
+    i_max = searchsortedfirst(event_times(h), tmax)
+    return i_max - i_min
 end
 
 """
@@ -115,16 +148,17 @@ function Base.push!(h::History, t, m; check=true)
 end
 
 """
-    append!(h1, h2)
+    union(h1, h2)
 
-Add all the events of `h2` at the end of `h1`.
+Create a new event history containing all events from h1 and h2.
+The new definition interval will be from min(h1.tmin, h2.tmin) to max(h1.tmax, h2.tmax)
 """
-function Base.append!(h1::History, h2::History)
-    max_time(h1) ≈ min_time(h2) || return false
-    append!(h1.times, h2.times)
-    append!(h1.marks, h2.marks)
-    h1.tmax = h2.tmax
-    return true
+function Base.union(h1::History, h2::History)
+    times = vcat(h1.times, h2.times)
+    marks = vcat(h1.marks, h2.marks)
+    tmin = min(h1.tmin, h2.tmin)
+    tmax = max(h1.tmax, h2.tmax)
+    return History(times, tmin, tmax, marks)
 end
 
 """
@@ -145,8 +179,8 @@ end
 
 Split `h` into a vector of consecutive histories with individual duration `chunk_duration`.
 """
-function split_into_chunks(h::History{M}, chunk_duration) where {M}
-    chunks = History{M}[]
+function split_into_chunks(h::History{T, M}, chunk_duration) where {T, M}
+    chunks = History{T, M}[]
     limits = collect(min_time(h):chunk_duration:max_time(h))
     if !(limits[end] ≈ max_time(h))
         push!(limits, max_time(h))
