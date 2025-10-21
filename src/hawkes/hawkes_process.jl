@@ -80,49 +80,72 @@ function StatsAPI.fit(
     rng::AbstractRNG,
     ::Type{HawkesProcess{T}},
     h::History;
-    step_tol=1e-6,
+    step_tol::Float64=1e-6,
     max_iter::Int=1000,
 ) where {T<:Real}
     n = nb_events(h)
     n == 0 && return HawkesProcess(zero(T), zero(T), zero(T))
+
     tmax = T(duration(h))
-    norm_ts = T.(h.times .* (n / tmax)) # Average inter-event time equal to 1. Numerical stability
+    # Normalize times so average inter-event time is 1 (T -> n)
+    norm_ts = T.(h.times .* (n / tmax))
+
+    # preallocate
+    A = zeros(T, n)            # A[i] = sum_{j<i} exp(-ω (t_i - t_j))
+    S = zeros(T, n)            # S[i] = sum_{j<i} (t_i - t_j) exp(-ω (t_i - t_j))
+    lambda_ts = similar(A)     # λ_i
+
+    # Λ(T) ≈ n after normalization
+    # μ not too close to 0 or 1 so that both base and offspring contribute
+    μ = T(0.2) + (T(0.6) * rand(rng, T))
+    ψ = one(T) - μ                           # ψ = α/ω (branching ratio)
+    t90 = T(0.5) + (T(1.5) * rand(rng, T))   # inverse of the time to decay to 10% in normalized time
+    ω = log(T(10)) * t90
+
     n_iters = 0
     step = step_tol + one(T)
-    lambda_ts = zeros(T, n)
-    # Step 1 - Choose initial guess such that Λ(T) ≈ n. After normalization, T → n
-    μ = T(0.2) + (T(0.6) * rand(rng, T)) # μ should not be too close to 0 or 1. μ = 1 → the base rate already accounts for all events
-    ψ = (one(T) - μ) # ψ = α / β is the integral of the activation function. Λ(t) ≈ μt + ψN_t
-    t90 = T(0.5) + (T(1.5) * rand(rng, T)) # t90 is the time it takes for the activation function to decay by 90%. Set to t90 ∈ [1/2, 2]
-    ω = log(T(10)) * t90 # ω is the parameter corresponding to t90.
+
+    # First event: A[1]=0, S[1]=0, so λ_1 = μ
+    lambda_ts[1] = μ
+
     while (step >= step_tol) && (n_iters < max_iter)
-        # Step 2
-        lambda_ts[1] = zero(T)
+        # compute A, S, and λ
         for i in 2:n
-            lambda_ts[i] =
-                exp(-ω * (norm_ts[i] - norm_ts[i - 1])) * (one(T) + lambda_ts[i - 1])
+            Δ = norm_ts[i] - norm_ts[i - 1]
+            e = exp(-ω * Δ)
+            Ai_1 = A[i - 1]
+            A[i] = e * (one(T) + Ai_1)
+            S[i] = e * (S[i - 1] + Δ * (one(T) + Ai_1))
+            lambda_ts[i] = μ + (ψ * ω) * A[i]
         end
-        lambda_ts .*= (ψ * ω)
-        lambda_ts .+= μ
-        # Step 3
-        D = zero(T) # Expected number of descendants
-        div = zero(T) # Needed to calculate the new parameters for the next iteration
+
+        # E-step aggregates
+        D = zero(T)   # expected number of descendants
+        div = zero(T)   # ∑ (t_i - t_j) D_{ij}
         for i in 2:n
-            for j in 1:(i - 1)
-                diffs = norm_ts[i] - norm_ts[j]
-                D_ij = (ψ * ω * exp(-ω * diffs)) / lambda_ts[i] # Probability that t_i is a descendant of t_j
-                D += D_ij
-                div += (diffs * D_ij)
-            end
+            w = (ψ * ω) / lambda_ts[i]  # factor common to all j<i
+            D += w * A[i]
+            div += w * S[i]
         end
-        # Steps 4 and 5
-        step = max(abs(μ - (one(T) - (D / n))), abs(ψ - (D / n)), abs(ω - (D / div)))
+
+        # Steps 4–5: M-step updates + convergence check
+        new_μ = one(T) - (D / n)
+        new_ψ = D / n
+        new_ω = D / (div + eps(T))   # small guard to avoid div=0
+
+        step = max(abs(μ - new_μ), abs(ψ - new_ψ), abs(ω - new_ω))
+        μ, ψ, ω = new_μ, new_ψ, new_ω
         n_iters += 1
-        μ, ψ, ω = one(T) - (D / n), D / n, D / div # Update parameters for the next iteration
+
+        # Prepare for next loop: reset λ₁ since A[1]=0 regardless of params
+        lambda_ts[1] = μ
     end
-    n_iters >= max_iter &&
-        @warn("Maximum number of iterations reached without convergence.")
-    return HawkesProcess(μ * (n / tmax), ψ * ω * (n / tmax), ω * (n / tmax)) # Unnormalize parameters
+
+    n_iters >= max_iter && @warn "Maximum number of iterations reached without convergence."
+
+    # Unnormalize back to original time scale (T -> tmax):
+    # parameters in normalized space (') relate to original by μ0=μ'*(n/tmax), ω0=ω'*(n/tmax), α0=(ψ'ω')*(n/tmax)
+    return HawkesProcess(μ * (n / tmax), ψ * ω * (n / tmax), ω * (n / tmax))
 end
 
 function StatsAPI.fit(HP::Type{HawkesProcess{T}}, h::History; kwargs...) where {T<:Real}
