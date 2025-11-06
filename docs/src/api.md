@@ -30,6 +30,7 @@ max_mark
 ```@docs
 push!
 append!
+cat
 time_change
 split_into_chunks
 ```

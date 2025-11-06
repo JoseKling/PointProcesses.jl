@@ -7,7 +7,7 @@ end
 
 function Distributions.suffstats(
     ::Type{MultivariatePoissonProcess{R}},
-    histories::AbstractVector{<:History{<:Real, <:Integer}},
+    histories::AbstractVector{<:History{<:Real,<:Integer}},
     weights::AbstractVector{W},
 ) where {R,W}
     m_max = maximum(max_mark(h; init=0) for h in histories)
@@ -23,14 +23,15 @@ function Distributions.suffstats(
 end
 
 function Distributions.suffstats(
-    ::Type{MultivariatePoissonProcess{R}}, histories::AbstractVector{<:History{<:Real, <:Integer}}
+    ::Type{MultivariatePoissonProcess{R}},
+    histories::AbstractVector{<:History{<:Real,<:Integer}},
 ) where {R}
     weights = ones(length(histories))
     return suffstats(MultivariatePoissonProcess{R}, histories, weights)
 end
 
 function Distributions.suffstats(
-    pptype::Type{MultivariatePoissonProcess{R}}, h::History{<:Real, <:Integer}
+    pptype::Type{MultivariatePoissonProcess{R}}, h::History{<:Real,<:Integer}
 ) where {R}
     return suffstats(pptype, [h])
 end
