@@ -20,15 +20,17 @@ struct History{T<:Real, M}
         if check
             tmin >= tmax && throw(DomainError((tmin, tmax), "End of interval must be strictly larger than the start."))
             length(marks) != length(times) && throw(DimensionMismatch("There must be the same number of events and marks."))
-            perm = sortperm(times)
-            times .= times[perm]
-            marks .= marks[perm]
-            if times[1] < tmin || times[end] >= tmax
-                @warn "Events outside of provided interval were discarded."
-                il = searchsortedfirst(times, tmin)
-                ir = searchsortedfirst(times, tmax) - 1
-                times = times[il: ir]
-                marks = marks[il: ir]
+            if !isempty(times)
+                perm = sortperm(times)
+                times .= times[perm]
+                marks .= marks[perm]
+                if times[1] < tmin || times[end] >= tmax
+                    @warn "Events outside of provided interval were discarded."
+                    il = searchsortedfirst(times, tmin)
+                    ir = searchsortedfirst(times, tmax) - 1
+                    times = times[il: ir]
+                    marks = marks[il: ir]
+                end
             end
         end
         T = promote_type(eltype(times), typeof(tmin), typeof(tmax))
@@ -137,7 +139,7 @@ duration(h::History) = max_time(h) - min_time(h)
 
 Add event `(t, m)` at the end of history `h`.
 """
-function Base.push!(h::History, t, m; check=true)
+function Base.push!(h::History, t::Real, m; check=true)
     if check
         @assert h.tmin <= t < h.tmax
         @assert (length(h) == 0) || (h.times[end] <= t)
@@ -148,17 +150,35 @@ function Base.push!(h::History, t, m; check=true)
 end
 
 """
-    union(h1, h2)
+    append!(h, ts, ms)
 
-Create a new event history containing all events from h1 and h2.
-The new definition interval will be from min(h1.tmin, h2.tmin) to max(h1.tmax, h2.tmax)
+Append events `(ts, ms)` at the end of history `h`.
 """
-function Base.union(h1::History, h2::History)
-    times = vcat(h1.times, h2.times)
-    marks = vcat(h1.marks, h2.marks)
-    tmin = min(h1.tmin, h2.tmin)
-    tmax = max(h1.tmax, h2.tmax)
-    return History(times, tmin, tmax, marks)
+function Base.append!(h::History, ts::Vector{<:Real}, ms; check=true)
+    if check
+        perm = sortperm(ts)
+        ts .= ts[perm]
+        ms .= ms[perm]
+        @assert h.tmin <= ts[1] && ts[end] < h.tmax
+        @assert (length(h) == 0) || (h.times[end] <= ts[1])
+    end
+    append!(h.times, ts)
+    append!(h.marks, ms)
+    return nothing
+end
+
+"""
+    cat(h1, h2)
+
+If h1 and h2 are consecutive event histories, i.e., the end of
+h1 coincides with the beginning of h2, then create a new event
+history by concatenating h1 and h2.
+"""
+function Base.cat(h1::History, h2::History)
+    max_time(h1) ≈ min_time(h2) || throw(DomainError((h1.tmax, h2.tmin), "End of h1's interval must coincide with start of h2's interval"))
+    times = [h1.times; h2.times]
+    marks = [h1.marks; h2.marks]
+    return History(times=times, tmin=h1.tmin, tmax=h2.tmax, marks=marks, check=false)
 end
 
 """
@@ -188,7 +208,7 @@ function split_into_chunks(h::History{T, M}, chunk_duration) where {T, M}
     for (a, b) in zip(limits[1:(end - 1)], limits[2:end])
         times = [t for t in event_times(h) if a <= t < b]
         marks = [m for (t, m) in zip(event_times(h), event_marks(h)) if a <= t < b]
-        chunk = History(; times=times, marks=marks, tmin=a, tmax=b)
+        chunk = History(; times=times, marks=marks, tmin=a, tmax=b, check=false)
         push!(chunks, chunk)
     end
     return chunks
