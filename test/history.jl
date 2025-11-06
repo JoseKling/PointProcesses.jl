@@ -7,8 +7,17 @@ h = History([0.2, 0.8, 1.1], 0.0, 2.0, ["a", "b", "c"]);
 @test !has_events(h, 1.5, 2.0)
 @test min_mark(h) == "a"
 @test max_mark(h) == "c"
+<<<<<<< HEAD
 @test event_times(h, 0.2, 0.8) == [0.2]
 @test event_marks(h, 0.2, 0.8) == ["a"]
+=======
+@test event_times(h) == [0.2, 0.8, 1.1]
+@test event_times(h, 0.2, 0.8) == [0.2]
+@test event_times(h, 0.8, 0.2) == []
+@test event_marks(h) == ["a", "b", "c"]
+@test event_marks(h, 0.2, 0.8) == ["a"]
+@test event_marks(h, 0.8, 0.2) == []
+>>>>>>> main
 
 push!(h, 1.7, "d")
 

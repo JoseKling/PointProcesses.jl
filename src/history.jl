@@ -56,9 +56,17 @@ event_times(h::History) = h.times
 """
     event_times(h, tmin, tmax)
 
+<<<<<<< HEAD
 Return the sorted vector of event times between `tmin` and `tmax` in `h`.
 """
 event_times(h::History, tmin, tmax) = @view h.times[searchsortedfirst(h.times, tmin): searchsortedfirst(h.times, tmax) - 1]
+=======
+Return the sorted vector of event times between `tmin` and `tmax` for `h`.
+"""
+function event_times(h::History, tmin, tmax)
+    @view h.times[searchsortedfirst(h.times, tmin):(searchsortedfirst(h.times, tmax) - 1)]
+end
+>>>>>>> main
 
 """
     event_marks(h)
@@ -70,9 +78,17 @@ event_marks(h::History) = h.marks
 """
     event_marks(h, tmin, tmax)
 
+<<<<<<< HEAD
 Return the sorted vector of marks of events between `tmin` and `tmax` in `h`.
 """
 event_marks(h::History, tmin, tmax) = @view h.marks[searchsortedfirst(h.times, tmin): searchsortedfirst(h.times, tmax) - 1]
+=======
+Return the vector of event marks between `tmin` and `tmax` for `h`, sorted according to their event times.
+"""
+function event_marks(h::History, tmin, tmax)
+    @view h.marks[searchsortedfirst(h.times, tmin):(searchsortedfirst(h.times, tmax) - 1)]
+end
+>>>>>>> main
 
 """
     min_time(h)
