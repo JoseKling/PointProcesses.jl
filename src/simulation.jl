@@ -1,3 +1,16 @@
+#=
+    simulate_poisson_times(rng, λ, tmin, tmax)
+
+Simulate the event times of a homogeneous Poisson process with parameter λ on the interval [tmin, tmax).
+Internal function to use in all other simulation algorithms.
+=#
+function simulate_poisson_times(rng::AbstractRNG, λ, tmin, tmax)
+    N = rand(rng, Poisson(λ * (tmax - tmin)))
+    times = [rand(rng, Uniform(tmin, tmax)) for _ in 1:N] # rand(rng, Uniform(tmin, tmax), N) always outputs a `Float64`
+    sort!(times)
+    return times
+end
+
 """
     simulate_ogata(rng, pp, tmin, tmax)
 
