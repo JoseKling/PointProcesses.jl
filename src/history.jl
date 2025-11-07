@@ -18,15 +18,19 @@ struct History{T<:Real,M}
 
     function History(times, tmin, tmax, marks=fill(nothing, length(times)); check=true)
         if check
-            tmin >= tmax && throw(
-                DomainError(
-                    (tmin, tmax),
-                    "End of interval must be strictly larger than the start.",
-                ),
-            )
-            length(marks) != length(times) && throw(
-                DimensionMismatch("There must be the same number of events and marks.")
-            )
+            if tmin >= tmax
+                throw(
+                    DomainError(
+                        (tmin, tmax),
+                        "End of interval must be strictly larger than the start.",
+                    ),
+                )
+            end
+            if length(marks) != length(times)
+                throw(
+                    DimensionMismatch("There must be the same number of events and marks.")
+                )
+            end
             if !isempty(times)
                 perm = sortperm(times)
                 times .= times[perm]
@@ -150,7 +154,7 @@ duration(h::History) = max_time(h) - min_time(h)
 """
     push!(h, t, m)
 
-Add event `(t, m)` at the end of history `h`.
+Add event `(t, m)` inside the interval `[h.tmin, h.tmax)` at the end of history `h`.
 """
 function Base.push!(h::History, t::Real, m; check=true)
     if check
@@ -165,7 +169,7 @@ end
 """
     append!(h, ts, ms)
 
-Append events `(ts, ms)` at the end of history `h`.
+Append events `(ts, ms)` inside the interval `[h.tmin, h.tmax)` at the end of history `h`.
 """
 function Base.append!(h::History, ts::Vector{<:Real}, ms; check=true)
     if check
