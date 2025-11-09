@@ -1,10 +1,3 @@
-using Distributions
-using PointProcesses
-using Random
-using Statistics
-using StatsAPI
-using Test
-
 rng = Random.seed!(63)
 
 intensities = rand(rng, 10)

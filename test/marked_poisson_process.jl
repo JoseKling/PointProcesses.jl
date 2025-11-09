@@ -1,12 +1,3 @@
-using DensityInterface
-using Distributions
-using ForwardDiff
-using PointProcesses
-using Statistics
-using StatsAPI
-using Test
-# using Zygote
-
 rng = Random.seed!(63)
 
 pp = MarkedPoissonProcess(1.0, Categorical([0.1, 0.3, 0.6]))
