@@ -59,7 +59,7 @@ mark_distribution
 
 ```@docs
 simulate_ogata
-Base.rand
+simulate
 ```
 
 ### Inference
