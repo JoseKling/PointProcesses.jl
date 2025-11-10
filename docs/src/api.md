@@ -67,11 +67,6 @@ simulate
 
 ```@docs
 logdensityof
-```
-
-### Learning
-
-```@docs
 integrated_ground_intensity
 ground_intensity_bound
 fit
@@ -97,10 +92,23 @@ MultivariatePoissonProcessPrior
 MarkedPoissonProcess
 ```
 
-## Hawkes Process
+## Hawkes Processes
 
 ```@docs
 HawkesProcess
+```
+
+## Goodness-of-fit tests
+
+```@docs
+PPTest
+pvalue
+Statistic
+statistic
+BootstrapTest
+BootstrapTest(S::Type{<:Statistic}, pp::Type{<:AbstractPointProcess}, h::History; n_sims=1000)
+NoBootstrapTest
+NoBootstrapTest(S::Type{<:Statistic}, pp::AbstractPointProcess, h::History; n_sims=1000)
 ```
 
 ## Index

@@ -77,10 +77,8 @@ include("poisson/marked/fit.jl")
 
 include("hawkes/hawkes_process.jl")
 
-include("hawkes/hawkes_process.jl")
-
-include("HypothesisTests/ppgoftest_statistic.jl")
+include("HypothesisTests/pptest_statistic.jl")
 include("HypothesisTests/Statistics/KSDistance.jl")
-include("HypothesisTests/PPGoFTests/BootstrapTest.jl")
-include("HypothesisTests/PPGoFTests/NoBootstrapTest.jl")
+include("HypothesisTests/PPTests/BootstrapTest.jl")
+include("HypothesisTests/PPTests/NoBootstrapTest.jl")
 end
