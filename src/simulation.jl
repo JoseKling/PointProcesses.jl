@@ -46,14 +46,14 @@ function simulate_ogata(
 end
 
 """
-    rand([rng,] pp, tmin, tmax)
+    simulate([rng,] pp, tmin, tmax)
 
 Alias for `simulate_ogata`.
 """
-function Base.rand(rng::AbstractRNG, pp::AbstractPointProcess, tmin, tmax)
+function simulate(rng::AbstractRNG, pp::AbstractPointProcess, tmin, tmax)
     return simulate_ogata(rng, pp, tmin, tmax)
 end
 
-function Base.rand(pp::AbstractPointProcess, args...; kwargs...)
-    return rand(default_rng(), pp, args...; kwargs...)
+function simulate(pp::AbstractPointProcess, args...; kwargs...)
+    return simulate(default_rng(), pp, args...; kwargs...)
 end
