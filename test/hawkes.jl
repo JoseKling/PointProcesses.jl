@@ -5,8 +5,10 @@
 @test_throws DomainError HawkesProcess(-1, 1, 2)
 
 hp = HawkesProcess(1, 1, 2)
-h = History([1.0, 2.0, 4.0], ["a", "b", "c"], 0.0, 5.0)
-h_big = History(BigFloat.([1, 2, 4]), ["a", "b", "c"], BigFloat(0), BigFloat(5))
+h = History(; times=[1.0, 2.0, 4.0], marks=["a", "b", "c"], tmin=0.0, tmax=5.0)
+h_big = History(;
+    times=BigFloat.([1, 2, 4]), marks=["a", "b", "c"], tmin=BigFloat(0), tmax=BigFloat(5)
+)
 
 # Time change
 h_transf = time_change(hp, h)
@@ -34,8 +36,8 @@ integral =
 # Rand
 h_sim = simulate(hp, 0.0, 10.0)
 @test issorted(h_sim.times)
-@test isa(h_sim, History{Nothing,Float64})
-@test isa(simulate(hp, BigFloat(0), BigFloat(10)), History{Nothing,BigFloat})
+@test isa(h_sim, History{Float64,Nothing})
+@test isa(simulate(hp, BigFloat(0), BigFloat(10)), History{BigFloat,Nothing})
 
 # Fit
 Random.seed!(123)

@@ -36,7 +36,7 @@ function simulate_ogata(
             if U < U_max
                 m = rand(rng, mark_distribution(pp, t + τ, h))
                 if t + τ < tmax
-                    push!(h, t + τ, m)
+                    push!(h, t + τ, m; check=false)
                 end
             end
             t = t + τ
