@@ -43,15 +43,16 @@ export ground_intensity, mark_distribution
 export intensity, log_intensity
 export ground_intensity_bound
 export integrated_ground_intensity
-export simulate_ogata
+export simulate_ogata, simulate
 
 ## Models
 
 export AbstractPoissonProcess
 export MultivariatePoissonProcess, MultivariatePoissonProcessPrior
 export MarkedPoissonProcess
+export HawkesProcess
 
-## Hypothesis testset
+## Goodness of fit tests tests
 
 export Statistic, KSDistance
 export BootstrapTest, NoBootstrapTest
@@ -73,6 +74,10 @@ include("poisson/multivariate/fit.jl")
 
 include("poisson/marked/marked_poisson_process.jl")
 include("poisson/marked/fit.jl")
+
+include("hawkes/hawkes_process.jl")
+
+include("hawkes/hawkes_process.jl")
 
 include("HypothesisTests/ppgoftest_statistic.jl")
 include("HypothesisTests/Statistics/KSDistance.jl")

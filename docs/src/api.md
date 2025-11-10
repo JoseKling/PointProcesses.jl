@@ -30,6 +30,7 @@ max_mark
 ```@docs
 push!
 append!
+cat
 time_change
 split_into_chunks
 ```
@@ -59,7 +60,7 @@ mark_distribution
 
 ```@docs
 simulate_ogata
-Base.rand
+simulate
 ```
 
 ### Inference
@@ -94,6 +95,12 @@ MultivariatePoissonProcessPrior
 
 ```@docs
 MarkedPoissonProcess
+```
+
+## Hawkes Process
+
+```@docs
+HawkesProcess
 ```
 
 ## Index

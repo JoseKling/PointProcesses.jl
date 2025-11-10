@@ -21,12 +21,12 @@ min_time(bpp::BoundedPointProcess) = bpp.tmin
 max_time(bpp::BoundedPointProcess) = bpp.tmax
 
 """
-    rand([rng,], bpp::BoundedPointProcess)
+    simulate([rng,] bpp::BoundedPointProcess)
 
 Simulate a point process on a predefined time interval.
 """
-function Base.rand(rng::AbstractRNG, bpp::BoundedPointProcess)
-    return rand(rng, bpp.pp, min_time(bpp), max_time(bpp))
+function simulate(rng::AbstractRNG, bpp::BoundedPointProcess)
+    return simulate(rng, bpp.pp, min_time(bpp), max_time(bpp))
 end
 
 ground_intensity(bpp::BoundedPointProcess, t, h) = ground_intensity(bpp.pp, t, h)

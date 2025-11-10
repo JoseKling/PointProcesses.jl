@@ -1,11 +1,14 @@
 using Aqua
+using DensityInterface
 using Documenter
 using Distributions
+using ForwardDiff
 using JuliaFormatter
+using LinearAlgebra
 using PointProcesses
 using Random
 using Statistics
-using LinearAlgebra
+using StatsAPI
 using Test
 
 Random.seed!(63)
@@ -35,5 +38,8 @@ DocMeta.setdocmeta!(PointProcesses, :DocTestSetup, :(using PointProcesses); recu
         @testset verbose = true "Marked" begin
             include("marked_poisson_process.jl")
         end
+    end
+    @testset verbose = true "Hawkes" begin
+        include("hawkes.jl")
     end
 end
