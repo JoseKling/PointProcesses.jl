@@ -9,5 +9,5 @@ function simulate(
 end
 
 function simulate(pp::AbstractPoissonProcess, tmin::Real, tmax::Real)
-    return rand(default_rng(), pp, tmin, tmax)
+    return simulate(default_rng(), pp, tmin, tmax)
 end
