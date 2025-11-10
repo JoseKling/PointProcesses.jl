@@ -1,4 +1,4 @@
-function Base.rand(
+function simulate(
     rng::AbstractRNG, pp::AbstractPoissonProcess, tmin::T, tmax::T
 ) where {T<:Real}
     mark_dist = mark_distribution(pp)
@@ -8,6 +8,6 @@ function Base.rand(
     return History(; times=times, marks=marks, tmin=tmin, tmax=tmax)
 end
 
-function Base.rand(pp::AbstractPoissonProcess, tmin::Real, tmax::Real)
-    return rand(default_rng(), pp, tmin, tmax)
+function simulate(pp::AbstractPoissonProcess, tmin::Real, tmax::Real)
+    return simulate(default_rng(), pp, tmin, tmax)
 end

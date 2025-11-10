@@ -38,7 +38,7 @@ struct HawkesProcess{T<:Real} <: AbstractPointProcess
     end
 end
 
-function Base.rand(rng::AbstractRNG, hp::HawkesProcess, tmin, tmax)
+function simulate(rng::AbstractRNG, hp::HawkesProcess, tmin, tmax)
     sim = simulate_poisson_times(rng, hp.μ, tmin, tmax) # Simulate Poisson process with base rate
     sim_desc = generate_descendants(rng, sim, tmax, hp.α, hp.ω) # Recursively generates descendants from first events
     append!(sim, sim_desc)

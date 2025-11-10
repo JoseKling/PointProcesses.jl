@@ -1,12 +1,3 @@
-using DensityInterface
-using ForwardDiff
-using PointProcesses
-using Random
-using Statistics
-using StatsAPI
-using Test
-# using Zygote
-
 rng = Random.seed!(63)
 
 pp = MultivariatePoissonProcess(rand(rng, 10))
@@ -14,12 +5,12 @@ bpp = BoundedPointProcess(MultivariatePoissonProcess(rand(rng, 10)), 0.0, 1000.0
 pp0 = MultivariatePoissonProcess(zeros(10))
 bpp0 = BoundedPointProcess(pp0, 0.0, 1000.0)
 
-h1 = rand(rng, pp, 0.0, 1000.0)
+h1 = simulate(rng, pp, 0.0, 1000.0)
 h2 = simulate_ogata(rng, pp, 0.0, 1000.0)
-h2bis = rand(rng, bpp)
-h3 = rand(rng, pp0, 0.0, 1000.0)
+h2bis = simulate(rng, bpp)
+h3 = simulate(rng, pp0, 0.0, 1000.0)
 h4 = simulate_ogata(rng, pp0, 0.0, 1000.0)
-h4bis = rand(rng, bpp0)
+h4bis = simulate(rng, bpp0)
 
 pp_est1 = fit(MultivariatePoissonProcess{Float32}, [h1, h1])
 pp_est2 = fit(MultivariatePoissonProcess{Float32}, [h2, h2])
