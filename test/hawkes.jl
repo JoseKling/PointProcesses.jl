@@ -36,8 +36,8 @@ integral =
 # Rand
 h_sim = simulate(hp, 0.0, 10.0)
 @test issorted(h_sim.times)
-@test isa(h_sim, History{Nothing,Float64})
-@test isa(simulate(hp, BigFloat(0), BigFloat(10)), History{Nothing,BigFloat})
+@test isa(h_sim, History{Float64,Nothing})
+@test isa(simulate(hp, BigFloat(0), BigFloat(10)), History{BigFloat,Nothing})
 
 # Fit
 Random.seed!(123)

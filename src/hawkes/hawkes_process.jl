@@ -154,12 +154,12 @@ function StatsAPI.fit(HP::Type{HawkesProcess{T}}, h::History; kwargs...) where {
 end
 
 # Type parameter for `HawkesProcess` was NOT explicitly provided
-function StatsAPI.fit(HP::Type{HawkesProcess}, h::History{H,M}; kwargs...) where {M,H<:Real}
+function StatsAPI.fit(HP::Type{HawkesProcess}, h::History{H,M}; kwargs...) where {H<:Real,M}
     T = promote_type(Float64, H)
     return fit(default_rng(), HP{T}, h; kwargs...)
 end
 
-function time_change(hp::HawkesProcess, h::History{T,M}) where {M,T<:Real}
+function time_change(hp::HawkesProcess, h::History{T,M}) where {T<:Real,M}
     n = nb_events(h)
     A = zeros(T, n + 1) # Array A in Ozaki (1979)
     @inbounds for i in 2:n
