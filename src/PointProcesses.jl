@@ -46,6 +46,7 @@ export simulate_ogata, simulate
 ## Models
 
 export AbstractPoissonProcess
+export HomogeneousPoissonProcess
 export MultivariatePoissonProcess, MultivariatePoissonProcessPrior
 export MarkedPoissonProcess
 export HawkesProcess
@@ -59,6 +60,8 @@ include("bounded_point_process.jl")
 
 include("poisson/abstract_poisson_process.jl")
 include("poisson/simulation.jl")
+
+include("poisson/homogeneous/homogeneous_poisson_process.jl")
 
 include("poisson/multivariate/multivariate_poisson_process.jl")
 include("poisson/multivariate/suffstats.jl")

@@ -84,6 +84,12 @@ fit_map
 AbstractPoissonProcess
 ```
 
+### Homogeneous
+
+```@docs
+HomogeneousPoissonProcess
+```
+
 ### Multivariate
 
 ```@docs

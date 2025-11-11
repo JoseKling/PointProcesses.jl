@@ -59,6 +59,13 @@ function Base.show(io::IO, h::History{T,M}) where {T,M}
     )
 end
 
+function Base.:(==)(h1::History, h2::History)
+    equal_times = h1.times == h2.times
+    equal_marks = h1.marks == h2.marks
+    equal_interval = (h1.tmin == h2.tmin) && (h1.tmax == h2.tmax)
+    return equal_times && equal_marks && equal_interval
+end
+
 """
     event_times(h)
 
