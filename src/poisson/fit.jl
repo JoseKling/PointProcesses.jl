@@ -16,7 +16,7 @@ end
 ## Bayesian fit (only for MultivariatePoissonProcess)
 
 function fit_map(
-    pptype::Type{MultivariatePoissonProcess{R}},
+    ::Type{MultivariatePoissonProcess{R}},
     prior::MultivariatePoissonProcessPrior,
     ss::PoissonProcessStats,
 ) where {R<:Real}
