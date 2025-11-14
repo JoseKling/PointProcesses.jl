@@ -53,11 +53,11 @@ Homogeneous multivariate temporal Poisson process with marginal intensities of t
 
 `MultivariatePoissonProcess{R}` is simply a type alias for `PoissonProcess{R,Categorical{Float64,Vector{Float64}}}`.
 """
-# The choice to impose the mark distribution Categorical{Float64,Vector{Float64}} was made on purpose
-## It is mainly due to the fact that Distributions.Categorical makes (most of the time) automatic conversions to Float64
 const MultivariatePoissonProcess{R<:Real} = PoissonProcess{
     R,Categorical{Float64,Vector{Float64}}
 }
+# The choice to impose the mark distribution Categorical{Float64,Vector{Float64}} was made on purpose
+## It is mainly due to the fact that Distributions.Categorical makes (most of the time) automatic conversions to Float64
 
 function Base.show(io::IO, pp::MultivariatePoissonProcess)
     return print(io, "MultivariatePoissonProcess($(pp.λ * probs(pp.mark_dist)))")
