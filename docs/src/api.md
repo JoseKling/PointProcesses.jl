@@ -48,6 +48,7 @@ BoundedPointProcess
 intensity
 ground_intensity
 log_intensity
+intensity_vector
 ```
 
 ### Marks
@@ -76,7 +77,13 @@ fit_map
 ## Poisson processes
 
 ```@docs
-AbstractPoissonProcess
+PoissonProcess
+```
+
+### Univariate
+
+```@docs
+UnivariatePoissonProcess
 ```
 
 ### Multivariate
@@ -86,13 +93,7 @@ MultivariatePoissonProcess
 MultivariatePoissonProcessPrior
 ```
 
-### Marked
-
-```@docs
-MarkedPoissonProcess
-```
-
-## Hawkes Processes
+## Hawkes Process
 
 ```@docs
 HawkesProcess
