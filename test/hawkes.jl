@@ -11,7 +11,7 @@ h_big = History(;
 )
 
 # Time change
-h_transf = time_change(hp, h)
+h_transf = time_change(h, hp)
 integral =
     (hp.μ * duration(h)) +
     (hp.α / hp.ω) * sum([1 - exp(-hp.ω * (h.tmax - ti)) for ti in h.times])
@@ -20,7 +20,7 @@ integral =
 @test h_transf.tmin ≈ 0
 @test h_transf.tmax ≈ integral
 @test h_transf.times ≈ [1, (2 + (1 - exp(-2)) / 2), 4 + (2 - exp(-2 * 3) - exp(-2 * 2)) / 2]
-@test isa(time_change(hp, h_big), typeof(h_big))
+@test isa(time_change(h_big, hp), typeof(h_big))
 
 # Ground intensity
 @test ground_intensity(hp, h, 1) == 1

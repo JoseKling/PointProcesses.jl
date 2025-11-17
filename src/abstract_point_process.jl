@@ -105,3 +105,13 @@ Fit a point process of type `PP` to one or several histories using maximum a pos
 Not implemented by default.
 """
 function fit_map end
+
+#=
+Fit for `Dirac` distribution not implemented in `Distributions.jl`,
+but is needed in `fit` when trying to fit a `UnivariatePoissonProcess`.
+The Dirac distribution is only used for unmarked processes, so the
+value returned by the distribution is unimportant
+=#
+function StatsAPI.fit(::Type{<:Distributions.Dirac}, _...)
+    return Dirac(nothing)
+end

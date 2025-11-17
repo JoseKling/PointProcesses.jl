@@ -16,8 +16,8 @@ struct NoBootstrapTest <: PPTest
     sim_stats::Vector{Float64}
 end
 
-function StatsAPI.pvalue(nbs::NoBootstrapTest)
-    (count(>=(nbs.stat), nbs.sim_stats) + 1) / (nbs.n_sims + 1)
+function StatsAPI.pvalue(nbt::NoBootstrapTest)
+    return (count(>=(nbt.stat), nbt.sim_stats) + 1) / (nbt.n_sims + 1)
 end
 
 """
@@ -41,7 +41,7 @@ Notice that this test is better suited when the parameter θ₀ is known (form 1
 procedure does not account for parameter estimation error. For more details on this, see
 [Jogesh Babu and Rao (2004)](http://www.jstor.org/stable/25053332),
 [Reynaud-Bouret et. al. (2014)](https://doi.org/10.1186/2190-8567-4-3), 
-[Kling and Vetter (2024)](https://arxiv.org/abs/2407.09130).
+[Kling and Vetter (2025)](https://doi.org/10.1111/sjos.70029).
 
 # Arguments
 - `S::Type{<:Statistic}`: the type of test statistic to use
@@ -72,7 +72,7 @@ function NoBootstrapTest(
     stat = statistic(S, pp, h)
     sim_stats = Vector{typeof(stat)}(undef, n_sims)
     Threads.@threads for i in 1:n_sims
-        sim = rand(rng, pp, h.tmin, h.tmax)
+        sim = simulate(rng, pp, h.tmin, h.tmax)
         sim_stats[i] = statistic(S, pp, sim)
     end
     return NoBootstrapTest(n_sims, stat, sim_stats)
@@ -97,6 +97,5 @@ end
 function NoBootstrapTest(
     S::Type{<:Statistic}, PP::Type{<:AbstractPointProcess}, h::History; kwargs...
 )
-    NoBootstrapTest(default_rng(), S, pp, h; kwargs...)
+    NoBootstrapTest(default_rng(), S, PP, h; kwargs...)
 end
-

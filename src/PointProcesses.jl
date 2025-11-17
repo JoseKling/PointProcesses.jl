@@ -26,7 +26,7 @@ using HypothesisTests: ExactOneSampleKSTest, ksstats
 export logdensityof, densityof # DensityInterface
 export fit # StatsAPI
 export fit_map
-export HypothesisTest, pvalue
+export HypothesisTest, pvalue # HypothesisTests
 
 ## History
 
@@ -54,8 +54,8 @@ export HawkesProcess
 
 ## Goodness of fit tests tests
 
-export Statistic, KSDistance
-export BootstrapTest, NoBootstrapTest
+export Statistic, KSDistance, statistic
+export PPTest, BootstrapTest, NoBootstrapTest
 
 # Includes
 
@@ -72,7 +72,8 @@ include("poisson/simulation.jl")
 
 include("hawkes/hawkes_process.jl")
 
-include("HypothesisTests/pptest_statistic.jl")
+include("HypothesisTests/pp_test.jl")
+include("HypothesisTests/statistic.jl")
 include("HypothesisTests/Statistics/KSDistance.jl")
 include("HypothesisTests/PPTests/BootstrapTest.jl")
 include("HypothesisTests/PPTests/NoBootstrapTest.jl")

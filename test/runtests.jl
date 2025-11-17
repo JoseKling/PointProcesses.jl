@@ -42,4 +42,7 @@ DocMeta.setdocmeta!(PointProcesses, :DocTestSetup, :(using PointProcesses); recu
     @testset verbose = true "Hawkes" begin
         include("hawkes.jl")
     end
+    @testset verbose = true "PPTests" begin
+        include("pp_tests.jl")
+    end
 end

@@ -102,14 +102,24 @@ HawkesProcess
 ## Goodness-of-fit tests
 
 ```@docs
-PPTest
-pvalue
 Statistic
 statistic
+PPTest
+pvalue
+```
+### Statistic
+
+```@docs
+KSDistance
+```
+
+### Tests
+
+```@docs
 BootstrapTest
-BootstrapTest(S::Type{<:Statistic}, pp::Type{<:AbstractPointProcess}, h::History; n_sims=1000)
+BootstrapTest(rng::AbstractRNG, S::Type{<:Statistic}, PP::Type{<:AbstractPointProcess}, h::History; n_sims=1000)
 NoBootstrapTest
-NoBootstrapTest(S::Type{<:Statistic}, pp::AbstractPointProcess, h::History; n_sims=1000)
+NoBootstrapTest(rng::AbstractRNG, S::Type{<:Statistic}, pp::AbstractPointProcess, h::History; n_sims=1000)
 ```
 
 ## Index

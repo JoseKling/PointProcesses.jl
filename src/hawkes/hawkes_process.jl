@@ -159,7 +159,7 @@ function StatsAPI.fit(HP::Type{HawkesProcess}, h::History{H,M}; kwargs...) where
     return fit(default_rng(), HP{T}, h; kwargs...)
 end
 
-function time_change(hp::HawkesProcess, h::History{T,M}) where {T<:Real,M}
+function time_change(h::History{T,M}, hp::HawkesProcess) where {T<:Real,M}
     n = nb_events(h)
     A = zeros(T, n + 1) # Array A in Ozaki (1979)
     @inbounds for i in 2:n

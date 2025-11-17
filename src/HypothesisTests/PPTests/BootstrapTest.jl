@@ -15,13 +15,19 @@ struct BootstrapTest <: PPTest
     stat::Float64
     sim_stats::Vector{Float64}
 end
+#=
+`stat` and `sim_stats` set to type `Float64`, because the `ksstats`
+function from `HypothesisTests.jl` always returns a `Float64` value
+If implementation changes, could define
+`BootstrapTest{R} <: PPTest where {R<:Real}`
+=#
 
-function StatsAPI.pvalue(bs::BootstrapTest)
-    (count(>=(bs.stat), bs.sim_stats) + 1) / (bs.n_sims + 1)
+function StatsAPI.pvalue(bt::BootstrapTest)
+    (count(>=(bt.stat), bt.sim_stats) + 1) / (bt.n_sims + 1)
 end
 
 """
-    BootstrapTest(S::Type{<:Statistic}, pp::Type{<:AbstractPointProcess}, h::History; n_sims=1000)
+    BootstrapTest(rng::AbstractRNG, S::Type{<:Statistic}, PP::Type{<:AbstractPointProcess}, h::History; n_sims=1000)
 
 Perform a goodness-of-fit test using simulation with bootstrap resampling, comparing
 the test statistic computed on the observed data against the distribution of the same
@@ -33,7 +39,7 @@ history, and λ(t; θ) is a a parametrization of the intensity, then the null hy
     H₀: There exists parameters θₒ such that λ₀(t) = λ(t; θ₀)
 
 This procedure is specifically aimed for testing hypotheses where parameters need to
-be estimated. Details are provided in [Kling and Vetter (2024)](https://arxiv.org/abs/2407.09130).
+be estimated. Details are provided in [Kling and Vetter (2025)](https://doi.org/10.1111/sjos.70029).
 
 # Arguments
 - `S::Type{<:Statistic}`: the type of test statistic to use
@@ -53,13 +59,17 @@ p = pvalue(test)
 ```
 """
 function BootstrapTest(
-    S::Type{<:Statistic}, PP::Type{<:AbstractPointProcess}, h::History; n_sims=1000
+    rng::AbstractRNG,
+    S::Type{<:Statistic},
+    PP::Type{<:AbstractPointProcess},
+    h::History;
+    n_sims=1000,
 )
-    pp_est = estimate(PP, h)
+    pp_est = fit(PP, h)
     stat = statistic(S, pp_est, h)
     sim_stats = Vector{Float64}(undef, n_sims)
     Threads.@threads for i in 1:n_sims
-        sim = simulate(pp_est, h.tmin, h.tmax)
+        sim = simulate(rng, pp_est, h.tmin, h.tmax)
         sim_est = fit(PP, sim)
         sim_stats[i] = statistic(S, sim_est, sim)
     end
@@ -67,7 +77,7 @@ function BootstrapTest(
 end
 
 function BootstrapTest(
-    S::Type{<:Statistic}, pp::AbstractPointProcess, h::History; kwargs...
+    S::Type{<:Statistic}, PP::Type{<:AbstractPointProcess}, h::History; kwargs...
 )
-    BootstrapTest(default_rng(), S, pp, h; kwargs...)
+    BootstrapTest(default_rng(), S, PP, h; kwargs...)
 end
