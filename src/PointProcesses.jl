@@ -10,7 +10,7 @@ module PointProcesses
 using DensityInterface: DensityInterface, HasDensity, densityof, logdensityof
 using Distributions: Distributions, UnivariateDistribution, MultivariateDistribution
 using Distributions: Categorical, Exponential, Poisson, Uniform, Dirac
-using Distributions: fit, suffstats, probs
+using Distributions: fit, suffstats, probs, mean
 using LinearAlgebra: dot
 using Random: rand
 using Random: AbstractRNG, default_rng

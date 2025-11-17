@@ -64,6 +64,7 @@ function Base.show(io::IO, pp::MultivariatePoissonProcess)
 end
 
 ## Constructors
+### MarkedPoissonProcess
 function PoissonProcess(λ::Vector{R}; check_args::Bool=true) where {R<:Real}
     if check_args
         if any(λ .< zero(λ))
@@ -83,6 +84,7 @@ function PoissonProcess(λ::Vector{R}; check_args::Bool=true) where {R<:Real}
     return PoissonProcess(sum(λ), Categorical(λ / sum(λ)); check_args=check_args)
 end
 
+### UnivariatePoissonProcess
 function PoissonProcess(λ::R; check_args::Bool=true) where {R<:Real}
     return PoissonProcess(λ, Dirac(nothing); check_args=check_args)
 end
