@@ -1,5 +1,5 @@
 """
-    StatsAPI.fit(rng, ::Type{HawkesProcess{T}}, h::History; step_tol::Float64 = 1e-6, max_iter::Int = 1000) where {T<:Real}
+    StatsAPI.fit(rng, ::Type{UnmarkedUnivariateHawkesProcess{T}}, h::History; step_tol::Float64 = 1e-6, max_iter::Int = 1000) where {T<:Real}
 
 Expectation-Maximization algorithm from [E. Lewis, G. Mohler (2011)](https://arxiv.org/pdf/1801.08273)).
 The relevant calculations are in page 4, equations 6-13.
@@ -29,11 +29,11 @@ therefore, the interval of the process is transformed from T to N. Also, in equa
 
 """
 function StatsAPI.fit(
-    ::Type{UnivariateHawkesProcess{T}},
+    ::Type{<:UnmarkedUnivariateHawkesProcess{T}},
     h::History;
     step_tol::Float64=1e-6,
     max_iter::Int=1000,
-    rng::AbstractRNG=default_rng()
+    rng::AbstractRNG=default_rng(),
 ) where {T<:Real}
     n = nb_events(h)
     n == 0 && return HawkesProcess(zero(T), zero(T), zero(T))
@@ -100,8 +100,10 @@ function StatsAPI.fit(
     return HawkesProcess(μ * (n / tmax), ψ * ω * (n / tmax), ω * (n / tmax))
 end
 
-# # Type parameter for `HawkesProcess` was NOT explicitly provided
-# function StatsAPI.fit(HP::Type{HawkesProcess}, h::History{H,M}; kwargs...) where {H<:Real,M}
-#     T = promote_type(Float64, H)
-#     return fit(HP{T}, h; kwargs...)
-# end
+# Type parameter for `HawkesProcess` was NOT explicitly provided
+function StatsAPI.fit(
+    HP::Type{UnmarkedUnivariateHawkesProcess}, h::History{H,M}; kwargs...
+) where {H<:Real,M}
+    T = promote_type(Float64, H)
+    return fit(HP{T}, h; kwargs...)
+end

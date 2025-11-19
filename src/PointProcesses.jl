@@ -10,8 +10,8 @@ module PointProcesses
 using DensityInterface: DensityInterface, HasDensity, densityof, logdensityof
 using Distributions: Distributions, UnivariateDistribution, MultivariateDistribution
 using Distributions: Categorical, Exponential, Poisson, Uniform, Dirac
-using Distributions: fit, suffstats, probs, mean
-using LinearAlgebra: dot
+using Distributions: fit, suffstats, probs, mean, support
+using LinearAlgebra: dot, diagm
 using Random: rand
 using Random: AbstractRNG, default_rng
 using StatsAPI: StatsAPI, fit
@@ -46,10 +46,15 @@ export simulate_ogata, simulate
 
 ## Models
 
+### Poisson processes
 export PoissonProcess
 export UnivariatePoissonProcess
 export MultivariatePoissonProcess, MultivariatePoissonProcessPrior
+
+### Hawkes processes
 export HawkesProcess
+export UnivariateHawkesProcess, UnmarkedUnivariateHawkesProcess
+export MultivariateHawkesProcess
 
 # Includes
 
@@ -65,5 +70,9 @@ include("poisson/fit.jl")
 include("poisson/simulation.jl")
 
 include("hawkes/hawkes_process.jl")
+include("hawkes/simulation.jl")
+include("hawkes/intensity.jl")
+include("hawkes/fit.jl")
+include("hawkes/time_change.jl")
 
 end

@@ -1,6 +1,6 @@
 # Constructor
-@test HawkesProcess(1, 1, 2) isa HawkesProcess{Int}
-@test HawkesProcess(1, 1, 2.0) isa HawkesProcess{Float64}
+@test HawkesProcess(1, 1, 2) isa UnmarkedUnivariateHawkesProcess{Int64}
+@test HawkesProcess(1, 1, 2.0) isa UnmarkedUnivariateHawkesProcess{Float64}
 @test_throws DomainError HawkesProcess(1, 1, 1)
 @test_throws DomainError HawkesProcess(-1, 1, 2)
 
@@ -44,12 +44,17 @@ Random.seed!(123)
 params_true = (100.0, 100.0, 200.0)
 model = HawkesProcess(params_true...)
 h_sim = simulate(model, 0.0, 50.0)
-model_est = fit(HawkesProcess, h_sim)
+model_est = fit(UnmarkedUnivariateHawkesProcess, h_sim)
 params_est = (model_est.μ, model_est.α, model_est.ω)
 @test isa(model_est, HawkesProcess)
 @test all((params_true .* 0.9) .<= params_est .<= (params_true .* 1.1))
-@test isa(fit(HawkesProcess, h_big), HawkesProcess{BigFloat})
-@test isa(fit(HawkesProcess{Float32}, h_big), HawkesProcess{Float32})
+@test isa(
+    fit(UnmarkedUnivariateHawkesProcess, h_big), UnmarkedUnivariateHawkesProcess{BigFloat}
+)
+@test isa(
+    fit(UnmarkedUnivariateHawkesProcess{Float32}, h_big),
+    UnmarkedUnivariateHawkesProcess{Float32},
+)
 
 # logdensityof
 @test logdensityof(hp, h) ≈

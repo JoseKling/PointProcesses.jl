@@ -1,116 +1,135 @@
 """
-    HawkesProcess{T<:Real,D}
+    HawkesProcess <: AbstractPointProcess
 
-Hawkes process with exponential decay kernel and mark distribution `D`.
-
-A Hawkes process is a self-exciting point process where each event increases the probability
-of future events. The conditional intensity function is given by
-
-    λ(t) = μ + ∑_{tᵢ < t} f(mᵢ) exp(-g(mᵢ)(t - tᵢ)),
-
-where the sum is over all previous event times (tᵢ, mᵢ).
-
-# Fields
-- `μ::T`: baseline intensity (immigration rate)
-- `f`: function f:M → R, where M is the space of marks. Jump size.
-- `g`: function f:M → R, where M is the space of marks. Decay rate.
+Common interface for all subtypes of `HawkesProcess`.
 """
-struct HawkesProcess{T<:Real,D} <: AbstractPointProcess
-    μ::T
-    f
-    g
-    mark_dist::D
-end
+abstract type HawkesProcess <: AbstractPointProcess end
 
-function Base.show(io::IO, hp::HawkesProcess)
-    mean_mark = mean(hp.mark_dist)
-    return print(io, "HawkesProcess($(hp.μ), $(hp.f(mean_mark)), $(hp.g(mean_mark)), $(hp.mark_dist))")
-end
-
-## Alias 
 """
-    UnivariateHawkesProcess{R}
+    UnivariateHawkesProcess{R<:Real,D} <: HawkesProcess
 
-Unmarked univariate temporal Hawkes process.
+Univariate Hawkes process with exponential decay kernel and mark 
+distribution `D`.
 
-The conditional intensity function is given by
+Denote the events of the process by (tᵢ, mᵢ), where tᵢ is the event time
+and mᵢ ∈ M the corresponding mark. The conditional intensity function
+of the Hawkes process is given by
 
-    λ(t) = μ + ∑_{tᵢ < t} α exp(-β(t - tᵢ)).
+λ(t) = μ + ∑_{tᵢ < t} α mᵢ exp(-ω (t - tᵢ)).
 
-Equivalent to the general definition with f(m) = α and g(m) = ω.
+Notice that the mark only affects the jump size.
 
 # Fields
 - `μ::R`: baseline intensity (immigration rate)
-- `α::R`: Jump size.
-- `ω::R`: Decay rate.
-
-Alias for `HawkesProcess{R,Dirac{Nothing}}`.
+- `α::R`: jump size
+- `ω::R`: decay rate.
+- `mark_dist::D`: distribution of marks
 """
-const UnivariateHawkesProcess{R<:Real} = HawkesProcess{R,Dirac{Nothing}}
+struct UnivariateHawkesProcess{T<:Real,D} <: HawkesProcess
+    μ::T
+    α::T
+    ω::T
+    mark_dist::D
+end
 
-function Base.show(io::IO, pp::UnivariateHawkesProcess)
-    return print(io, "UnivariateHawkesProcess($(pp.μ), $(pp.f(nothing)), $(pp.g(nothing)))")
+function Base.show(io::IO, hp::UnivariateHawkesProcess)
+    return print(io, "UnivariateHawkesProcess($(hp.μ), $(hp.α), $(hp.ω), $(hp.mark_dist))")
 end
 
 """
-    MultivariateHawkesProcess{R}
+    UnmarkedUnivariateHawkesProcess{R<:Real} <: HawkesProcess
 
-Unmarked multivariate temporal Hawkes process
+Unmarked univariate Hawkes process with exponential decay kernel.
 
-For a process with D marginal processes, the conditional intensity
-function of the k-th process is given by
+Denote the events of the process by tᵢ. The conditional intensity function
+of the Hawkes process is given by
 
-    λₖ(t) = μₖ + ∑_{h=1,...,D} ∑_{tʰᵢ < t} αₖₕ exp(-βₖₕ(t - tʰᵢ)),
+λ(t) = μ + ∑_{tᵢ < t} α exp(-ω (t - tᵢ)).
 
-where tʰᵢ is the i-th element in the h-th marginal process.
-μ is a vector of length D with elements μᵢ. α and ω are D×D
-matrices with elements αᵢⱼ and ωᵢⱼ.
+# Fields
+- `μ::R`: baseline intensity (immigration rate)
+- `α::R`: jump size
+- `ω::R`: decay rate.
+
+Alias for UnivariateHawkesProcess{R, Dirac{Nothing}}.
+"""
+const UnmarkedUnivariateHawkesProcess{R<:Real} = UnivariateHawkesProcess{R,Dirac{Nothing}}
+
+function Base.show(io::IO, hp::UnmarkedUnivariateHawkesProcess)
+    return print(io, "UnmarkedUnivariateHawkesProcess$((hp.μ, hp.α, hp.ω))")
+end
+
+"""
+    MultivariateHawkesProcess{R} <: HawkesProcess
+
+Unmarked multivariate temporal Hawkes process with exponential decay
+
+For a process with m = 1, 2, ..., M marginal processes, the conditional intensity
+function of the m-th process is given by
+
+    λₘ(t) = μₘ + ∑_{l=1,...,M} ∑_{tˡᵢ < t} αₘₗ exp(-βₘₗ(t - tˡᵢ)),
+
+where tˡᵢ is the i-th element in the l-th marginal process.
+μ is a vector of length M with elements μₘ. α and ω are M×M
+matrices with elements αₘₗ and ωₘₗ.
+
+The process is represented as a marked process, where each marginal
+process m = 1, 2, ..., M is represented by events (tᵐᵢ, m), tᵐᵢ being
+the i-th element with mark m.
 
 # Fields
 - `μ::Vector{<:Real}`: baseline intensity (immigration rate)
 - `α::Matrix{<:Real}`: Jump size.
 - `ω::Matrix{<:Real}`: Decay rate.
-
-Alias for `HawkesProcess{R,Categorical{Float64,Vector{Float64}}}`.
 """
-const MultivariateHawkesProcess{R<:Real} = HawkesProcess{
-    R,Categorical{Float64,Vector{Float64}}
-}
-# The choice to impose the mark distribution Categorical{Float64,Vector{Float64}} was made on purpose
-## It is mainly due to the fact that Distributions.Categorical makes (most of the time) automatic conversions to Float64
-
-function Base.show(io::IO, pp::MultivariateHawkesProcess)
-    D = length(pp.mark_dist.p)
-    inds = [(i, j) for i in 1:D, j in 1:D]
-    return print(io, "MultivariateHawkesProcess\nμ = $(pp.μ .* pp.mark_dist.p)\nα = $(pp.f.(inds))\nω = $(pp.g.(inds))")
+struct MultivariateHawkesProcess{T<:Real} <: HawkesProcess
+    μ::T
+    α::Matrix{T}
+    ω::Matrix{T}
+    mark_dist::Categorical{Float64,Vector{Float64}} # To keep consistent with PoissonProcess. Helps in simulation.
 end
+
+function Base.show(io::IO, hp::MultivariateHawkesProcess{T}) where {T<:Real}
+    return print(
+        io,
+        "MultivariateHawkesProcess\nμ = $(T.(hp.μ .* probs(hp.mark_dist)))\nα = $(hp.α)\nω = $(hp.ω)",
+    )
+end
+
+Base.length(mh::MultivariateHawkesProcess) = size(mh.α)[1]
 
 ## Constructors
 ### UnivariatehawkesProcess
-function HawkesProcess(
-    μ::R1, α::R2, ω::R3; check_args::Bool=true
-    ) where {R1<:Real,R2<:Real,R3<:Real}
-    check_args && check_args_Hawkes(μ, α, ω)
-    R = promote_type(R1, R2, R3)
-    fα(_...) = R(α)
-    gω(_...) = R(ω)
-    return HawkesProcess(R(μ), fα, gω, Dirac(nothing))
+function HawkesProcess(μ::Real, α::Real, ω::Real, mark_dist; check_args::Bool=true)
+    check_args && check_args_Hawkes(μ, α, ω, mark_dist)
+    return UnivariateHawkesProcess(promote(μ, α, ω)..., mark_dist)
+end
+
+function HawkesProcess(μ::Real, α::Real, ω::Real; check_args::Bool=true)
+    return HawkesProcess(μ, α, ω, Dirac(nothing); check_args=check_args)
 end
 
 ### MultivariateHawkesProcess
 function HawkesProcess(
-    μ::Vector{R1}, α::Matrix{R2}, ω::Matrix{R3}; check_args::Bool=true
-    ) where {R1<:Real,R2<:Real,R3<:Real}
+    μ::Vector{<:Real}, α::Matrix{<:Real}, ω::Matrix{<:Real}; check_args::Bool=true
+)
     check_args && check_args_Hawkes(μ, α, ω)
-    R = promote_type(R1, R2, R3)
-    f((i, j)) = R(α[i, j])
-    g((i, j)) = R(ω[i, j])
-    return HawkesProcess(R(sum(μ)), f, g, Categorical(Float64.(μ / sum(μ))))
+    R = promote_type(eltype(μ), eltype(α), eltype(ω))
+    return MultivariateHawkesProcess(R(sum(μ)), R.(α), R.(ω), Categorical(μ / sum(μ)))
 end
 
-### Check check
-# Univariate Hawkes
-function check_args_Hawkes(μ::Real, α::Real, ω::Real)
+# For M independent marginal processes
+function HawkesProcess(
+    μ::Vector{<:Real}, α::Vector{<:Real}, ω::Vector{<:Real}; check_args::Bool=true
+)
+    check_args && check_args_Hawkes(μ, diagm(α), diagm(ω))
+    R = promote_type(eltype(μ), eltype(α), eltype(ω))
+    return MultivariateHawkesProcess(R(sum(μ)), R.(α), R.(ω), Categorical(μ / sum(μ)))
+end
+
+# Check args
+## Univariate Hawkes
+function check_args_Hawkes(μ::Real, α::Real, ω::Real, mark_dist)
     if any((μ, α, ω) .< 0)
         throw(
             DomainError(
@@ -119,91 +138,50 @@ function check_args_Hawkes(μ::Real, α::Real, ω::Real)
             ),
         )
     end
+    mean_α = mark_dist isa Dirac{Nothing} ? α : mean(mark_dist) * α
+    if mean_α >= ω
+        throw(
+            DomainError(
+                "α = $(mean_α), ω = $ω",
+                "HawkesProcess: mᵢα must be, on average, smaller than ω. Stability condition.",
+            ),
+        )
+    end
+    if !isa(mark_dist, Dirac{Nothing}) && minimum(mark_dist) < 0
+        throw(
+            DomainError(
+                "Mark distribution support = $((support(mark_dist).lb, support(mark_dist).ub))",
+                "HawkesProcess: Support of mark distribution must be contained in non-negative numbers",
+            ),
+        )
+    end
     return nothing
 end
 
-# Multivariate Hawkes
+## Multivariate Hawkes
 function check_args_Hawkes(μ::Vector{<:Real}, α::Matrix{<:Real}, ω::Matrix{<:Real})
-    if !(length(μ) == size(α)[1] && length(μ) == size(α)[2])
-        throw(DimansionMismatch("α must have size $(length(μ))×$(length(μ))")) 
+    if length(μ) != size(α)[2]
+        throw(DimansionMismatch("α must have size $(length(μ))×$(length(μ))"))
     end
-    if !(length(μ) == size(ω)[1] && length(μ) == size(ω)[2])
+    if length(μ) != size(ω)[2]
         throw(DimansionMismatch("ω must have size $(length(μ))×$(length(μ))"))
     end
-    if any(μ .< zero(μ))
+    if any(sum(α ./ ω; dims=1) .>= 1)
         throw(
             DomainError(
-                "μ = $μ",
-                "HawkesProcess: the condition μ ≥ 0 is not satisfied for all dimensions.",
+                "α = $α, ω = $ω",
+                "HawkesProcess: Sum of α/β over each row must be smaller than 1. Stability condition.",
             ),
         )
     end
-    if any(α .< zero(α))
+    if any(μ .< zero(μ)) || any(α .< zero(α)) || any(ω .< zero(ω))
         throw(
             DomainError(
-                "α = $α",
-                "HawkesProcess: the condition α ≥ 0 is not satisfied for all dimensions.",
+                "μ = $μ, α = $α, ω = $ω",
+                "HawkesProcess: All elements of μ, α and ω must be non-negative.",
             ),
         )
     end
-    if any(ω .< zero(ω))
-        throw(
-            DomainError(
-                "ω = $ω",
-                "HawkesProcess: the condition ω ≥ 0 is not satisfied for all dimensions.",
-            ),
-        )
-    end
+    ω[α .== 0] .= 1 # Protects against division by 0 in simulation
     return nothing
 end
-
-## Access
-function ground_intensity(hp::HawkesProcess, h::History, t)
-    activation = sum(exp.(hp.ω .* (@view h.times[1:(searchsortedfirst(h.times, t) - 1)])))
-    return hp.μ + (hp.α * activation / exp(hp.ω * t))
-end
-
-function integrated_ground_intensity(hp::HawkesProcess, h::History, tmin, tmax)
-    times = event_times(h, h.tmin, tmax)
-    integral = 0
-    for ti in times
-        # Integral of activation function. 'max(tmin - ti, 0)' corrects for events that occurred
-        # inside or outside the interval [tmin, tmax].
-        integral += (exp(-hp.ω * max(tmin - ti, 0)) - exp(-hp.ω * (tmax - ti)))
-    end
-    integral *= hp.α / hp.ω
-    integral += hp.μ * (tmax - tmin) # Integral of base rate
-    return integral
-end
-
-function DensityInterface.logdensityof(hp::HawkesProcess, h::History)
-    A = zeros(nb_events(h)) # Vector A in Ozaki (1979)
-    for i in 2:nb_events(h)
-        A[i] = exp(-hp.ω * (h.times[i] - h.times[i - 1])) * (1 + A[i - 1])
-    end
-    return sum(log.(hp.μ .+ (hp.α .* A))) - # Value of intensity at each event
-           (hp.μ * duration(h)) - # Integral of base rate
-           ((hp.α / hp.ω) * sum(1 .- exp.(-hp.ω .* (duration(h) .- h.times)))) # Integral of each kernel
-end
-
-function time_change(hp::HawkesProcess, h::History{T,M}) where {T<:Real,M}
-    n = nb_events(h)
-    A = zeros(T, n + 1) # Array A in Ozaki (1979)
-    @inbounds for i in 2:n
-        A[i] = exp(-hp.ω * (h.times[i] - h.times[i - 1])) * (1 + A[i - 1])
-    end
-    A[end] = exp(-hp.ω * (h.tmax - h.times[end])) * (1 + A[end - 1]) # Used to calculate the integral of the intensity at every event time
-    times = T.(hp.μ .* (h.times .- h.tmin)) # Transformation with respect to base rate
-    T_base = hp.μ * duration(h) # Contribution of base rate to total length of time re-scaled process
-    for i in eachindex(times)
-        times[i] += (hp.α / hp.ω) * ((i - 1) - A[i]) # Add contribution of activation functions
-    end
-    return History(;
-        times=times,
-        marks=h.marks,
-        tmin=zero(T),
-        tmax=T(T_base + ((hp.α / hp.ω) * (n - A[end]))),
-        check=false,
-    ) # A time re-scaled process starts at t=0
-end
-

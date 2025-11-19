@@ -104,6 +104,19 @@ MultivariatePoissonProcessPrior
 HawkesProcess
 ```
 
+### Univariate
+
+```@docs
+UnivariateHawkesProcess
+UnmarkedUnivariateHawkesProcess
+```
+
+### Multivariate
+
+```@docs
+MultivariateHawkesProcess
+```
+
 ## Index
 
 ```@index
