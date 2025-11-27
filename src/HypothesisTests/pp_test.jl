@@ -3,7 +3,7 @@
 
 Interface for all goodness-of-fit tests
 """
-abstract type PPTest end
+abstract type PPTest <: StatsAPI.HypothesisTest end
 
 """
     pvalue(test::PPTest)

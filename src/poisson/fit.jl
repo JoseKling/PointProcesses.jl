@@ -1,5 +1,16 @@
 ## Fit MLE
 
+#=
+A separate `fit` method for unmarked Poisson processes is needed, because
+`Distributions.jl` does not provide a `fit` method for the `Dirac` distribution
+=#
+function StatsAPI.fit(
+    ::Type{PoissonProcess{R,Dirac{Nothing}}}, ss::PoissonProcessStats{R1,R2}
+) where {R<:Real,R1<:Real,R2<:Real}
+    λ = convert(R, ss.nb_events / ss.duration)
+    return PoissonProcess(λ, Dirac(nothing))
+end
+
 function StatsAPI.fit(
     ::Type{PoissonProcess{R,D}}, ss::PoissonProcessStats{R1,R2}
 ) where {R<:Real,D,R1<:Real,R2<:Real}
