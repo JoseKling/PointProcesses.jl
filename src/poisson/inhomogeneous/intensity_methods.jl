@@ -7,15 +7,30 @@ These provide analytical solutions for bounds and integrals where possible.
 ## PolynomialIntensity optimizations
 
 """
-Analytical integral for polynomial intensity functions.
+Analytical integral for polynomial intensity functions with identity link.
+For log link, we use numerical integration.
 """
 function integrated_intensity(f::PolynomialIntensity, a, b)
-    result = zero(promote_type(eltype(f.coefficients), typeof(a), typeof(b)))
-    for (i, coef) in enumerate(f.coefficients)
-        power = i
-        result += coef * (b^power - a^power) / power
+    if f.link === :identity
+        # Analytical integral for polynomial
+        result = zero(promote_type(eltype(f.coefficients), typeof(a), typeof(b)))
+        for (i, coef) in enumerate(f.coefficients)
+            power = i
+            result += coef * (b^power - a^power) / power
+        end
+        return result
+    else
+        # Numerical integration for log link
+        n_points = max(100, ceil(Int, 100 * (b - a)))
+        ts = range(a, b; length=n_points)
+        intensities = [f(t) for t in ts]
+
+        integral = zero(eltype(intensities))
+        for i in 1:(n_points - 1)
+            integral += (intensities[i] + intensities[i + 1]) / 2 * (ts[i + 1] - ts[i])
+        end
+        return integral
     end
-    return result
 end
 
 """

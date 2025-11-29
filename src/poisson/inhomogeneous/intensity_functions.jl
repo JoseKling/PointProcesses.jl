@@ -5,44 +5,67 @@ All intensity functions are callable objects that take a time `t` and return λ(
 """
 
 """
-    PolynomialIntensity{R<:Real}
+    PolynomialIntensity{R<:Real,L}
 
-Polynomial intensity function: λ(t) = a₀ + a₁*t + a₂*t² + ... + aₙ*tⁿ.
+Polynomial intensity function with optional link function.
 
 # Fields
 
 - `coefficients::Vector{R}`: polynomial coefficients [a₀, a₁, ..., aₙ].
+- `link::L`: link function applied to the polynomial (`:identity` or `:log`).
 
 # Constructor
 
-    PolynomialIntensity(coefficients)
+    PolynomialIntensity(coefficients; link=:identity)
+
+When `link=:identity`: λ(t) = a₀ + a₁*t + a₂*t² + ... + aₙ*tⁿ
+When `link=:log`: λ(t) = exp(a₀ + a₁*t + a₂*t² + ... + aₙ*tⁿ)
+
+The log link ensures positivity of the intensity function.
 
 # Examples
 
 ```julia
-# Linear: λ(t) = 2 + 3*t
+# Linear identity: λ(t) = 2 + 3*t (may be negative!)
 PolynomialIntensity([2.0, 3.0])
+
+# Linear log: λ(t) = exp(2 + 3*t) (always positive)
+PolynomialIntensity([2.0, 3.0]; link=:log)
 
 # Quadratic: λ(t) = 1 + 2*t + 0.5*t²
 PolynomialIntensity([1.0, 2.0, 0.5])
 ```
 """
-struct PolynomialIntensity{R<:Real}
+struct PolynomialIntensity{R<:Real,L}
     coefficients::Vector{R}
+    link::L
+
+    function PolynomialIntensity(
+        coefficients::Vector{R}; link::Symbol=:identity
+    ) where {R<:Real}
+        if link ∉ (:identity, :log)
+            throw(ArgumentError("link must be :identity or :log, got :$link"))
+        end
+        return new{R,Symbol}(coefficients, link)
+    end
 end
 
 function (f::PolynomialIntensity)(t)
-    result = f.coefficients[1]
+    η = f.coefficients[1]
     t_power = one(t)
     for i in 2:length(f.coefficients)
         t_power *= t
-        result += f.coefficients[i] * t_power
+        η += f.coefficients[i] * t_power
     end
-    return result
+    return f.link === :log ? exp(η) : η
 end
 
 function Base.show(io::IO, f::PolynomialIntensity)
-    return print(io, "PolynomialIntensity($(f.coefficients))")
+    if f.link === :identity
+        return print(io, "PolynomialIntensity($(f.coefficients))")
+    else
+        return print(io, "PolynomialIntensity($(f.coefficients), link=:$(f.link))")
+    end
 end
 
 """
@@ -52,16 +75,33 @@ Exponential intensity function: λ(t) = a*exp(b*t).
 
 # Fields
 
-- `a::R`: scaling factor.
+- `a::R`: scaling factor (must be positive).
 - `b::R`: exponential rate.
 
 # Constructor
 
     ExponentialIntensity(a, b)
+
+# Examples
+
+```julia
+# Increasing intensity
+ExponentialIntensity(2.0, 0.1)
+
+# Decreasing intensity
+ExponentialIntensity(5.0, -0.05)
+```
 """
 struct ExponentialIntensity{R<:Real}
     a::R
     b::R
+
+    function ExponentialIntensity(a::R, b::R) where {R<:Real}
+        if a <= 0
+            throw(ArgumentError("scaling factor 'a' must be positive, got $a"))
+        end
+        return new{R}(a, b)
+    end
 end
 
 (f::ExponentialIntensity)(t) = f.a * exp(f.b * t)
@@ -75,9 +115,11 @@ end
 
 Sinusoidal intensity function: λ(t) = a + b*sin(ω*t + φ).
 
+To ensure positivity, we require a >= |b| so that λ(t) >= 0 for all t.
+
 # Fields
 
-- `a::R`: baseline intensity.
+- `a::R`: baseline intensity (must satisfy a >= |b|).
 - `b::R`: amplitude.
 - `ω::R`: angular frequency.
 - `φ::R`: phase shift.
@@ -85,16 +127,39 @@ Sinusoidal intensity function: λ(t) = a + b*sin(ω*t + φ).
 # Constructor
 
     SinusoidalIntensity(a, b, ω, φ=0.0)
+
+# Examples
+
+```julia
+# Valid: a=5, b=2, so a >= |b|
+SinusoidalIntensity(5.0, 2.0, 2π)
+
+# Valid: a=5, b=-3, so a >= |-3| = 3
+SinusoidalIntensity(5.0, -3.0, 2π)
+
+# Invalid: a=2, b=3, so a < |b| (will error)
+```
 """
 struct SinusoidalIntensity{R<:Real}
     a::R
     b::R
     ω::R
     φ::R
+
+    function SinusoidalIntensity(a::R, b::R, ω::R, φ::R) where {R<:Real}
+        if a < abs(b)
+            throw(
+                ArgumentError(
+                    "baseline 'a' must be >= |b| to ensure positivity, got a=$a, b=$b (requires a >= $(abs(b)))",
+                ),
+            )
+        end
+        return new{R}(a, b, ω, φ)
+    end
 end
 
 function SinusoidalIntensity(a::R, b::R, ω::R) where {R<:Real}
-    SinusoidalIntensity(a, b, ω, zero(R))
+    return SinusoidalIntensity(a, b, ω, zero(R))
 end
 
 (f::SinusoidalIntensity)(t) = f.a + f.b * sin(f.ω * t + f.φ)
@@ -194,11 +259,11 @@ struct LinearCovariateIntensity{R<:Real,F}
 end
 
 function (f::LinearCovariateIntensity)(t)
-    result = f.intercept
+    η = f.intercept
     for (β, x) in zip(f.coefficients, f.covariates)
-        result += β * x(t)
+        η += β * x(t)
     end
-    return result
+    return exp(η)
 end
 
 function Base.show(io::IO, f::LinearCovariateIntensity)

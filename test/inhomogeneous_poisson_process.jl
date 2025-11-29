@@ -14,10 +14,24 @@ rng = Random.seed!(42)
         intensity_linear = PolynomialIntensity([1.0, 0.5])
         pp = InhomogeneousPoissonProcess(intensity_linear, Normal())
 
-        @testset "Intensity function evaluation" begin
+        @testset "Intensity function evaluation - identity link" begin
             @test intensity_linear(0.0) ≈ 1.0
             @test intensity_linear(1.0) ≈ 1.5
             @test intensity_linear(2.0) ≈ 2.0
+        end
+
+        @testset "Intensity function evaluation - log link" begin
+            # Linear log: λ(t) = exp(0.5 + 0.1*t)
+            intensity_log = PolynomialIntensity([0.5, 0.1]; link=:log)
+            @test intensity_log(0.0) ≈ exp(0.5)
+            @test intensity_log(1.0) ≈ exp(0.6)
+            @test intensity_log(2.0) ≈ exp(0.7)
+            # Verify positivity
+            @test all(intensity_log(t) > 0 for t in 0.0:0.1:10.0)
+        end
+
+        @testset "Link function validation" begin
+            @test_throws ArgumentError PolynomialIntensity([1.0, 0.5]; link=:invalid)
         end
 
         @testset "Interface methods" begin
@@ -70,6 +84,15 @@ rng = Random.seed!(42)
         @testset "Intensity function evaluation" begin
             @test intensity_exp(0.0) ≈ 2.0
             @test intensity_exp(1.0) ≈ 2.0 * exp(0.1)
+            # Verify positivity for all t
+            @test all(intensity_exp(t) > 0 for t in -10.0:0.1:10.0)
+        end
+
+        @testset "Positivity enforcement" begin
+            @test_throws ArgumentError ExponentialIntensity(-1.0, 0.1)
+            @test_throws ArgumentError ExponentialIntensity(0.0, 0.1)
+            # Negative b is fine (decreasing intensity)
+            @test ExponentialIntensity(2.0, -0.1) isa ExponentialIntensity
         end
 
         @testset "Simulation" begin
@@ -99,6 +122,19 @@ rng = Random.seed!(42)
             @test intensity_sin(0.5) ≈ 5.0 rtol = 1e-6
             @test intensity_sin(0.75) ≈ 3.0 rtol = 1e-6
             @test intensity_sin(1.0) ≈ 5.0 rtol = 1e-6
+            # Verify positivity
+            @test all(intensity_sin(t) >= 0 for t in 0.0:0.01:10.0)
+        end
+
+        @testset "Positivity enforcement" begin
+            # Valid: a >= |b|
+            @test SinusoidalIntensity(5.0, 3.0, 2π) isa SinusoidalIntensity
+            @test SinusoidalIntensity(5.0, -3.0, 2π) isa SinusoidalIntensity
+            @test SinusoidalIntensity(3.0, 3.0, 2π) isa SinusoidalIntensity
+
+            # Invalid: a < |b|
+            @test_throws ArgumentError SinusoidalIntensity(2.0, 3.0, 2π)
+            @test_throws ArgumentError SinusoidalIntensity(2.0, -3.0, 2π)
         end
 
         @testset "Simulation" begin
@@ -155,16 +191,20 @@ rng = Random.seed!(42)
     end
 
     @testset "LinearCovariateIntensity" begin
-        # λ(t) = 1.0 + 0.5*t + 0.3*sin(2π*t)
+        # λ(t) = exp(1.0 + 0.5*t + 0.3*sin(2π*t))
         cov1 = t -> t
         cov2 = t -> sin(2π * t)
         intensity_cov = LinearCovariateIntensity(1.0, [0.5, 0.3], [cov1, cov2])
         pp = InhomogeneousPoissonProcess(intensity_cov, Normal())
 
         @testset "Intensity function evaluation" begin
-            @test intensity_cov(0.0) ≈ 1.0
-            @test intensity_cov(1.0) ≈ 1.5 rtol = 1e-6
-            @test intensity_cov(0.25) ≈ 1.0 + 0.5 * 0.25 + 0.3 * 1.0 rtol = 1e-6
+            # η(t) = 1.0 + 0.5*t + 0.3*sin(2π*t)
+            # λ(t) = exp(η(t))
+            @test intensity_cov(0.0) ≈ exp(1.0) rtol = 1e-6
+
+            @test intensity_cov(1.0) ≈ exp(1.0 + 0.5*1.0) rtol = 1e-6
+
+            @test intensity_cov(0.25) ≈ exp(1.0 + 0.5*0.25 + 0.3*1.0) rtol = 1e-6
         end
 
         @testset "Simulation" begin
@@ -269,9 +309,11 @@ rng = Random.seed!(42)
 
     @testset "Display methods" begin
         intensity_linear = PolynomialIntensity([1.0, 0.5])
+        intensity_log = PolynomialIntensity([1.0, 0.5]; link=:log)
         pp = InhomogeneousPoissonProcess(intensity_linear, Normal())
 
         @test string(intensity_linear) == "PolynomialIntensity([1.0, 0.5])"
+        @test string(intensity_log) == "PolynomialIntensity([1.0, 0.5], link=:log)"
         @test occursin("InhomogeneousPoissonProcess", string(pp))
     end
 end
