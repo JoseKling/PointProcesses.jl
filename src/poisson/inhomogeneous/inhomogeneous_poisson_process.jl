@@ -25,7 +25,7 @@ pp = InhomogeneousPoissonProcess(SinusoidalIntensity(5.0, 2.0, 2π), Categorical
 pp = InhomogeneousPoissonProcess(t -> 1.0 + 0.5*sin(t), Uniform())
 ```
 """
-struct InhomogeneousPoissonProcess{F,M} <: AbstractPoissonProcess
+struct InhomogeneousPoissonProcess{F,M} <: AbstractPointProcess
     intensity_function::F
     mark_dist::M
 end
@@ -36,7 +36,7 @@ function Base.show(io::IO, pp::InhomogeneousPoissonProcess)
     )
 end
 
-## AbstractPoissonProcess interface
+## Access methods
 
 """
 Mark distribution is time-independent for this implementation.
@@ -82,15 +82,6 @@ function integrated_ground_intensity(pp::InhomogeneousPoissonProcess, h, a, b)
 end
 
 ## Simulation
-
-"""
-Override the Poisson-specific rand method to use Ogata's algorithm.
-
-Inhomogeneous processes cannot use the simple Poisson simulation from
-`poisson/simulation.jl` since the intensity varies with time.
-"""
-function Base.rand(
-    rng::AbstractRNG, pp::InhomogeneousPoissonProcess, tmin::Real, tmax::Real
-)
+function simulate(rng::AbstractRNG, pp::InhomogeneousPoissonProcess, tmin::Real, tmax::Real)
     return simulate_ogata(rng, pp, tmin, tmax)
 end

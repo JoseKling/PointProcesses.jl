@@ -21,7 +21,7 @@ rng = Random.seed!(42)
         end
 
         @testset "Interface methods" begin
-            h_empty = History(Float64[], Float64[], 0.0, 10.0)
+            h_empty = History(Float64[], 0.0, 10.0, Float64[])
             @test ground_intensity(pp, 0.0, h_empty) ≈ 1.0
             @test ground_intensity(pp, 2.0, h_empty) ≈ 2.0
             @test mark_distribution(pp, 0.0, h_empty) isa Normal
@@ -29,7 +29,7 @@ rng = Random.seed!(42)
         end
 
         @testset "Simulation" begin
-            h1 = rand(rng, pp, 0.0, 10.0)
+            h1 = simulate(rng, pp, 0.0, 10.0)
             h2 = simulate_ogata(rng, pp, 0.0, 10.0)
 
             @test issorted(event_times(h1))
@@ -41,7 +41,7 @@ rng = Random.seed!(42)
         end
 
         @testset "Integrated intensity" begin
-            h_empty = History(Float64[], Float64[], 0.0, 10.0)
+            h_empty = History(Float64[], 0.0, 10.0, Float64[])
             # ∫₀¹⁰ (1 + 0.5*t) dt = [t + 0.25*t²]₀¹⁰ = 10 + 25 = 35
             integral = integrated_ground_intensity(pp, h_empty, 0.0, 10.0)
             @test integral ≈ 35.0 rtol = 1e-3
@@ -56,7 +56,7 @@ rng = Random.seed!(42)
             @test intensity_quad(1.0) ≈ 1.6
             @test intensity_quad(2.0) ≈ 2.4
 
-            h = rand(rng, pp_quad, 0.0, 5.0)
+            h = simulate(rng, pp_quad, 0.0, 5.0)
             @test issorted(event_times(h))
             @test all(x -> x ∈ [1, 2], event_marks(h))
         end
@@ -73,13 +73,13 @@ rng = Random.seed!(42)
         end
 
         @testset "Simulation" begin
-            h = rand(rng, pp, 0.0, 10.0)
+            h = simulate(rng, pp, 0.0, 10.0)
             @test issorted(event_times(h))
             @test nb_events(h) > 0
         end
 
         @testset "Integrated intensity" begin
-            h_empty = History(Float64[], Float64[], 0.0, 10.0)
+            h_empty = History(Float64[], 0.0, 10.0, Float64[])
             # ∫ 2*exp(0.1*t) dt = 20*(exp(0.1*t))
             # From 0 to 10: 20*(exp(1) - exp(0)) = 20*(e - 1)
             expected = 20.0 * (exp(1.0) - 1.0)
@@ -102,20 +102,20 @@ rng = Random.seed!(42)
         end
 
         @testset "Simulation" begin
-            h = rand(rng, pp, 0.0, 10.0)
+            h = simulate(rng, pp, 0.0, 10.0)
             @test issorted(event_times(h))
             @test nb_events(h) > 0
         end
 
         @testset "Integrated intensity" begin
-            h_empty = History(Float64[], Float64[], 0.0, 1.0)
+            h_empty = History(Float64[], 0.0, 1.0, Float64[])
             # Over one period, sin integrates to 0, so integral = 5*1 = 5
             integral = integrated_ground_intensity(pp, h_empty, 0.0, 1.0)
             @test integral ≈ 5.0 rtol = 1e-3
         end
 
         @testset "Intensity bounds" begin
-            h_empty = History(Float64[], Float64[], 0.0, 10.0)
+            h_empty = History(Float64[], 0.0, 10.0, Float64[])
             B, L = ground_intensity_bound(pp, 0.0, h_empty)
             @test B >= 7.0  # max is a + |b| = 5 + 2 = 7
             @test L == typemax(Float64)  # Bound holds for all time
@@ -135,13 +135,13 @@ rng = Random.seed!(42)
         end
 
         @testset "Simulation" begin
-            h = rand(rng, pp, 0.0, 3.0)
+            h = simulate(rng, pp, 0.0, 3.0)
             @test issorted(event_times(h))
             @test nb_events(h) > 0
         end
 
         @testset "Integrated intensity" begin
-            h_empty = History(Float64[], Float64[], 0.0, 3.0)
+            h_empty = History(Float64[], 0.0, 3.0, Float64[])
             # ∫₀³ = 1*(1-0) + 3*(2-1) + 2*(3-2) = 1 + 3 + 2 = 6
             integral = integrated_ground_intensity(pp, h_empty, 0.0, 3.0)
             @test integral ≈ 6.0 rtol = 1e-3
@@ -168,7 +168,7 @@ rng = Random.seed!(42)
         end
 
         @testset "Simulation" begin
-            h = rand(rng, pp, 0.0, 5.0)
+            h = simulate(rng, pp, 0.0, 5.0)
             @test issorted(event_times(h))
             @test nb_events(h) > 0
         end
@@ -184,13 +184,13 @@ rng = Random.seed!(42)
         pp = InhomogeneousPoissonProcess(custom_func, Uniform())
 
         @testset "Simulation" begin
-            h = rand(rng, pp, 0.0, 10.0)
+            h = simulate(rng, pp, 0.0, 10.0)
             @test issorted(event_times(h))
             @test nb_events(h) > 0
         end
 
         @testset "Interface methods" begin
-            h_empty = History(Float64[], Float64[], 0.0, 10.0)
+            h_empty = History(Float64[], 0.0, 10.0, Float64[])
             @test ground_intensity(pp, 0.0, h_empty) ≈ 1.0
             @test ground_intensity(pp, π / 2, h_empty) ≈ 1.5
         end
@@ -203,7 +203,7 @@ rng = Random.seed!(42)
         intensity_true = PiecewiseConstantIntensity(breakpoints_true, rates_true)
         pp_true = InhomogeneousPoissonProcess(intensity_true, Normal())
 
-        h = rand(rng, pp_true, 0.0, 10.0)
+        h = simulate(rng, pp_true, 0.0, 10.0)
 
         # Fit with 2 bins
         pp_est = fit(
@@ -225,7 +225,7 @@ rng = Random.seed!(42)
         intensity_true = PolynomialIntensity([2.0, 0.3])
         pp_true = InhomogeneousPoissonProcess(intensity_true, Categorical([0.4, 0.6]))
 
-        h = rand(rng, pp_true, 0.0, 20.0)
+        h = simulate(rng, pp_true, 0.0, 20.0)
 
         # Fit linear intensity
         pp_est = fit(
@@ -244,7 +244,7 @@ rng = Random.seed!(42)
         intensity_linear = PolynomialIntensity([1.0, 0.5])
         pp = InhomogeneousPoissonProcess(intensity_linear, Normal())
 
-        h = rand(rng, pp, 0.0, 10.0)
+        h = simulate(rng, pp, 0.0, 10.0)
         l = logdensityof(pp, h)
 
         @test l isa Real
