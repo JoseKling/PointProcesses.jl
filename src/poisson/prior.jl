@@ -5,20 +5,20 @@ Gamma prior on all the event rates of a `MultivariatePoissonProcess`.
 
 # Fields
 
-- `λ_α::Vector{R1}`
-- `λ_β::R2`
+- `α::Vector{R1}`
+- `β::R2`
 """
 struct MultivariatePoissonProcessPrior{R1<:Real,R2<:Real}
-    λ_α::Vector{R1}
-    λ_β::R2
+    α::Vector{R1}
+    β::R2
 end
 
 function DensityInterface.logdensityof(
-    prior::MultivariatePoissonProcessPrior, pp::MultivariatePoissonProcess
+    prior::MultivariatePoissonProcessPrior, pp::PoissonProcess
 )
     l = sum(
-        logdensityof(Gamma(prior.λα[m], inv(prior.λβ); check_args=false), pp.λ[m]) for
-        m in 1:length(pp)
+        logdensityof(Gamma(prior.α[m], inv(prior.β); check_args=false), intensity(pp, m))
+        for m in 1:length(pp)
     )
     return l
 end

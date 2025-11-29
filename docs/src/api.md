@@ -30,6 +30,7 @@ max_mark
 ```@docs
 push!
 append!
+cat
 time_change
 split_into_chunks
 ```
@@ -47,6 +48,7 @@ BoundedPointProcess
 intensity
 ground_intensity
 log_intensity
+intensity_vector
 ```
 
 ### Marks
@@ -59,7 +61,7 @@ mark_distribution
 
 ```@docs
 simulate_ogata
-Base.rand
+simulate
 ```
 
 ### Inference
@@ -80,7 +82,13 @@ fit_map
 ## Poisson processes
 
 ```@docs
-AbstractPoissonProcess
+PoissonProcess
+```
+
+### Univariate
+
+```@docs
+UnivariatePoissonProcess
 ```
 
 ### Multivariate
@@ -88,12 +96,6 @@ AbstractPoissonProcess
 ```@docs
 MultivariatePoissonProcess
 MultivariatePoissonProcessPrior
-```
-
-### Marked
-
-```@docs
-MarkedPoissonProcess
 ```
 
 ## Hawkes Process

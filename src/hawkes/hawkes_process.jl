@@ -38,12 +38,12 @@ struct HawkesProcess{T<:Real} <: AbstractPointProcess
     end
 end
 
-function Base.rand(rng::AbstractRNG, hp::HawkesProcess, tmin, tmax)
+function simulate(rng::AbstractRNG, hp::HawkesProcess, tmin, tmax)
     sim = simulate_poisson_times(rng, hp.μ, tmin, tmax) # Simulate Poisson process with base rate
     sim_desc = generate_descendants(rng, sim, tmax, hp.α, hp.ω) # Recursively generates descendants from first events
     append!(sim, sim_desc)
     sort!(sim)
-    return History(sim, fill(nothing, length(sim)), tmin, tmax)
+    return History(; times=sim, tmin=tmin, tmax=tmax, check=false)
 end
 
 """
@@ -148,17 +148,18 @@ function StatsAPI.fit(
     return HawkesProcess(μ * (n / tmax), ψ * ω * (n / tmax), ω * (n / tmax))
 end
 
+# Type parameter for `HawkesProcess` was explicitly provided
 function StatsAPI.fit(HP::Type{HawkesProcess{T}}, h::History; kwargs...) where {T<:Real}
     return fit(default_rng(), HP, h; kwargs...)
 end
 
-# Type parameter for `HawkesProcess` was not explicitly provided
-function StatsAPI.fit(HP::Type{HawkesProcess}, h::History{M,H}; kwargs...) where {M,H<:Real}
+# Type parameter for `HawkesProcess` was NOT explicitly provided
+function StatsAPI.fit(HP::Type{HawkesProcess}, h::History{H,M}; kwargs...) where {H<:Real,M}
     T = promote_type(Float64, H)
     return fit(default_rng(), HP{T}, h; kwargs...)
 end
 
-function time_change(hp::HawkesProcess, h::History{M,T}) where {M,T<:Real}
+function time_change(hp::HawkesProcess, h::History{T,M}) where {T<:Real,M}
     n = nb_events(h)
     A = zeros(T, n + 1) # Array A in Ozaki (1979)
     @inbounds for i in 2:n
@@ -170,7 +171,13 @@ function time_change(hp::HawkesProcess, h::History{M,T}) where {M,T<:Real}
     for i in eachindex(times)
         times[i] += (hp.α / hp.ω) * ((i - 1) - A[i]) # Add contribution of activation functions
     end
-    return History(times, h.marks, zero(T), T(T_base + ((hp.α / hp.ω) * (n - A[end])))) # A time re-scaled process starts at t=0
+    return History(;
+        times=times,
+        marks=h.marks,
+        tmin=zero(T),
+        tmax=T(T_base + ((hp.α / hp.ω) * (n - A[end]))),
+        check=false,
+    ) # A time re-scaled process starts at t=0
 end
 
 function ground_intensity(hp::HawkesProcess, h::History, t)
