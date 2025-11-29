@@ -48,7 +48,16 @@ export simulate_ogata
 export AbstractPoissonProcess
 export MultivariatePoissonProcess, MultivariatePoissonProcessPrior
 export MarkedPoissonProcess
+export InhomogeneousPoissonProcess
 export HawkesProcess
+
+## Intensity functions for inhomogeneous processes
+
+export PolynomialIntensity
+export ExponentialIntensity
+export SinusoidalIntensity
+export PiecewiseConstantIntensity
+export LinearCovariateIntensity
 
 # Includes
 
@@ -67,6 +76,11 @@ include("poisson/multivariate/fit.jl")
 
 include("poisson/marked/marked_poisson_process.jl")
 include("poisson/marked/fit.jl")
+
+include("poisson/inhomogeneous/intensity_functions.jl")
+include("poisson/inhomogeneous/intensity_methods.jl")
+include("poisson/inhomogeneous/inhomogeneous_poisson_process.jl")
+include("poisson/inhomogeneous/fit.jl")
 
 include("hawkes/hawkes_process.jl")
 
