@@ -1,12 +1,13 @@
 using DensityInterface
 using Distributions
 using ForwardDiff
+using Optim
 using PointProcesses
 using Statistics
 using StatsAPI
 using Test
 
-rng = Random.seed!(42)
+rng = Random.seed!(12345)
 
 @testset verbose = true "InhomogeneousPoissonProcess" begin
     @testset "PolynomialIntensity" begin
@@ -260,24 +261,79 @@ rng = Random.seed!(42)
         @test 0.5 * rates_true[2] <= est_rates[2] <= 2.0 * rates_true[2]
     end
 
-    @testset "Fitting - Polynomial" begin
-        # Generate data from linear process
-        intensity_true = PolynomialIntensity([2.0, 0.3])
+    @testset "Fitting - Polynomial (MLE)" begin
+        # Generate data from linear process with log link
+        intensity_true = PolynomialIntensity([0.5, 0.1]; link=:log)
         pp_true = InhomogeneousPoissonProcess(intensity_true, Categorical([0.4, 0.6]))
 
-        h = simulate(rng, pp_true, 0.0, 20.0)
+        h = simulate(rng, pp_true, 0.0, 50.0)
 
-        # Fit linear intensity
+        # Fit linear intensity with MLE
         pp_est = fit(
-            InhomogeneousPoissonProcess{PolynomialIntensity{Float64},Categorical}, h, 1
+            InhomogeneousPoissonProcess{PolynomialIntensity{Float64},Categorical},
+            h,
+            1;
+            link=:log,
         )
 
         @test pp_est isa InhomogeneousPoissonProcess
         @test pp_est.intensity_function isa PolynomialIntensity
         @test pp_est.mark_dist isa Categorical
+        @test pp_est.intensity_function.link === :log
 
         # Check mark distribution is reasonable
         @test length(pp_est.mark_dist.p) == 2
+
+        # Parameters should be in the right ballpark
+        @test abs(pp_est.intensity_function.coefficients[1] - 0.5) < 0.5
+        @test abs(pp_est.intensity_function.coefficients[2] - 0.1) < 0.2
+    end
+
+    @testset "Fitting - Exponential (MLE)" begin
+        # Generate data from exponential process
+        intensity_true = ExponentialIntensity(2.0, 0.05)
+        pp_true = InhomogeneousPoissonProcess(intensity_true, Normal())
+
+        h = simulate(rng, pp_true, 0.0, 20.0)
+
+        # Fit exponential intensity with MLE
+        pp_est = fit(InhomogeneousPoissonProcess{ExponentialIntensity{Float64},Normal}, h)
+
+        @test pp_est isa InhomogeneousPoissonProcess
+        @test pp_est.intensity_function isa ExponentialIntensity
+        @test pp_est.mark_dist isa Normal
+
+        # Parameters should be in the right ballpark
+        # Allow wide tolerance since this is stochastic data
+        @test 0.5 * intensity_true.a <=
+            pp_est.intensity_function.a <=
+            3.0 * intensity_true.a
+        @test abs(pp_est.intensity_function.b - intensity_true.b) < 0.1
+    end
+
+    @testset "Fitting - Sinusoidal (MLE)" begin
+        # Generate data from sinusoidal process
+        intensity_true = SinusoidalIntensity(5.0, 2.0, 2π, 0.0)
+        pp_true = InhomogeneousPoissonProcess(intensity_true, Uniform())
+
+        h = simulate(rng, pp_true, 0.0, 10.0)
+
+        # Fit sinusoidal intensity with MLE
+        pp_est = fit(
+            InhomogeneousPoissonProcess{SinusoidalIntensity{Float64},Uniform}, h; ω=2π
+        )
+
+        @test pp_est isa InhomogeneousPoissonProcess
+        @test pp_est.intensity_function isa SinusoidalIntensity
+        @test pp_est.mark_dist isa Uniform
+        @test pp_est.intensity_function.ω ≈ 2π
+
+        # Check constraint a >= |b| is satisfied
+        @test pp_est.intensity_function.a >= abs(pp_est.intensity_function.b)
+
+        # Parameters should be in a reasonable range
+        @test 2.0 <= pp_est.intensity_function.a <= 10.0
+        @test abs(pp_est.intensity_function.b) <= pp_est.intensity_function.a
     end
 
     @testset "Log-density and gradients" begin

@@ -104,6 +104,12 @@ struct ExponentialIntensity{R<:Real}
     end
 end
 
+# Allow mixed types for automatic differentiation compatibility
+function ExponentialIntensity(a::A, b::B) where {A<:Real,B<:Real}
+    R = promote_type(A, B)
+    return ExponentialIntensity(R(a), R(b))
+end
+
 (f::ExponentialIntensity)(t) = f.a * exp(f.b * t)
 
 function Base.show(io::IO, f::ExponentialIntensity)
@@ -156,6 +162,12 @@ struct SinusoidalIntensity{R<:Real}
         end
         return new{R}(a, b, ω, φ)
     end
+end
+
+# Allow mixed types for automatic differentiation compatibility
+function SinusoidalIntensity(a::A, b::B, ω::W, φ::P) where {A<:Real,B<:Real,W<:Real,P<:Real}
+    R = promote_type(A, B, W, P)
+    return SinusoidalIntensity(R(a), R(b), R(ω), R(φ))
 end
 
 function SinusoidalIntensity(a::R, b::R, ω::R) where {R<:Real}

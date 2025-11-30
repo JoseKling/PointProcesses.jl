@@ -12,6 +12,7 @@ using Distributions: Distributions, UnivariateDistribution, MultivariateDistribu
 using Distributions: Categorical, Exponential, Poisson, Uniform, Dirac
 using Distributions: fit, suffstats, probs
 using LinearAlgebra: dot
+using Optim: Optim, optimize, LBFGS
 using Random: rand
 using Random: AbstractRNG, default_rng
 using StatsAPI: StatsAPI, fit
