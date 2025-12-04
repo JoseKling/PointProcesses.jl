@@ -111,11 +111,13 @@ function fit_mle(
     # Fit mark distribution independently
     mark_dist = fit(M, marks)
 
-    # Handle empty history
+    # Handle empty history: define a literal zero-intensity function
     if isempty(times)
-        # Return a process with zero intensity
-        intensity_func = param_to_intensity(zero(initial_params))
-        return InhomogeneousPoissonProcess(intensity_func, mark_dist)
+        T = eltype(initial_params)
+        zero_intensity = let z = zero(T)
+            t -> z
+        end
+        return InhomogeneousPoissonProcess(zero_intensity, mark_dist)
     end
 
     # Define objective function
@@ -337,17 +339,6 @@ function StatsAPI.fit(
 
     intensity_func = PiecewiseConstantIntensity(breakpoints, rates)
     return InhomogeneousPoissonProcess(intensity_func, mark_dist)
-end
-
-"""
-    fit(::Type{InhomogeneousPoissonProcess{PiecewiseConstantIntensity{R},M}}, h::History) where {R,M}
-
-Fit with 10 bins by default.
-"""
-function StatsAPI.fit(
-    pptype::Type{InhomogeneousPoissonProcess{PiecewiseConstantIntensity{R},M}}, h::History
-) where {R,M}
-    return fit(pptype, h, 10)
 end
 
 ## Helper methods for multiple histories

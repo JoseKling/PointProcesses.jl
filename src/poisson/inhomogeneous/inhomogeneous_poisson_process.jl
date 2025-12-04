@@ -30,6 +30,10 @@ struct InhomogeneousPoissonProcess{F,M} <: AbstractPointProcess
     mark_dist::M
 end
 
+# Convenience constructor for no marks
+InhomogeneousPoissonProcess(f::F) where {F} =
+    InhomogeneousPoissonProcess{F, Dirac{Nothing}}(f, Dirac(nothing))
+
 function Base.show(io::IO, pp::InhomogeneousPoissonProcess)
     return print(
         io, "InhomogeneousPoissonProcess($(pp.intensity_function), $(pp.mark_dist))"
@@ -51,10 +55,6 @@ mark_distribution(pp::InhomogeneousPoissonProcess, t) = pp.mark_dist
 
 function intensity(pp::InhomogeneousPoissonProcess, m, t, h)
     return ground_intensity(pp, t, h) * densityof(mark_distribution(pp, t, h), m)
-end
-
-function log_intensity(pp::InhomogeneousPoissonProcess, m, t, h)
-    return log(ground_intensity(pp, t, h)) + logdensityof(mark_distribution(pp, t, h), m)
 end
 
 """
