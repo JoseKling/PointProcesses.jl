@@ -10,7 +10,7 @@ module PointProcesses
 using DensityInterface: DensityInterface, HasDensity, densityof, logdensityof
 using Distributions: Distributions, UnivariateDistribution, MultivariateDistribution
 using Distributions: Categorical, Exponential, Poisson, Uniform, Dirac
-using Distributions: fit, suffstats, probs, mean, support
+using Distributions: fit, suffstats, probs, mean, support, pdf
 using LinearAlgebra: dot, diagm
 using Random: rand
 using Random: AbstractRNG, default_rng
@@ -73,6 +73,20 @@ include("hawkes/hawkes_process.jl")
 include("hawkes/simulation.jl")
 include("hawkes/intensity.jl")
 include("hawkes/fit.jl")
-include("hawkes/time_change.jl")
+include("hawkes/unmarked_univariate/unmarked_univariate_hawkes.jl")
+include("hawkes/unmarked_univariate/intensity.jl")
+include("hawkes/unmarked_univariate/time_change.jl")
+include("hawkes/unmarked_univariate/fit.jl")
+include("hawkes/unmarked_univariate/simulation.jl")
+include("hawkes/univariate/univariate_hawkes.jl")
+include("hawkes/univariate/intensity.jl")
+include("hawkes/univariate/time_change.jl")
+include("hawkes/univariate/fit.jl")
+include("hawkes/univariate/simulation.jl")
+include("hawkes/multivariate/multivariate_hawkes.jl")
+include("hawkes/multivariate/intensity.jl")
+# include("hawkes/multivariate/time_change.jl")
+# include("hawkes/multivariate/fit.jl")
+include("hawkes/multivariate/simulation.jl")
 
 end

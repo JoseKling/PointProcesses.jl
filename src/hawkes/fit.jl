@@ -1,50 +1,29 @@
-"""
-    StatsAPI.fit(rng, ::Type{UnmarkedUnivariateHawkesProcess{T}}, h::History; step_tol::Float64 = 1e-6, max_iter::Int = 1000) where {T<:Real}
-
-Expectation-Maximization algorithm from [E. Lewis, G. Mohler (2011)](https://arxiv.org/pdf/1801.08273)).
-The relevant calculations are in page 4, equations 6-13.
-
-Let (t₁ < ... < tₙ) be the event times over the interval [0, T). We use the immigrant-descendant representation,
-where immigrants arrive at a constant base rate μ and each each arrival may generate descendants following the
-activation function α exp(-ω(t - tᵢ)).
-
-The algorithm consists in the following steps:
-1. Start with some initial guess for the parameters μ, ψ, and ω. ψ = α ω is the branching factor.
-2. Calculate λ(tᵢ; μ, ψ, ω) (`lambda_ts` in the code) using the procedure in [Ozaki (1979)](https://doi.org/10.1007/bf02480272).
-3. For each tᵢ and each j < i, calculate Dᵢⱼ = P(tᵢ is a descendant of tⱼ) as
-
-    Dᵢⱼ = ψ ω exp(-ω(tᵢ - tⱼ)) / λ(tᵢ; μ, ψ, ω).
-
-    Define D = ∑_{j < i} Dᵢⱼ (expected number of descendants) and div = ∑_{j < i} (tᵢ - tⱼ) Dᵢⱼ. 
-4. Update the parameters as
-        μ = (N - D) / T
-        ψ = D / N
-        ω = D / div
-5. If convergence criterion is met, return updated parameters, otherwise, back to step 2.
-
-Notice that, in the implementation, the process is normalized so the average inter-event time is equal to 1 and, 
-therefore, the interval of the process is transformed from T to N. Also, in equation (8) in the paper,
-
-∑_{i=1:n} pᵢᵢ = ∑_{i=1:n} (1 - ∑_{j < i} Dᵢⱼ) = N - D.
-
-"""
-function StatsAPI.fit(
-    ::Type{<:UnmarkedUnivariateHawkesProcess{T}},
-    h::History;
+#=
+Method for fitting the parameters of marked and unmarked Hawkes
+processes. For unmarked processes, the marks in `history` must
+be either all equal to `nothing` or equal to 1.
+=#
+function fit_hawkes_params(
+    ::Type{R},
+    h::History,
+    div_ψ::Real;
     step_tol::Float64=1e-6,
     max_iter::Int=1000,
     rng::AbstractRNG=default_rng(),
-) where {T<:Real}
+) where {R<:Real}
+    T = float(R)
+    div_ψ = T(div_ψ)
     n = nb_events(h)
-    n == 0 && return HawkesProcess(zero(T), zero(T), zero(T))
+    nT = T(n)
+    n == 0 && return (zero(T), zero(T), zero(T))
 
     tmax = T(duration(h))
     # Normalize times so average inter-event time is 1 (T -> n)
     norm_ts = T.(h.times .* (n / tmax))
 
     # preallocate
-    A = zeros(T, n)            # A[i] = sum_{j<i} exp(-ω (t_i - t_j))
-    S = zeros(T, n)            # S[i] = sum_{j<i} (t_i - t_j) exp(-ω (t_i - t_j))
+    A = zeros(T, n)            # A[i] = sum_{j<i} mⱼ exp(-ω (t_i - t_j))
+    S = zeros(T, n)            # S[i] = sum_{j<i} mⱼ (t_i - t_j) exp(-ω (t_i - t_j))
     lambda_ts = similar(A)     # λ_i
 
     # Λ(T) ≈ n after normalization
@@ -65,9 +44,8 @@ function StatsAPI.fit(
         for i in 2:n
             Δ = norm_ts[i] - norm_ts[i - 1]
             e = exp(-ω * Δ)
-            Ai_1 = A[i - 1]
-            A[i] = e * (one(T) + Ai_1)
-            S[i] = e * (S[i - 1] + Δ * (one(T) + Ai_1))
+            A[i] = update_A(A[i - 1], e, h.marks[i - 1]) # Different updates for real marks and no marks
+            S[i] = (Δ * A[i]) + (e * S[i - 1])
             lambda_ts[i] = μ + (ψ * ω) * A[i]
         end
 
@@ -81,8 +59,8 @@ function StatsAPI.fit(
         end
 
         # Steps 4–5: M-step updates + convergence check
-        new_μ = one(T) - (D / n)
-        new_ψ = D / n
+        new_μ = one(T) - (D / nT)
+        new_ψ = D / div_ψ
         new_ω = D / (div + eps(T))   # small guard to avoid div=0
 
         step = max(abs(μ - new_μ), abs(ψ - new_ψ), abs(ω - new_ω))
@@ -97,13 +75,5 @@ function StatsAPI.fit(
 
     # Unnormalize back to original time scale (T -> tmax):
     # parameters in normalized space (') relate to original by μ0=μ'*(n/tmax), ω0=ω'*(n/tmax), α0=(ψ'ω')*(n/tmax)
-    return HawkesProcess(μ * (n / tmax), ψ * ω * (n / tmax), ω * (n / tmax))
-end
-
-# Type parameter for `HawkesProcess` was NOT explicitly provided
-function StatsAPI.fit(
-    HP::Type{UnmarkedUnivariateHawkesProcess}, h::History{H,M}; kwargs...
-) where {H<:Real,M}
-    T = promote_type(Float64, H)
-    return fit(HP{T}, h; kwargs...)
+    return (μ * (nT / tmax), ψ * ω * (nT / tmax), ω * (nT / tmax))
 end

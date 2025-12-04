@@ -107,8 +107,8 @@ HawkesProcess
 ### Univariate
 
 ```@docs
-UnivariateHawkesProcess
 UnmarkedUnivariateHawkesProcess
+UnivariateHawkesProcess
 ```
 
 ### Multivariate

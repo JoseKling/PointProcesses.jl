@@ -31,7 +31,7 @@ function simulate_ogata(rng::AbstractRNG, pp::AbstractPointProcess, tmin::Real, 
         if τ > L
             t = t + L
         elseif τ <= L
-            U_max = ground_intensity(pp, t + τ, h) / B
+            U_max = ground_intensity(pp, h, t + τ) / B
             U = rand(rng, typeof(U_max))
             if U < U_max
                 m = rand(rng, mark_distribution(pp, t + τ, h))
