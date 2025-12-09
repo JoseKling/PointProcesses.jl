@@ -11,7 +11,6 @@ without passing closures around.
 Abstract trait for intensity functions that can be parameterized for MLE fitting.
 
 Any intensity type that implements this interface must provide:
-- `to_params(f)`: Extract parameters from intensity function (for unconstrained optimization)
 - `from_params(::Type{F}, params)`: Construct intensity function from parameters
 - `initial_params(::Type{F}, h::History)`: Generate initial parameter guess from data
 
@@ -20,22 +19,12 @@ The parameter space should be unconstrained (e.g., use log-transforms for positi
 abstract type ParametricIntensity end
 
 """
-    to_params(f::ParametricIntensity) -> Vector
-
-Extract parameters from an intensity function in unconstrained space.
-
-This should transform constrained parameters (e.g., a > 0) to unconstrained space
-(e.g., log(a)) suitable for numerical optimization.
-"""
-function to_params end
-
-"""
     from_params(::Type{F}, params::AbstractVector) -> F where {F<:ParametricIntensity}
 
 Construct an intensity function from parameters in unconstrained space.
 
-This is the inverse of `to_params`, transforming from unconstrained optimization
-space back to the constrained parameter space.
+Parameters are transformed from unconstrained optimization space to the constrained
+parameter space (e.g., exp(p) for positive parameters).
 """
 function from_params end
 

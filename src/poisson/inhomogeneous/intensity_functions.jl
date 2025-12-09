@@ -289,13 +289,6 @@ end
 
 # PolynomialIntensity
 """
-    to_params(f::PolynomialIntensity)
-
-Extract parameters from PolynomialIntensity. Parameters are already unconstrained.
-"""
-to_params(f::PolynomialIntensity) = f.coefficients
-
-"""
     from_params(::Type{PolynomialIntensity{R}}, params; link=:identity)
 
 Construct PolynomialIntensity from parameters.
@@ -344,13 +337,6 @@ end
 
 # ExponentialIntensity
 """
-    to_params(f::ExponentialIntensity)
-
-Extract parameters from ExponentialIntensity in unconstrained space: [log(a), b].
-"""
-to_params(f::ExponentialIntensity) = [log(f.a), f.b]
-
-"""
     from_params(::Type{ExponentialIntensity{R}}, params)
 
 Construct ExponentialIntensity from unconstrained parameters: params = [log(a), b].
@@ -375,22 +361,6 @@ function initial_params(::Type{ExponentialIntensity{R}}, h::History) where {R}
 end
 
 # SinusoidalIntensity
-"""
-    to_params(f::SinusoidalIntensity)
-
-Extract parameters from SinusoidalIntensity in unconstrained space.
-
-Parameters: [log(a), atanh(b/a), φ] where |b/a| < 1 ensures a >= |b|.
-"""
-function to_params(f::SinusoidalIntensity)
-    p1 = log(f.a)
-    # atanh may be unstable if b/a ≈ ±1, clamp to safe range
-    ratio = clamp(f.b / f.a, -1.0 + eps(eltype(f.a)), 1.0 - eps(eltype(f.a)))
-    p2 = atanh(ratio)
-    p3 = f.φ
-    return [p1, p2, p3]
-end
-
 """
     from_params(::Type{SinusoidalIntensity{R}}, params; ω=2π)
 
