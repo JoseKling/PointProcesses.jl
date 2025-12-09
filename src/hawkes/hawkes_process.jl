@@ -77,11 +77,11 @@ therefore, the interval of the process is transformed from T to N. Also, in equa
 
 """
 function StatsAPI.fit(
-    rng::AbstractRNG,
     ::Type{HawkesProcess{T}},
     h::History;
     step_tol::Float64=1e-6,
     max_iter::Int=1000,
+    rng::AbstractRNG=default_rng(),
 ) where {T<:Real}
     n = nb_events(h)
     n == 0 && return HawkesProcess(zero(T), zero(T), zero(T))
@@ -148,36 +148,37 @@ function StatsAPI.fit(
     return HawkesProcess(μ * (n / tmax), ψ * ω * (n / tmax), ω * (n / tmax))
 end
 
-# Type parameter for `HawkesProcess` was explicitly provided
-function StatsAPI.fit(HP::Type{HawkesProcess{T}}, h::History; kwargs...) where {T<:Real}
-    return fit(default_rng(), HP, h; kwargs...)
-end
-
 # Type parameter for `HawkesProcess` was NOT explicitly provided
 function StatsAPI.fit(HP::Type{HawkesProcess}, h::History{H,M}; kwargs...) where {H<:Real,M}
     T = promote_type(Float64, H)
-    return fit(default_rng(), HP{T}, h; kwargs...)
+    return fit(HP{T}, h; kwargs...)
 end
 
-function time_change(h::History{T,M}, hp::HawkesProcess) where {T<:Real,M}
+function time_change(h::History{R,M}, hp::HawkesProcess) where {R<:Real,M}
+    T = float(R)
     n = nb_events(h)
-    A = zeros(T, n + 1) # Array A in Ozaki (1979)
-    @inbounds for i in 2:n
-        A[i] = exp(-hp.ω * (h.times[i] - h.times[i - 1])) * (1 + A[i - 1])
+    n == 0 && return History(T[], zero(T), T(hp.μ * duration(h)), event_marks(h))
+    times = zeros(T, n)
+
+    # In this step, `times` is the vector A in Ozaki (1979)
+    #     A[1] = 0, A[i] = exp(-ω(tᵢ - tᵢ₋₁)) (1 + A[i - 1])
+    for i in 2:n
+        times[i] = exp(-hp.ω * (h.times[i] - h.times[i - 1])) * (1 + times[i - 1])
     end
-    A[end] = exp(-hp.ω * (h.tmax - h.times[end])) * (1 + A[end - 1]) # Used to calculate the integral of the intensity at every event time
-    times = T.(hp.μ .* (h.times .- h.tmin)) # Transformation with respect to base rate
-    T_base = hp.μ * duration(h) # Contribution of base rate to total length of time re-scaled process
+    tmax = exp(-hp.ω * (h.tmax - h.times[end])) * (1 + times[end])
+
+    # Integral of the intensity corresponding to activation functions
+    #    Λ(tₙ) - μtₙ  = (α/ω) ((n-1) - A[n])
     for i in eachindex(times)
-        times[i] += (hp.α / hp.ω) * ((i - 1) - A[i]) # Add contribution of activation functions
+        times[i] = (hp.α / hp.ω) * ((i - 1) - times[i]) # Add contribution of activation functions
     end
-    return History(;
-        times=times,
-        marks=h.marks,
-        tmin=zero(T),
-        tmax=T(T_base + ((hp.α / hp.ω) * (n - A[end]))),
-        check=false,
-    ) # A time re-scaled process starts at t=0
+    tmax = (hp.α / hp.ω) * (n - tmax) # Add contribution of activation functions
+
+    # Add integral of base intensity
+    times .+= T.(hp.μ .* (h.times .- h.tmin))
+    tmax += T(hp.μ * duration(h))
+
+    return History(; times=times, marks=h.marks, tmin=zero(T), tmax=tmax, check=false) # A time re-scaled process starts at t=0
 end
 
 function ground_intensity(hp::HawkesProcess, h::History, t)

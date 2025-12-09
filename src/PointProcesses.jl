@@ -13,7 +13,7 @@ using Distributions: Categorical, Exponential, Poisson, Uniform, Dirac
 using Distributions: fit, suffstats, probs
 using LinearAlgebra: dot
 using Random: rand
-using Random: AbstractRNG, default_rng
+using Random: AbstractRNG, default_rng, Xoshiro
 using StatsAPI: StatsAPI, fit, HypothesisTest, pvalue
 using HypothesisTests: ExactOneSampleKSTest, ksstats
 

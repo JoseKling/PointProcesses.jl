@@ -46,6 +46,7 @@ be estimated. Details are provided in [Kling and Vetter (2025)](https://doi.org/
 - `pp::Type{<:AbstractPointProcess}`: the null hypothesis model family
 - `h::History`: the observed event history
 - `n_sims::Int=1000`: number of bootstrap simulations to perform
+- `rng::AbstractRNG=default_rng()`: Random number generator
 
 # Returns
 - `BootstrapTest`: test result object containing the observed statistic, bootstrap statistics, and test metadata
@@ -59,25 +60,31 @@ p = pvalue(test)
 ```
 """
 function BootstrapTest(
-    rng::AbstractRNG,
     S::Type{<:Statistic},
     PP::Type{<:AbstractPointProcess},
     h::History;
-    n_sims=1000,
+    n_sims::Int=1000,
+    rng::AbstractRNG=default_rng(),
 )
-    pp_est = fit(PP, h)
+    if isempty(h.times)
+        throw(ArgumentError("Test is not valid for empty event history."))
+    end
+
+    pp_est = fit(PP, h; rng=rng)
     stat = statistic(S, pp_est, h)
+
     sim_stats = Vector{Float64}(undef, n_sims)
+
+    # one RNG per thread, seeded deterministically from the master rng
+    rngs = [Xoshiro(rand(rng, UInt)) for _ in 1:Threads.nthreads()]
+
     Threads.@threads for i in 1:n_sims
-        sim = simulate(rng, pp_est, h.tmin, h.tmax)
-        sim_est = fit(PP, sim)
+        tid = Threads.threadid()
+        local_rng = rngs[tid]
+
+        sim = simulate(local_rng, pp_est, h.tmin, h.tmax)
+        sim_est = fit(PP, sim, rng=local_rng)
         sim_stats[i] = statistic(S, sim_est, sim)
     end
     return BootstrapTest(n_sims, stat, sim_stats)
-end
-
-function BootstrapTest(
-    S::Type{<:Statistic}, PP::Type{<:AbstractPointProcess}, h::History; kwargs...
-)
-    BootstrapTest(default_rng(), S, PP, h; kwargs...)
 end
