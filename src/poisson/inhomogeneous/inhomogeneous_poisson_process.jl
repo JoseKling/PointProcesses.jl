@@ -1,5 +1,5 @@
 """
-    InhomogeneousPoissonProcess{F,M}
+    InhomogeneousPoissonProcess{F,M,C}
 
 Inhomogeneous temporal Poisson process with time-varying intensity.
 
@@ -7,10 +7,11 @@ Inhomogeneous temporal Poisson process with time-varying intensity.
 
 - `intensity_function::F`: callable intensity function λ(t).
 - `mark_dist::M`: mark distribution.
+- `integration_config::C`: configuration for numerical integration.
 
 # Constructor
 
-    InhomogeneousPoissonProcess(intensity_function, mark_dist)
+    InhomogeneousPoissonProcess(intensity_function, mark_dist; integration_config=IntegrationConfig())
 
 # Examples
 
@@ -23,16 +24,36 @@ pp = InhomogeneousPoissonProcess(SinusoidalIntensity(5.0, 2.0, 2π), Categorical
 
 # Custom intensity function
 pp = InhomogeneousPoissonProcess(t -> 1.0 + 0.5*sin(t), Uniform())
+
+# Custom integration settings
+pp = InhomogeneousPoissonProcess(
+    my_intensity,
+    Normal(),
+    integration_config=IntegrationConfig(abstol=1e-10)
+)
 ```
 """
-struct InhomogeneousPoissonProcess{F,M} <: AbstractPointProcess
+struct InhomogeneousPoissonProcess{F,M,C} <: AbstractPointProcess
     intensity_function::F
     mark_dist::M
+    integration_config::C
+end
+
+# Main constructor with default config
+function InhomogeneousPoissonProcess(
+    f::F, mark_dist::M; integration_config::C=IntegrationConfig()
+) where {F,M,C}
+    return InhomogeneousPoissonProcess{F,M,C}(f, mark_dist, integration_config)
 end
 
 # Convenience constructor for no marks
-InhomogeneousPoissonProcess(f::F) where {F} =
-    InhomogeneousPoissonProcess{F, Dirac{Nothing}}(f, Dirac(nothing))
+function InhomogeneousPoissonProcess(
+    f::F; integration_config::C=IntegrationConfig()
+) where {F,C}
+    return InhomogeneousPoissonProcess{F,Dirac{Nothing},C}(
+        f, Dirac(nothing), integration_config
+    )
+end
 
 function Base.show(io::IO, pp::InhomogeneousPoissonProcess)
     return print(
@@ -75,10 +96,11 @@ end
 Compute the integrated ground intensity (compensator) over interval [a, b).
 
 This delegates to `integrated_intensity` defined for specific intensity function types
-in intensity_methods.jl. Analytical integrals are used when available.
+in intensity_methods.jl. Analytical integrals are used when available, otherwise
+numerical integration is performed using the configuration stored in `pp.integration_config`.
 """
 function integrated_ground_intensity(pp::InhomogeneousPoissonProcess, h, a, b)
-    return integrated_intensity(pp.intensity_function, a, b)
+    return integrated_intensity(pp.intensity_function, a, b, pp.integration_config)
 end
 
 ## Simulation

@@ -5,7 +5,7 @@ All intensity functions are callable objects that take a time `t` and return λ(
 """
 
 """
-    PolynomialIntensity{R<:Real,L}
+    PolynomialIntensity{R<:Real,L} <: ParametricIntensity
 
 Polynomial intensity function with optional link function.
 
@@ -36,7 +36,7 @@ PolynomialIntensity([2.0, 3.0]; link=:log)
 PolynomialIntensity([1.0, 2.0, 0.5])
 ```
 """
-struct PolynomialIntensity{R<:Real,L}
+struct PolynomialIntensity{R<:Real,L} <: ParametricIntensity
     coefficients::Vector{R}
     link::L
 
@@ -69,7 +69,7 @@ function Base.show(io::IO, f::PolynomialIntensity)
 end
 
 """
-    ExponentialIntensity{R<:Real}
+    ExponentialIntensity{R<:Real} <: ParametricIntensity
 
 Exponential intensity function: λ(t) = a*exp(b*t).
 
@@ -92,7 +92,7 @@ ExponentialIntensity(2.0, 0.1)
 ExponentialIntensity(5.0, -0.05)
 ```
 """
-struct ExponentialIntensity{R<:Real}
+struct ExponentialIntensity{R<:Real} <: ParametricIntensity
     a::R
     b::R
 
@@ -117,7 +117,7 @@ function Base.show(io::IO, f::ExponentialIntensity)
 end
 
 """
-    SinusoidalIntensity{R<:Real}
+    SinusoidalIntensity{R<:Real} <: ParametricIntensity
 
 Sinusoidal intensity function: λ(t) = a + b*sin(ω*t + φ).
 
@@ -146,7 +146,7 @@ SinusoidalIntensity(5.0, -3.0, 2π)
 # Invalid: a=2, b=3, so a < |b| (will error)
 ```
 """
-struct SinusoidalIntensity{R<:Real}
+struct SinusoidalIntensity{R<:Real} <: ParametricIntensity
     a::R
     b::R
     ω::R
@@ -283,4 +283,142 @@ function Base.show(io::IO, f::LinearCovariateIntensity)
         io,
         "LinearCovariateIntensity($(f.intercept), $(f.coefficients), $(length(f.covariates)) covariates)",
     )
+end
+
+## ParametricIntensity trait implementations
+
+# PolynomialIntensity
+"""
+    to_params(f::PolynomialIntensity)
+
+Extract parameters from PolynomialIntensity. Parameters are already unconstrained.
+"""
+to_params(f::PolynomialIntensity) = f.coefficients
+
+"""
+    from_params(::Type{PolynomialIntensity{R}}, params; link=:identity)
+
+Construct PolynomialIntensity from parameters.
+"""
+function from_params(
+    ::Type{PolynomialIntensity{R}}, params::AbstractVector; link::Symbol=:identity
+) where {R}
+    # Keep params as-is to support ForwardDiff.Dual types
+    return PolynomialIntensity(collect(params); link=link)
+end
+
+"""
+    initial_params(::Type{PolynomialIntensity{R}}, h::History; degree::Int, link=:log)
+
+Generate initial parameter guess for PolynomialIntensity based on event history.
+"""
+function initial_params(
+    ::Type{PolynomialIntensity{R}}, h::History; degree::Int, link::Symbol=:log
+) where {R}
+    times = event_times(h)
+    tmin = min_time(h)
+    tmax = max_time(h)
+
+    # Compute empirical rate
+    empirical_rate = R(length(times)) / (tmax - tmin)
+
+    # Initialize with simple estimates
+    if link == :log
+        # Start with log of empirical rate for intercept
+        # For higher-order terms, use very small values scaled by the time range
+        # This prevents overflow when t is large
+        intercept = log(empirical_rate)
+        higher_order = zeros(R, degree)
+        # Scale higher-order coefficients inversely with time range to prevent overflow
+        if degree > 0 && tmax > tmin
+            scale = 1 / (tmax - tmin)
+            # Use very small initial values to avoid exp(large_number) overflow
+            higher_order = fill(R(0.001) * scale, degree)
+        end
+        return vcat([intercept], higher_order)
+    else
+        # Start with empirical rate for intercept, zeros for higher orders
+        return vcat([empirical_rate], zeros(R, degree))
+    end
+end
+
+# ExponentialIntensity
+"""
+    to_params(f::ExponentialIntensity)
+
+Extract parameters from ExponentialIntensity in unconstrained space: [log(a), b].
+"""
+to_params(f::ExponentialIntensity) = [log(f.a), f.b]
+
+"""
+    from_params(::Type{ExponentialIntensity{R}}, params)
+
+Construct ExponentialIntensity from unconstrained parameters: params = [log(a), b].
+"""
+function from_params(::Type{ExponentialIntensity{R}}, params::AbstractVector) where {R}
+    return ExponentialIntensity(exp(params[1]), params[2])
+end
+
+"""
+    initial_params(::Type{ExponentialIntensity{R}}, h::History)
+
+Generate initial parameter guess for ExponentialIntensity based on event history.
+"""
+function initial_params(::Type{ExponentialIntensity{R}}, h::History) where {R}
+    times = event_times(h)
+    tmin = min_time(h)
+    tmax = max_time(h)
+
+    # Assume roughly constant rate to start
+    empirical_rate = R(length(times)) / (tmax - tmin)
+    return [log(empirical_rate), R(0.0)]  # [log(a), b]
+end
+
+# SinusoidalIntensity
+"""
+    to_params(f::SinusoidalIntensity)
+
+Extract parameters from SinusoidalIntensity in unconstrained space.
+
+Parameters: [log(a), atanh(b/a), φ] where |b/a| < 1 ensures a >= |b|.
+"""
+function to_params(f::SinusoidalIntensity)
+    p1 = log(f.a)
+    # atanh may be unstable if b/a ≈ ±1, clamp to safe range
+    ratio = clamp(f.b / f.a, -1.0 + eps(eltype(f.a)), 1.0 - eps(eltype(f.a)))
+    p2 = atanh(ratio)
+    p3 = f.φ
+    return [p1, p2, p3]
+end
+
+"""
+    from_params(::Type{SinusoidalIntensity{R}}, params; ω=2π)
+
+Construct SinusoidalIntensity from unconstrained parameters.
+
+Parameters: [p₁, p₂, p₃] where a = exp(p₁), b = tanh(p₂)*a, φ = p₃.
+The ω (angular frequency) must be specified separately.
+"""
+function from_params(
+    ::Type{SinusoidalIntensity{R}}, params::AbstractVector; ω::R=R(2π)
+) where {R}
+    a = exp(params[1])
+    b = tanh(params[2]) * a
+    φ = params[3]
+    return SinusoidalIntensity(a, b, ω, φ)
+end
+
+"""
+    initial_params(::Type{SinusoidalIntensity{R}}, h::History; ω=2π)
+
+Generate initial parameter guess for SinusoidalIntensity based on event history.
+"""
+function initial_params(::Type{SinusoidalIntensity{R}}, h::History; ω::R=R(2π)) where {R}
+    times = event_times(h)
+    tmin = min_time(h)
+    tmax = max_time(h)
+
+    # Start with: a = empirical_rate, b = 0, φ = 0
+    empirical_rate = R(length(times)) / (tmax - tmin)
+    return [log(empirical_rate), R(0.0), R(0.0)]  # [log(a), atanh(b/a), φ]
 end

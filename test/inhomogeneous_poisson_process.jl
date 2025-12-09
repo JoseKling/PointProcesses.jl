@@ -248,7 +248,11 @@ rng = Random.seed!(12345)
 
         # Fit with 2 bins
         pp_est = fit(
-            InhomogeneousPoissonProcess{PiecewiseConstantIntensity{Float64},Normal}, h, 2
+            InhomogeneousPoissonProcess{
+                PiecewiseConstantIntensity{Float64},Normal,IntegrationConfig
+            },
+            h,
+            2,
         )
 
         @test pp_est isa InhomogeneousPoissonProcess
@@ -270,7 +274,9 @@ rng = Random.seed!(12345)
 
         # Fit linear intensity with MLE
         pp_est = fit(
-            InhomogeneousPoissonProcess{PolynomialIntensity{Float64},Categorical},
+            InhomogeneousPoissonProcess{
+                PolynomialIntensity{Float64},Categorical,IntegrationConfig
+            },
             h,
             1;
             link=:log,
@@ -297,7 +303,12 @@ rng = Random.seed!(12345)
         h = simulate(rng, pp_true, 0.0, 20.0)
 
         # Fit exponential intensity with MLE
-        pp_est = fit(InhomogeneousPoissonProcess{ExponentialIntensity{Float64},Normal}, h)
+        pp_est = fit(
+            InhomogeneousPoissonProcess{
+                ExponentialIntensity{Float64},Normal,IntegrationConfig
+            },
+            h,
+        )
 
         @test pp_est isa InhomogeneousPoissonProcess
         @test pp_est.intensity_function isa ExponentialIntensity
@@ -320,7 +331,11 @@ rng = Random.seed!(12345)
 
         # Fit sinusoidal intensity with MLE
         pp_est = fit(
-            InhomogeneousPoissonProcess{SinusoidalIntensity{Float64},Uniform}, h; ω=2π
+            InhomogeneousPoissonProcess{
+                SinusoidalIntensity{Float64},Uniform,IntegrationConfig
+            },
+            h;
+            ω=2π,
         )
 
         @test pp_est isa InhomogeneousPoissonProcess

@@ -1,11 +1,12 @@
 name = "PointProcesses"
 uuid = "af0b7596-9bb0-472a-a012-63904f2b4c55"
-authors = ["Guillaume Dalle", "José Kling"]
 version = "0.6.0"
+authors = ["Guillaume Dalle", "José Kling"]
 
 [deps]
 DensityInterface = "b429d917-457f-4dbc-8f4c-0cc954292b1d"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+Integrals = "de52edbc-65ea-441a-8357-d3a637375a31"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Optim = "429524aa-4258-5aef-a3af-852621145aeb"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
@@ -15,6 +16,7 @@ StatsAPI = "82ae8749-77ed-4fe6-ae5f-f523153014b0"
 [compat]
 DensityInterface = "0.4"
 Distributions = "0.25"
+Integrals = "4.7.1"
 LinearAlgebra = "1.10"
 Optim = "1.7"
 Random = "1.10"

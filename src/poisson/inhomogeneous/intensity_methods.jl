@@ -10,7 +10,7 @@ These provide analytical solutions for bounds and integrals where possible.
 Analytical integral for polynomial intensity functions with identity link.
 For log link, we use numerical integration.
 """
-function integrated_intensity(f::PolynomialIntensity, a, b)
+function integrated_intensity(f::PolynomialIntensity, a, b, config::IntegrationConfig)
     if f.link === :identity
         # Analytical integral for polynomial
         result = zero(promote_type(eltype(f.coefficients), typeof(a), typeof(b)))
@@ -20,16 +20,17 @@ function integrated_intensity(f::PolynomialIntensity, a, b)
         end
         return result
     else
-        # Numerical integration for log link
-        n_points = max(100, ceil(Int, 100 * (b - a)))
-        ts = range(a, b; length=n_points)
-        intensities = [f(t) for t in ts]
-
-        integral = zero(eltype(intensities))
-        for i in 1:(n_points - 1)
-            integral += (intensities[i] + intensities[i + 1]) / 2 * (ts[i + 1] - ts[i])
-        end
-        return integral
+        # Numerical integration for log link using config
+        integrand(t, p) = f(t)
+        prob = IntegralProblem(integrand, (a, b))  # 1D domain (lb, ub)
+        integral = solve(
+            prob,
+            config.solver;
+            abstol=config.abstol,
+            reltol=config.reltol,
+            maxiters=config.maxiters,
+        )
+        return integral.u
     end
 end
 
@@ -51,7 +52,7 @@ end
 """
 Analytical integral for exponential intensity: ∫ a*exp(b*t) dt = (a/b)*(exp(b*b) - exp(b*a))
 """
-function integrated_intensity(f::ExponentialIntensity, a, b)
+function integrated_intensity(f::ExponentialIntensity, a, b, config::IntegrationConfig)
     if abs(f.b) < 1e-10
         # b ≈ 0, treat as constant
         return f.a * (b - a)
@@ -86,7 +87,9 @@ end
 """
 Analytical integral for sinusoidal intensity: ∫ (a + b*sin(ω*t + φ)) dt
 """
-function integrated_intensity(f::SinusoidalIntensity, t_start, t_end)
+function integrated_intensity(
+    f::SinusoidalIntensity, t_start, t_end, config::IntegrationConfig
+)
     linear_part = f.a * (t_end - t_start)
     if abs(f.ω) < 1e-10
         # ω ≈ 0, sin term is approximately constant
@@ -113,7 +116,9 @@ end
 """
 Analytical integral for piecewise constant intensity.
 """
-function integrated_intensity(f::PiecewiseConstantIntensity, a, b)
+function integrated_intensity(
+    f::PiecewiseConstantIntensity, a, b, config::IntegrationConfig
+)
     # Find the intervals that overlap with [a, b]
     start_idx = searchsortedlast(f.breakpoints, a)
     end_idx = searchsortedlast(f.breakpoints, b)
@@ -181,18 +186,17 @@ end
 """
 Numerical integral for linear covariate intensity (no general analytical form).
 """
-function integrated_intensity(f::LinearCovariateIntensity, a, b)
-    # Use trapezoidal rule
-    n_points = max(100, ceil(Int, 100 * (b - a)))
-    ts = range(a, b; length=n_points)
-    intensities = [f(t) for t in ts]
-
-    integral = zero(eltype(intensities))
-    for i in 1:(n_points - 1)
-        integral += (intensities[i] + intensities[i + 1]) / 2 * (ts[i + 1] - ts[i])
-    end
-
-    return integral
+function integrated_intensity(f::LinearCovariateIntensity, a, b, config::IntegrationConfig)
+    integrand(t, p) = f(t)
+    prob = IntegralProblem(integrand, (a, b))  # 1D
+    integral = solve(
+        prob,
+        config.solver;
+        abstol=config.abstol,
+        reltol=config.reltol,
+        maxiters=config.maxiters,
+    )
+    return integral.u
 end
 
 """
@@ -211,17 +215,17 @@ end
 """
 Numerical integral for arbitrary callable intensity functions.
 """
-function integrated_intensity(f::F, a, b) where {F}
-    n_points = max(100, ceil(Int, 100 * (b - a)))
-    ts = range(a, b; length=n_points)
-    intensities = [f(t) for t in ts]
-
-    integral = zero(eltype(intensities))
-    for i in 1:(n_points - 1)
-        integral += (intensities[i] + intensities[i + 1]) / 2 * (ts[i + 1] - ts[i])
-    end
-
-    return integral
+function integrated_intensity(f::F, a, b, config::IntegrationConfig) where {F}
+    integrand(t, p) = f(t)
+    prob = IntegralProblem(integrand, (a, b))  # 1D
+    integral = solve(
+        prob,
+        config.solver;
+        abstol=config.abstol,
+        reltol=config.reltol,
+        maxiters=config.maxiters,
+    )
+    return integral.u
 end
 
 """

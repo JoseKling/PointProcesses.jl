@@ -11,6 +11,7 @@ using DensityInterface: DensityInterface, HasDensity, densityof, logdensityof
 using Distributions: Distributions, UnivariateDistribution, MultivariateDistribution
 using Distributions: Categorical, Exponential, Poisson, Uniform, Dirac
 using Distributions: fit, suffstats, probs
+using Integrals: Integrals, IntegralProblem, solve, QuadGKJL
 using LinearAlgebra: dot
 using Optim: Optim, optimize, LBFGS
 using Random: rand
@@ -61,6 +62,12 @@ export SinusoidalIntensity
 export PiecewiseConstantIntensity
 export LinearCovariateIntensity
 
+## Parametric intensity traits and configuration
+
+export ParametricIntensity
+export to_params, from_params, initial_params
+export IntegrationConfig
+
 # Includes
 
 include("history.jl")
@@ -75,6 +82,8 @@ include("poisson/fit.jl")
 include("poisson/simulation.jl")
 
 # IPP
+include("poisson/inhomogeneous/integration_config.jl")
+include("poisson/inhomogeneous/parametric_intensity.jl")
 include("poisson/inhomogeneous/intensity_functions.jl")
 include("poisson/inhomogeneous/intensity_methods.jl")
 include("poisson/inhomogeneous/inhomogeneous_poisson_process.jl")

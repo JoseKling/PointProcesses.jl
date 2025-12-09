@@ -12,7 +12,7 @@ For most parametric forms, we use numerical optimization with automatic differen
 ## Generic MLE infrastructure
 
 """
-    negative_loglikelihood_ipp(params, param_to_intensity, times, tmin, tmax, mark_dist)
+    negative_loglikelihood_ipp(params, intensity_type, times, tmin, tmax, integration_config; kwargs...)
 
 Compute the negative log-likelihood for an inhomogeneous Poisson process.
 
@@ -21,30 +21,46 @@ This is the objective function to minimize during MLE. It uses the general form:
 
 # Arguments
 - `params`: parameter vector to optimize
-- `param_to_intensity`: function that converts params to an intensity function
+- `intensity_type`: Type of intensity function (e.g., ExponentialIntensity{Float64})
 - `times`: observed event times
 - `tmin`, `tmax`: observation window
-- `mark_dist`: mark distribution (used for output only, fitted separately)
+- `integration_config`: IntegrationConfig for numerical integration
+- `kwargs...`: additional keyword arguments for from_params (e.g., link, ω)
 
 # Returns
 Negative log-likelihood value (to be minimized).
 """
-function negative_loglikelihood_ipp(params, param_to_intensity, times, tmin, tmax)
-    # Build intensity function from parameters
-    intensity_func = param_to_intensity(params)
+function negative_loglikelihood_ipp(
+    params,
+    intensity_type::Type{F},
+    times,
+    tmin,
+    tmax,
+    integration_config::IntegrationConfig;
+    kwargs...,
+) where {F<:ParametricIntensity}
+    # Build intensity function from parameters using trait
+    # Filter out kwargs that are only for initial_params (like degree)
+    from_params_kwargs = filter(kv -> kv[1] ∉ [:degree], collect(pairs(kwargs)))
+    intensity_func = from_params(intensity_type, params; from_params_kwargs...)
 
-    # Compute integrated intensity (compensator)
-    Λ = integrated_intensity(intensity_func, tmin, tmax)
-
-    # Sum of log intensities at event times
+    # Sum of log intensities at event times (compute first for stability)
     log_sum = zero(eltype(params))
     for t in times
         λ_t = intensity_func(t)
-        if λ_t <= 0
-            # Penalize invalid (non-positive) intensities heavily
+        if λ_t <= 0 || !isfinite(λ_t)
+            # Penalize invalid (non-positive or non-finite) intensities heavily
             return typeof(log_sum)(Inf)
         end
         log_sum += log(λ_t)
+    end
+
+    # Compute integrated intensity
+    Λ = integrated_intensity(intensity_func, tmin, tmax, integration_config)
+
+    # Check for NaN or Inf in integrated intensity
+    if !isfinite(Λ)
+        return typeof(Λ)(Inf)
     end
 
     # Return negative log-likelihood
@@ -53,27 +69,27 @@ end
 
 """
     fit_mle(
-        ::Type{InhomogeneousPoissonProcess{F,M}},
-        h::History,
-        param_to_intensity::Function,
-        intensity_to_params::Function,
-        initial_params::Vector;
+        ::Type{InhomogeneousPoissonProcess{F,M,C}},
+        h::History;
         optimizer = LBFGS(),
-        autodiff = :forward
-    ) where {F,M}
+        autodiff = :forward,
+        integration_config = IntegrationConfig(),
+        kwargs...
+    ) where {F<:ParametricIntensity,M,C}
 
 Fit an inhomogeneous Poisson process using maximum likelihood estimation with numerical optimization.
+
+This version uses the trait-based parameter interface, eliminating the need for manual closures.
 
 # Arguments
 - `pptype`: Type of process to fit
 - `h`: Event history
-- `param_to_intensity`: Function mapping parameter vector to intensity function
-- `intensity_to_params`: Function extracting parameters from an intensity function (for initialization)
-- `initial_params`: Initial parameter values for optimization
 
 # Keyword Arguments
 - `optimizer`: Optim.jl optimizer (default: LBFGS())
 - `autodiff`: Automatic differentiation mode (default: :forward)
+- `integration_config`: IntegrationConfig for numerical integration (default: IntegrationConfig())
+- `kwargs...`: additional arguments passed to `from_params` and `initial_params` (e.g., degree, link, ω)
 
 # Returns
 Fitted `InhomogeneousPoissonProcess` with optimized parameters.
@@ -81,28 +97,28 @@ Fitted `InhomogeneousPoissonProcess` with optimized parameters.
 # Example
 ```julia
 # For ExponentialIntensity: λ(t) = a*exp(b*t)
-param_to_intensity = p -> ExponentialIntensity(exp(p[1]), p[2])
-intensity_to_params = f -> [log(f.a), f.b]
-initial_params = [log(2.0), 0.1]
+pp = fit(InhomogeneousPoissonProcess{ExponentialIntensity{Float64}, Normal}, history)
 
-pp = fit_mle(
-    InhomogeneousPoissonProcess{ExponentialIntensity{Float64}, Normal},
-    history,
-    param_to_intensity,
-    intensity_to_params,
-    initial_params
+# For PolynomialIntensity with quadratic degree
+pp = fit(InhomogeneousPoissonProcess{PolynomialIntensity{Float64}, Normal}, history; degree=2, link=:log)
+
+# With custom integration settings
+pp = fit(
+    InhomogeneousPoissonProcess{PolynomialIntensity{Float64}, Normal},
+    history;
+    degree=1,
+    integration_config=IntegrationConfig(abstol=1e-10)
 )
 ```
 """
 function fit_mle(
-    ::Type{InhomogeneousPoissonProcess{F,M}},
-    h::History,
-    param_to_intensity::Function,
-    intensity_to_params::Function,
-    initial_params::Vector;
+    ::Type{InhomogeneousPoissonProcess{F,M,C}},
+    h::History;
     optimizer=LBFGS(),
     autodiff=:forward,
-) where {F,M}
+    integration_config::C=IntegrationConfig(),
+    kwargs...,
+) where {F<:ParametricIntensity,M,C}
     times = event_times(h)
     marks = event_marks(h)
     tmin = min_time(h)
@@ -113,34 +129,42 @@ function fit_mle(
 
     # Handle empty history: define a literal zero-intensity function
     if isempty(times)
-        T = eltype(initial_params)
-        zero_intensity = let z = zero(T)
+        R = eltype(F) <: Real ? eltype(F) : Float64
+        zero_intensity = let z = zero(R)
             t -> z
         end
-        return InhomogeneousPoissonProcess(zero_intensity, mark_dist)
+        return InhomogeneousPoissonProcess(
+            zero_intensity, mark_dist; integration_config=integration_config
+        )
     end
+
+    # Get initial parameters using trait
+    init_params = initial_params(F, h; kwargs...)
 
     # Define objective function
     objective(params) = negative_loglikelihood_ipp(
-        params, param_to_intensity, times, tmin, tmax
+        params, F, times, tmin, tmax, integration_config; kwargs...
     )
 
-    # Optimize using Optim.jl with automatic differentiation
-    result = optimize(objective, initial_params, optimizer; autodiff=autodiff)
+    result = optimize(objective, init_params, optimizer; autodiff=autodiff)
 
     # Extract optimal parameters
     optimal_params = Optim.minimizer(result)
 
-    # Build final intensity function
-    intensity_func = param_to_intensity(optimal_params)
+    # Build final intensity function using trait
+    # Filter out kwargs that are only for initial_params (like degree)
+    from_params_kwargs = filter(kv -> kv[1] ∉ [:degree], collect(pairs(kwargs)))
+    intensity_func = from_params(F, optimal_params; from_params_kwargs...)
 
-    return InhomogeneousPoissonProcess(intensity_func, mark_dist)
+    return InhomogeneousPoissonProcess(
+        intensity_func, mark_dist; integration_config=integration_config
+    )
 end
 
 ## PolynomialIntensity fitting (MLE-based)
 
 """
-    fit(::Type{InhomogeneousPoissonProcess{PolynomialIntensity{R},M}}, h::History, degree::Int; link=:log) where {R,M}
+    fit(::Type{InhomogeneousPoissonProcess{PolynomialIntensity{R},M,C}}, h::History, degree::Int; link=:log, integration_config=IntegrationConfig()) where {R,M,C}
 
 Fit an inhomogeneous Poisson process with polynomial intensity using MLE.
 
@@ -148,7 +172,10 @@ Fit an inhomogeneous Poisson process with polynomial intensity using MLE.
 - `pptype`: The type of the process to fit
 - `h`: Event history
 - `degree`: Degree of the polynomial (0 for constant, 1 for linear, etc.)
+
+# Keyword Arguments
 - `link`: Link function, either `:identity` or `:log` (default: `:log` for positivity)
+- `integration_config`: IntegrationConfig for numerical integration
 
 Uses maximum likelihood estimation via numerical optimization with automatic differentiation.
 The log link is recommended as it ensures positivity of the intensity function.
@@ -156,52 +183,38 @@ The log link is recommended as it ensures positivity of the intensity function.
 The mark distribution is fitted separately from the event times.
 """
 function StatsAPI.fit(
-    ::Type{InhomogeneousPoissonProcess{PolynomialIntensity{R},M}},
+    ::Type{InhomogeneousPoissonProcess{PolynomialIntensity{R},M,C}},
     h::History,
     degree::Int;
     link::Symbol=:log,
-) where {R,M}
-    times = event_times(h)
-    tmin = min_time(h)
-    tmax = max_time(h)
-
-    # Initialize with simple estimates
-    # For log link: start with small values
-    # For identity link: start with empirical rate
-    if link == :log
-        initial_params = vcat([log(R(length(times)) / (tmax - tmin))], zeros(R, degree))
-    else
-        initial_params = vcat([R(length(times)) / (tmax - tmin)], zeros(R, degree))
-    end
-
-    # Define parameter transformation functions
-    param_to_intensity(p) = PolynomialIntensity(p; link=link)
-    intensity_to_params(f) = f.coefficients
-
+    integration_config::C=IntegrationConfig(),
+) where {R,M,C}
     return fit_mle(
-        InhomogeneousPoissonProcess{PolynomialIntensity{R},M},
-        h,
-        param_to_intensity,
-        intensity_to_params,
-        initial_params,
+        InhomogeneousPoissonProcess{PolynomialIntensity{R},M,C},
+        h;
+        degree=degree,
+        link=link,
+        integration_config=integration_config,
     )
 end
 
 """
-    fit(::Type{InhomogeneousPoissonProcess{PolynomialIntensity{R},M}}, h::History) where {R,M}
+    fit(::Type{InhomogeneousPoissonProcess{PolynomialIntensity{R},M,C}}, h::History; kwargs...) where {R,M,C}
 
 Fit a linear (degree 1) polynomial intensity with log link by default.
 """
 function StatsAPI.fit(
-    pptype::Type{InhomogeneousPoissonProcess{PolynomialIntensity{R},M}}, h::History
-) where {R,M}
-    return fit(pptype, h, 1; link=:log)  # Default to linear intensity with log link
+    pptype::Type{InhomogeneousPoissonProcess{PolynomialIntensity{R},M,C}},
+    h::History;
+    kwargs...,
+) where {R,M,C}
+    return fit(pptype, h, 1; link=:log, kwargs...)  # Default to linear intensity with log link
 end
 
 ## ExponentialIntensity fitting (MLE-based)
 
 """
-    fit(::Type{InhomogeneousPoissonProcess{ExponentialIntensity{R},M}}, h::History) where {R,M}
+    fit(::Type{InhomogeneousPoissonProcess{ExponentialIntensity{R},M,C}}, h::History; integration_config=IntegrationConfig()) where {R,M,C}
 
 Fit an inhomogeneous Poisson process with exponential intensity λ(t) = a*exp(b*t) using MLE.
 
@@ -212,38 +225,27 @@ Parameters are transformed to ensure a > 0: internally optimizes log(a).
 - `pptype`: The type of the process to fit
 - `h`: Event history
 
+# Keyword Arguments
+- `integration_config`: IntegrationConfig for numerical integration
+
 The mark distribution is fitted separately from the event times.
 """
 function StatsAPI.fit(
-    ::Type{InhomogeneousPoissonProcess{ExponentialIntensity{R},M}}, h::History
-) where {R,M}
-    times = event_times(h)
-    tmin = min_time(h)
-    tmax = max_time(h)
-
-    # Initialize with reasonable estimates
-    # Assume roughly constant rate to start
-    empirical_rate = R(length(times)) / (tmax - tmin)
-    initial_params = [log(empirical_rate), R(0.0)]  # [log(a), b]
-
-    # Parameter transformation: params = [log(a), b]
-    # This ensures a > 0
-    param_to_intensity(p) = ExponentialIntensity(exp(p[1]), p[2])
-    intensity_to_params(f) = [log(f.a), f.b]
-
+    ::Type{InhomogeneousPoissonProcess{ExponentialIntensity{R},M,C}},
+    h::History;
+    integration_config::C=IntegrationConfig(),
+) where {R,M,C}
     return fit_mle(
-        InhomogeneousPoissonProcess{ExponentialIntensity{R},M},
-        h,
-        param_to_intensity,
-        intensity_to_params,
-        initial_params,
+        InhomogeneousPoissonProcess{ExponentialIntensity{R},M,C},
+        h;
+        integration_config=integration_config,
     )
 end
 
 ## SinusoidalIntensity fitting (MLE-based)
 
 """
-    fit(::Type{InhomogeneousPoissonProcess{SinusoidalIntensity{R},M}}, h::History; ω=2π) where {R,M}
+    fit(::Type{InhomogeneousPoissonProcess{SinusoidalIntensity{R},M,C}}, h::History; ω=2π, integration_config=IntegrationConfig()) where {R,M,C}
 
 Fit an inhomogeneous Poisson process with sinusoidal intensity λ(t) = a + b*sin(ω*t + φ) using MLE.
 
@@ -253,52 +255,31 @@ The constraint a >= |b| is enforced by parameterizing: a = exp(p₁), b = tanh(p
 # Arguments
 - `pptype`: The type of the process to fit
 - `h`: Event history
+
+# Keyword Arguments
 - `ω`: Angular frequency (default: 2π for period of 1)
+- `integration_config`: IntegrationConfig for numerical integration
 
 The mark distribution is fitted separately from the event times.
 """
 function StatsAPI.fit(
-    ::Type{InhomogeneousPoissonProcess{SinusoidalIntensity{R},M}}, h::History; ω::R=R(2π)
-) where {R,M}
-    times = event_times(h)
-    tmin = min_time(h)
-    tmax = max_time(h)
-
-    # Initialize with reasonable estimates
-    empirical_rate = R(length(times)) / (tmax - tmin)
-    # Start with: a = empirical_rate, b = 0, φ = 0
-    initial_params = [log(empirical_rate), R(0.0), R(0.0)]  # [log(a), atanh(b/a), φ]
-
-    # Parameter transformation to enforce a >= |b|:
-    # params = [p₁, p₂, p₃] where a = exp(p₁), b = tanh(p₂) * exp(p₁), φ = p₃
-    # This ensures |b| <= a since |tanh(p₂)| <= 1
-    function param_to_intensity(p)
-        a = exp(p[1])
-        b = tanh(p[2]) * a
-        φ = p[3]
-        return SinusoidalIntensity(a, b, ω, φ)
-    end
-
-    function intensity_to_params(f)
-        p1 = log(f.a)
-        p2 = atanh(f.b / f.a)  # Note: may be unstable if b/a ≈ ±1
-        p3 = f.φ
-        return [p1, p2, p3]
-    end
-
+    ::Type{InhomogeneousPoissonProcess{SinusoidalIntensity{R},M,C}},
+    h::History;
+    ω::R=R(2π),
+    integration_config::C=IntegrationConfig(),
+) where {R,M,C}
     return fit_mle(
-        InhomogeneousPoissonProcess{SinusoidalIntensity{R},M},
-        h,
-        param_to_intensity,
-        intensity_to_params,
-        initial_params,
+        InhomogeneousPoissonProcess{SinusoidalIntensity{R},M,C},
+        h;
+        ω=ω,
+        integration_config=integration_config,
     )
 end
 
 ## PiecewiseConstantIntensity fitting
 
 """
-    fit(::Type{InhomogeneousPoissonProcess{PiecewiseConstantIntensity{R},M}}, h::History, n_bins::Int) where {R,M}
+    fit(::Type{InhomogeneousPoissonProcess{PiecewiseConstantIntensity{R},M,C}}, h::History, n_bins::Int; integration_config=IntegrationConfig()) where {R,M,C}
 
 Fit an inhomogeneous Poisson process with piecewise constant intensity.
 
@@ -307,13 +288,17 @@ Fit an inhomogeneous Poisson process with piecewise constant intensity.
 - `h`: Event history
 - `n_bins`: Number of constant intervals to use
 
+# Keyword Arguments
+- `integration_config`: IntegrationConfig for numerical integration
+
 Each bin gets a rate estimated as (count in bin) / (duration of bin).
 """
 function StatsAPI.fit(
-    ::Type{InhomogeneousPoissonProcess{PiecewiseConstantIntensity{R},M}},
+    ::Type{InhomogeneousPoissonProcess{PiecewiseConstantIntensity{R},M,C}},
     h::History,
-    n_bins::Int,
-) where {R,M}
+    n_bins::Int;
+    integration_config::C=IntegrationConfig(),
+) where {R,M,C}
     times = event_times(h)
     marks = event_marks(h)
     tmin = min_time(h)
@@ -338,7 +323,9 @@ function StatsAPI.fit(
     rates = R.(counts ./ bin_duration)
 
     intensity_func = PiecewiseConstantIntensity(breakpoints, rates)
-    return InhomogeneousPoissonProcess(intensity_func, mark_dist)
+    return InhomogeneousPoissonProcess(
+        intensity_func, mark_dist; integration_config=integration_config
+    )
 end
 
 ## Helper methods for multiple histories
