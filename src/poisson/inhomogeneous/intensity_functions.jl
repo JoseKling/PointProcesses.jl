@@ -300,41 +300,6 @@ function from_params(
     return PolynomialIntensity(collect(params); link=link)
 end
 
-"""
-    initial_params(::Type{PolynomialIntensity{R}}, h::History; degree::Int, link=:log)
-
-Generate initial parameter guess for PolynomialIntensity based on event history.
-"""
-function initial_params(
-    ::Type{PolynomialIntensity{R}}, h::History; degree::Int, link::Symbol=:log
-) where {R}
-    times = event_times(h)
-    tmin = min_time(h)
-    tmax = max_time(h)
-
-    # Compute empirical rate
-    empirical_rate = R(length(times)) / (tmax - tmin)
-
-    # Initialize with simple estimates
-    if link == :log
-        # Start with log of empirical rate for intercept
-        # For higher-order terms, use very small values scaled by the time range
-        # This prevents overflow when t is large
-        intercept = log(empirical_rate)
-        higher_order = zeros(R, degree)
-        # Scale higher-order coefficients inversely with time range to prevent overflow
-        if degree > 0 && tmax > tmin
-            scale = 1 / (tmax - tmin)
-            # Use very small initial values to avoid exp(large_number) overflow
-            higher_order = fill(R(0.001) * scale, degree)
-        end
-        return vcat([intercept], higher_order)
-    else
-        # Start with empirical rate for intercept, zeros for higher orders
-        return vcat([empirical_rate], zeros(R, degree))
-    end
-end
-
 # ExponentialIntensity
 """
     from_params(::Type{ExponentialIntensity{R}}, params)
@@ -343,21 +308,6 @@ Construct ExponentialIntensity from unconstrained parameters: params = [log(a), 
 """
 function from_params(::Type{ExponentialIntensity{R}}, params::AbstractVector) where {R}
     return ExponentialIntensity(exp(params[1]), params[2])
-end
-
-"""
-    initial_params(::Type{ExponentialIntensity{R}}, h::History)
-
-Generate initial parameter guess for ExponentialIntensity based on event history.
-"""
-function initial_params(::Type{ExponentialIntensity{R}}, h::History) where {R}
-    times = event_times(h)
-    tmin = min_time(h)
-    tmax = max_time(h)
-
-    # Assume roughly constant rate to start
-    empirical_rate = R(length(times)) / (tmax - tmin)
-    return [log(empirical_rate), R(0.0)]  # [log(a), b]
 end
 
 # SinusoidalIntensity
@@ -376,19 +326,4 @@ function from_params(
     b = tanh(params[2]) * a
     φ = params[3]
     return SinusoidalIntensity(a, b, ω, φ)
-end
-
-"""
-    initial_params(::Type{SinusoidalIntensity{R}}, h::History; ω=2π)
-
-Generate initial parameter guess for SinusoidalIntensity based on event history.
-"""
-function initial_params(::Type{SinusoidalIntensity{R}}, h::History; ω::R=R(2π)) where {R}
-    times = event_times(h)
-    tmin = min_time(h)
-    tmax = max_time(h)
-
-    # Start with: a = empirical_rate, b = 0, φ = 0
-    empirical_rate = R(length(times)) / (tmax - tmin)
-    return [log(empirical_rate), R(0.0), R(0.0)]  # [log(a), atanh(b/a), φ]
 end
