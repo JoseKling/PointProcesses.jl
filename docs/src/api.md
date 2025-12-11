@@ -98,6 +98,30 @@ MultivariatePoissonProcess
 MultivariatePoissonProcessPrior
 ```
 
+## Inhomogeneous Poisson Process
+
+```@docs
+InhomogeneousPoissonProcess
+```
+
+### Intensity Functions
+
+```@docs
+ParametricIntensity
+PolynomialIntensity
+ExponentialIntensity
+SinusoidalIntensity
+PiecewiseConstantIntensity
+LinearCovariateIntensity
+```
+
+### Configuration
+
+```@docs
+from_params
+IntegrationConfig
+```
+
 ## Hawkes Process
 
 ```@docs
