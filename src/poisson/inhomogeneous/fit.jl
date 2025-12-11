@@ -61,9 +61,6 @@ function StatsAPI.fit(
     integration_config=IntegrationConfig(),
     intensity_kwargs...,
 )
-    if isempty(h.times)
-        return InhomogeneousPoissonProcess(t -> 0.0, Dirac(nothing))
-    end
 
     # Define objective function
     objective(params) = negative_loglikelihood_ipp(
