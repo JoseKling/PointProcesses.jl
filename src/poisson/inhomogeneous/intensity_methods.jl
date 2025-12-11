@@ -1,15 +1,15 @@
-"""
+#=
 Optimized methods for specific intensity function types.
 
 These provide analytical solutions for bounds and integrals where possible.
-"""
+=#
 
 ## PolynomialIntensity optimizations
 
-"""
+#=
 Analytical integral for polynomial intensity functions with identity link.
 For log link, we use numerical integration.
-"""
+=#
 function integrated_intensity(f::PolynomialIntensity, a, b, config::IntegrationConfig)
     if f.link === :identity
         # Analytical integral for polynomial
@@ -34,11 +34,11 @@ function integrated_intensity(f::PolynomialIntensity, a, b, config::IntegrationC
     end
 end
 
-"""
+#=
 Upper bound for polynomial intensity over an interval.
 
 For polynomials, we sample densely and add a margin.
-"""
+=#
 function intensity_bound(f::PolynomialIntensity{R}, t::T) where {R,T}
     lookahead = T(1.0)
     n_samples = 50
@@ -49,9 +49,7 @@ end
 
 ## ExponentialIntensity optimizations
 
-"""
-Analytical integral for exponential intensity: ∫ a*exp(b*t) dt = (a/b)*(exp(b*b) - exp(b*a))
-"""
+# Analytical integral for exponential intensity: ∫ a*exp(b*t) dt = (a/b)*(exp(b*b) - exp(b*a))
 function integrated_intensity(f::ExponentialIntensity, a, b, config::IntegrationConfig)
     if abs(f.b) < 1e-10
         # b ≈ 0, treat as constant
@@ -60,13 +58,13 @@ function integrated_intensity(f::ExponentialIntensity, a, b, config::Integration
     return (f.a / f.b) * (exp(f.b * b) - exp(f.b * a))
 end
 
-"""
+#=
 Upper bound for exponential intensity.
 
 If b > 0 (increasing), max is at right endpoint.
 If b < 0 (decreasing), max is at left endpoint.
 If b ≈ 0 (constant), use constant bound.
-"""
+=#
 function intensity_bound(f::ExponentialIntensity{R}, t::T) where {R,T}
     lookahead = T(1.0)
     if f.b > 1e-10
@@ -84,9 +82,9 @@ end
 
 ## SinusoidalIntensity optimizations
 
-"""
+#=
 Analytical integral for sinusoidal intensity: ∫ (a + b*sin(ω*t + φ)) dt
-"""
+=#
 function integrated_intensity(
     f::SinusoidalIntensity, t_start, t_end, config::IntegrationConfig
 )
@@ -100,11 +98,11 @@ function integrated_intensity(
     return linear_part + sin_part
 end
 
-"""
+#=
 Upper bound for sinusoidal intensity.
 
 Maximum is a + |b| (when sin = 1 if b > 0, or sin = -1 if b < 0).
-"""
+=#
 function intensity_bound(f::SinusoidalIntensity{R}, t::T) where {R,T}
     B = f.a + abs(f.b)
     L = typemax(T)  # Bound holds for all time
@@ -113,9 +111,6 @@ end
 
 ## PiecewiseConstantIntensity optimizations
 
-"""
-Analytical integral for piecewise constant intensity.
-"""
 function integrated_intensity(
     f::PiecewiseConstantIntensity, a, b, config::IntegrationConfig
 )
@@ -159,11 +154,6 @@ function integrated_intensity(
     return integral
 end
 
-"""
-Upper bound for piecewise constant intensity.
-
-The bound is simply the maximum rate in the upcoming intervals.
-"""
 function intensity_bound(f::PiecewiseConstantIntensity{R}, t::T) where {R,T}
     idx = searchsortedlast(f.breakpoints, t)
 
@@ -183,9 +173,6 @@ end
 
 ## LinearCovariateIntensity
 
-"""
-Numerical integral for linear covariate intensity (no general analytical form).
-"""
 function integrated_intensity(f::LinearCovariateIntensity, a, b, config::IntegrationConfig)
     integrand(t, p) = f(t)
     prob = IntegralProblem(integrand, (a, b))  # 1D
@@ -199,9 +186,6 @@ function integrated_intensity(f::LinearCovariateIntensity, a, b, config::Integra
     return integral.u
 end
 
-"""
-Numerical bound for linear covariate intensity.
-"""
 function intensity_bound(f::LinearCovariateIntensity{R}, t::T) where {R,T}
     lookahead = T(1.0)
     n_samples = 100
@@ -212,9 +196,7 @@ end
 
 ## Generic fallback for custom functions
 
-"""
-Numerical integral for arbitrary callable intensity functions.
-"""
+#Numerical integral for arbitrary callable intensity functions.
 function integrated_intensity(f::F, a, b, config::IntegrationConfig) where {F}
     integrand(t, p) = f(t)
     prob = IntegralProblem(integrand, (a, b))  # 1D
@@ -228,9 +210,7 @@ function integrated_intensity(f::F, a, b, config::IntegrationConfig) where {F}
     return integral.u
 end
 
-"""
-Numerical bound for arbitrary callable intensity functions.
-"""
+#Numerical bound for arbitrary callable intensity functions.
 function intensity_bound(f::F, t::T) where {F,T}
     lookahead = T(1.0)
     n_samples = 100
