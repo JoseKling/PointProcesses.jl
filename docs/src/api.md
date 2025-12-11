@@ -113,13 +113,17 @@ pvalue
 KSDistance
 ```
 
-### Tests
+### BootstrapTest
 
 ```@docs
 BootstrapTest
-BootstrapTest(rng::AbstractRNG, S::Type{<:Statistic}, PP::Type{<:AbstractPointProcess}, h::History; n_sims=1000)
+BootstrapTest(S::Type{<:Statistic}, PP::Type{<:AbstractPointProcess}, h::History)
+```
+
+### NoBootstrapTest
+```@docs
 NoBootstrapTest
-NoBootstrapTest(rng::AbstractRNG, S::Type{<:Statistic}, pp::AbstractPointProcess, h::History; n_sims=1000)
+NoBootstrapTest(S::Type{<:Statistic}, pp::AbstractPointProcess, h::History)
 ```
 
 ## Index

@@ -21,7 +21,7 @@ function StatsAPI.pvalue(nbt::NoBootstrapTest)
 end
 
 """
-    NoBootstrapTest(S::Type{<:Statistic}, pp::AbstractPointProcess, h::History; n_sims=1000)
+    NoBootstrapTest(S::Type{<:Statistic}, pp::AbstractPointProcess, h::History; n_sims::Int=1000, rng::AbstractRNG=default_rng())
 
 Perform a goodness-of-fit test using simulation without bootstrap resampling, comparing
 the test statistic computed on the observed data against the distribution of the same
