@@ -11,29 +11,30 @@ without passing closures around.
 Abstract trait for intensity functions that can be parameterized for MLE fitting.
 
 Any intensity type that implements this interface must provide:
-- `from_params(::Type{F}, params)`: Construct intensity function from parameters
-- `initial_params(::Type{F}, h::History)`: Generate initial parameter guess from data
+- `from_vector_params(::Type{F}, params)`: Construct intensity function from parameters
 
 The parameter space should be unconstrained (e.g., use log-transforms for positive parameters).
 """
 abstract type ParametricIntensity end
 
 """
-    from_params(::Type{F}, params::AbstractVector) -> F where {F<:ParametricIntensity}
+    from_params
 
-Construct an intensity function from parameters in unconstrained space.
+Method used in optimization, where paramters are returned as vectors.
+Can be used to perform a transformation in the parameter space. Example:
+```julia
+struct Constant{R} <: ParametricIntensity
+    a::R
+end where {R<:Real}
+(f::Constant, t::Real) = f.a
 
-Parameters are transformed from unconstrained optimization space to the constrained
-parameter space (e.g., exp(p) for positive parameters).
+# Optimization procedure uses this method to calculate the objective.
+# This is not constrained to positive paramter values anymore
+function from_params(::Constant, params)
+    return Constant(exp(params[1]))
+end
+```
 """
-function from_params end
-
-"""
-    initial_params(::Type{F}, h::History) -> Vector where {F<:ParametricIntensity}
-
-Generate smart initial parameter guess from event history.
-
-This should provide a reasonable starting point for numerical optimization based
-on the observed event times.
-"""
-function initial_params end
+function from_params(F::Type{<:ParametricIntensity}, params; kwargs...)
+    return F(params...; kwargs...)
+end

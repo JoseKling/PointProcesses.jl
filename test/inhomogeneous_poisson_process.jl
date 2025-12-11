@@ -273,12 +273,13 @@ rng = Random.seed!(12345)
         h = simulate(rng, pp_true, 0.0, 50.0)
 
         # Fit linear intensity with MLE
+        # Initial params for degree 1 polynomial: [a0, a1]
         pp_est = fit(
             InhomogeneousPoissonProcess{
                 PolynomialIntensity{Float64},Categorical,IntegrationConfig
             },
             h,
-            1;
+            [0.5, 0.1];
             link=:log,
         )
 
@@ -303,11 +304,13 @@ rng = Random.seed!(12345)
         h = simulate(rng, pp_true, 0.0, 20.0)
 
         # Fit exponential intensity with MLE
+        # Initial params: [log(a), b]
         pp_est = fit(
             InhomogeneousPoissonProcess{
                 ExponentialIntensity{Float64},Normal,IntegrationConfig
             },
             h,
+            [log(2.0), 0.05],
         )
 
         @test pp_est isa InhomogeneousPoissonProcess
@@ -330,11 +333,13 @@ rng = Random.seed!(12345)
         h = simulate(rng, pp_true, 0.0, 10.0)
 
         # Fit sinusoidal intensity with MLE
+        # Initial params: [log(a), b_unconstrained, φ] where a = exp(p1), b = tanh(p2)*a
         pp_est = fit(
             InhomogeneousPoissonProcess{
                 SinusoidalIntensity{Float64},Uniform,IntegrationConfig
             },
-            h;
+            h,
+            [log(5.0), 0.5, 0.0];
             ω=2π,
         )
 
