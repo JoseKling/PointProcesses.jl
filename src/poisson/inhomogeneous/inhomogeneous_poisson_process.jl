@@ -87,7 +87,7 @@ This delegates to `intensity_bound` defined for specific intensity function type
 in intensity_methods.jl. Analytical bounds are used when available.
 """
 function ground_intensity_bound(pp::InhomogeneousPoissonProcess, t::T, h) where {T}
-    return intensity_bound(pp.intensity_function, t, h)
+    return intensity_bound(pp.intensity_function, t)
 end
 
 """
