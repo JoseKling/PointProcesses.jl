@@ -30,11 +30,23 @@ Negative log-likelihood value (to be minimized).
 function negative_loglikelihood_ipp(
     h::History, f::ParametricIntensity; integration_config=IntegrationConfig()
 )
-    # Sum of log intensities at event times (compute first for stability)
-    log_sum = mapreduce(t -> log(f(t)), +, h.times)
+    # Check for invalid intensities at event times and sum log intensities
+    log_sum = zero(eltype(h.times))
+    for t in h.times
+        λ = f(t)
+        if λ <= 0
+            return Inf  # Invalid parameters: intensity must be positive
+        end
+        log_sum += log(λ)
+    end
 
     # Compute integrated intensity
     Λ = integrated_intensity(f, h.tmin, h.tmax, integration_config)
+
+    # Check if integrated intensity is valid
+    if Λ < 0 || !isfinite(Λ)
+        return Inf  # Invalid parameters
+    end
 
     # Return negative log-likelihood
     return Λ - log_sum
