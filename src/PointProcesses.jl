@@ -68,9 +68,6 @@ export ParametricIntensity
 export from_params
 export IntegrationConfig
 
-# Documented but not exported
-public negative_loglikelihood_ipp
-
 # Includes
 
 include("history.jl")

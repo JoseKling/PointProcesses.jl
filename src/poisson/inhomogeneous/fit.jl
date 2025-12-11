@@ -11,7 +11,7 @@ For most parametric forms, we use numerical optimization with automatic differen
 
 ## Generic MLE infrastructure
 
-"""
+#=
     negative_loglikelihood_ipp(params, intensity_type, times, tmin, tmax, integration_config; kwargs...)
 
 Compute the negative log-likelihood for an inhomogeneous Poisson process.
@@ -26,7 +26,7 @@ This is the objective function to minimize during MLE. It uses the general form:
 
 # Returns
 Negative log-likelihood value (to be minimized).
-"""
+=#
 function negative_loglikelihood_ipp(
     h::History, f::ParametricIntensity; integration_config=IntegrationConfig()
 )
