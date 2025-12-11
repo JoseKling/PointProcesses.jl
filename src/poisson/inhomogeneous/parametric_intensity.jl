@@ -35,6 +35,6 @@ function from_params(::Constant, params)
 end
 ```
 """
-function from_params(F::Type{<:ParametricIntensity}, params ; kwargs...) 
+function from_params(F::Type{<:ParametricIntensity}, params; kwargs...)
     return F(params...; kwargs...)
 end

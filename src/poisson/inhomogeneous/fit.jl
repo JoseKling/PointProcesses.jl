@@ -28,9 +28,7 @@ This is the objective function to minimize during MLE. It uses the general form:
 Negative log-likelihood value (to be minimized).
 """
 function negative_loglikelihood_ipp(
-    h::History,
-    f::ParametricIntensity;
-    integration_config=IntegrationConfig()
+    h::History, f::ParametricIntensity; integration_config=IntegrationConfig()
 )
     # Sum of log intensities at event times (compute first for stability)
     log_sum = mapreduce(t -> log(f(t)), +, h.times)
@@ -49,18 +47,18 @@ function StatsAPI.fit(
     optimizer=LBFGS(),
     autodiff=:forward,
     integration_config=IntegrationConfig(),
-    intensity_kwargs...
+    intensity_kwargs...,
 )
     if isempty(h.times)
         return InhomogeneousPoissonProcess(t -> 0.0, Dirac(nothing))
     end
 
     # Define objective function
-    objective(params) = negative_loglikelihood_ipp(h,
-                                                   from_params(F,
-                                                               params
-                                                               ; intensity_kwargs...)
-                                                   ; integration_config=integration_config)
+    objective(params) = negative_loglikelihood_ipp(
+        h,
+        from_params(F, params; intensity_kwargs...);
+        integration_config=integration_config,
+    )
 
     result = optimize(objective, init_params, optimizer; autodiff=autodiff)
 
@@ -71,11 +69,11 @@ function StatsAPI.fit(
 end
 
 function StatsAPI.fit(
-    ::Type{<:InhomogeneousPoissonProcess{F, D}},
+    ::Type{<:InhomogeneousPoissonProcess{F,D}},
     h::History,
     init_params;
     integration_config=IntegrationConfig(),
-    kwargs...
+    kwargs...,
 ) where {F<:ParametricIntensity,D}
     # Fit mark distribution independently
     mark_dist = fit(D, h.marks)

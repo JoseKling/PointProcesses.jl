@@ -65,7 +65,7 @@ export LinearCovariateIntensity
 ## Parametric intensity traits and configuration
 
 export ParametricIntensity
-export from_params, initial_params
+export from_params
 export IntegrationConfig
 
 # Includes
