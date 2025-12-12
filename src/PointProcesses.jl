@@ -55,7 +55,7 @@ export HawkesProcess
 ## Goodness of fit tests tests
 
 export Statistic, KSDistance, statistic
-export PPTest, BootstrapTest, NoBootstrapTest
+export PointProcessTest, BootstrapTest, MonteCarloTest
 
 # Includes
 
@@ -72,9 +72,9 @@ include("poisson/simulation.jl")
 
 include("hawkes/hawkes_process.jl")
 
-include("HypothesisTests/pp_test.jl")
+include("HypothesisTests/point_process_tests.jl")
 include("HypothesisTests/statistic.jl")
 include("HypothesisTests/Statistics/KSDistance.jl")
-include("HypothesisTests/PPTests/BootstrapTest.jl")
-include("HypothesisTests/PPTests/NoBootstrapTest.jl")
+include("HypothesisTests/PPTests/bootstrap_test.jl")
+include("HypothesisTests/PPTests/monte_carlo_test.jl")
 end

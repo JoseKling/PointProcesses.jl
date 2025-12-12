@@ -1,24 +1,24 @@
 """
-    PPTest
+    PointProcessTest
 
 Interface for all goodness-of-fit tests
 """
-abstract type PPTest <: StatsAPI.HypothesisTest end
+abstract type PointProcessTest <: StatsAPI.HypothesisTest end
 
 """
-    pvalue(test::PPTest)
+    pvalue(test::PointProcessTest)
 
 Calculate the p-value of a goodness-of-fit test on a process.
 
 # Arguments
-- `::PPTest`: the bootstrap test result object
+- `::PointProcessTest`: the test result object
 
 # Returns
 - `Float64`: p-value in [0, 1], where small values provide evidence against the null hypothesis
 """
-function StatsAPI.pvalue(::PPTest) end
+function StatsAPI.pvalue(::PointProcessTest) end
 
-function Base.show(io::IO, t::PPTest)
+function Base.show(io::IO, t::PointProcessTest)
     print(io, "$(typeof(t)) - pvalue = $(pvalue(t))")
 end
 

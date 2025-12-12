@@ -37,11 +37,11 @@ h2 = History(collect(0:999), 0, 1000)
     @test all(sort(test1.sim_stats) .== sort(test2.sim_stats)) # Test reproducibility
 end
 
-@testset "NoBootstrapTest" begin
-    @test_throws ArgumentError NoBootstrapTest(KSDistance{Uniform}, PP, h_empty)
+@testset "MonteCarloTest" begin
+    @test_throws ArgumentError MonteCarloTest(KSDistance{Uniform}, PP, h_empty)
 
-    nbt1 = NoBootstrapTest(KSDistance{Uniform}, PP, h2; n_sims=1000)
-    nbt2 = NoBootstrapTest(KSDistance{Uniform}, pp, h2; n_sims=10000)
+    nbt1 = MonteCarloTest(KSDistance{Uniform}, PP, h2; n_sims=1000)
+    nbt2 = MonteCarloTest(KSDistance{Uniform}, pp, h2; n_sims=10000)
 
     @test nbt1.n_sims == 1000
     @test nbt2.n_sims == 10000
@@ -50,10 +50,10 @@ end
     @test pvalue(nbt1) isa Float64
     @test pvalue(nbt1) > 0.99
     @test pvalue(nbt2) > 0.99
-    @test string(nbt1) == "NoBootstrapTest - pvalue = 1.0"
+    @test string(nbt1) == "MonteCarloTest - pvalue = 1.0"
 
-    nbt3 = NoBootstrapTest(KSDistance{Exponential}, PP, h2)
-    nbt4 = NoBootstrapTest(KSDistance{Exponential}, pp, h2)
+    nbt3 = MonteCarloTest(KSDistance{Exponential}, PP, h2)
+    nbt4 = MonteCarloTest(KSDistance{Exponential}, pp, h2)
 
     @test nbt3.n_sims == 1000
     @test nbt4.n_sims == 1000
@@ -63,8 +63,8 @@ end
     @test pvalue(nbt3) < 0.01
     @test pvalue(nbt4) < 0.01
 
-    test1 = NoBootstrapTest(KSDistance{Uniform}, PP, h2; n_sims=1000, rng=Random.seed!(1))
-    test2 = NoBootstrapTest(KSDistance{Uniform}, PP, h2; n_sims=1000, rng=Random.seed!(1))
+    test1 = MonteCarloTest(KSDistance{Uniform}, PP, h2; n_sims=1000, rng=Random.seed!(1))
+    test2 = MonteCarloTest(KSDistance{Uniform}, PP, h2; n_sims=1000, rng=Random.seed!(1))
 
     @test all(sort(test1.sim_stats) .== sort(test2.sim_stats)) # Test reproducibility
 end

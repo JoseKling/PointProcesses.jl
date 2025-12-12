@@ -1,5 +1,5 @@
 """
-    NoBootstrapTest <: PPTest
+    MonteCarloTest <: PointProcessTest
 
 An object containing the results of a non-bootstrap based goodness-of-fit test.
 The p-value of the test is calculated as
@@ -10,18 +10,18 @@ The p-value of the test is calculated as
 - `stat::Float64`: observed test statistic value
 - `sim_stats::Vector{Float64}`: test statistics from simulated data
 """
-struct NoBootstrapTest <: PPTest
+struct MonteCarloTest <: PointProcessTest
     n_sims::Int
     stat::Float64
     sim_stats::Vector{Float64}
 end
 
-function StatsAPI.pvalue(nbt::NoBootstrapTest)
+function StatsAPI.pvalue(nbt::MonteCarloTest)
     return (count(>=(nbt.stat), nbt.sim_stats) + 1) / (nbt.n_sims + 1)
 end
 
 """
-    NoBootstrapTest(S::Type{<:Statistic}, pp::AbstractPointProcess, h::History; n_sims::Int=1000, rng::AbstractRNG=default_rng())
+    MonteCarloTest(S::Type{<:Statistic}, pp::AbstractPointProcess, h::History; n_sims::Int=1000, rng::AbstractRNG=default_rng())
 
 Perform a goodness-of-fit test using simulation without bootstrap resampling, comparing
 the test statistic computed on the observed data against the distribution of the same
@@ -48,22 +48,22 @@ procedure does not account for parameter estimation error. For more details on t
 - `pp::Union{AbstractPointProcess, Type{<:AbstractPointProcess}}`: the null hypothesis model family
 - `h::History`: the observed event history
 - `n_sims::Int=1000`: number of simulations to perform for the test
-- `rng::AbstractRNG=default_rng()test statistics from simulated data`: Random number generator
+- `rng::AbstractRNG=default_rng()`: Random number generator
 
 # Returns
-- `NoBootstrapTest`: test result object containing the observed statistic, simulated statistics, and test metadata
+- `MonteCarloTest`: test result object containing the observed statistic, simulated statistics, and test metadata
 
 # Example
 ```julia
 # Test null hypothesis of form 1. Known θ₀
-test = NoBootstrapTest(KSDistance(Exponential), HawkesProcess(1, 1, 2), history; n_sims=1000)
+test = MonteCarloTest(KSDistance(Exponential), HawkesProcess(1, 1, 2), history; n_sims=1000)
 p = pvalue(test)
 # Test null hypothesis of form 2. Unknown θ₀
-test = NoBootstrapTest(KSDistance(Exponential), HawkesProcess, history; n_sims=1000)
+test = MonteCarloTest(KSDistance(Exponential), HawkesProcess, history; n_sims=1000)
 p = pvalue(test)
 ```
 """
-function NoBootstrapTest(
+function MonteCarloTest(
     S::Type{<:Statistic},
     pp::AbstractPointProcess,
     h::History;
@@ -72,24 +72,35 @@ function NoBootstrapTest(
 )
     isempty(h.times) && @warn "Event history is empty."
 
+    # Calculate statistic from data
     stat = statistic(S, pp, h)
 
+    # Initialize vector with test statistics from simulations
     sim_stats = Vector{typeof(stat)}(undef, n_sims)
 
-    # one RNG per thread, seeded deterministically from the master rng
-    rngs = [Xoshiro(rand(rng, UInt)) for _ in 1:Threads.nthreads()]
+    # Split sim_stats in one chunk per thread
+    chunk_size = max(1, length(sim_stats) ÷ Threads.nthreads())
+    chunks = Iterators.partition(sim_stats, chunk_size)
 
-    Threads.@threads for i in 1:n_sims
-        tid = Threads.threadid()
-        local_rng = rngs[tid]
+    tasks = map(chunks) do chunk
+        Threads.@spawn begin
 
-        sim = simulate(local_rng, pp, h.tmin, h.tmax)
-        sim_stats[i] = statistic(S, pp, sim)
+            # Local rng seeded deterministically from the master rng 
+            local_rng = Xoshiro(rand(rng, UInt))
+
+            for i in eachindex(chunk)
+                # Simulates a process and uses the initial process
+                # to calculate the test statistic
+                sim = simulate(local_rng, pp, h.tmin, h.tmax)
+                chunk[i] = statistic(S, pp, sim)
+            end
+        end
     end
-    return NoBootstrapTest(n_sims, stat, sim_stats)
+    fetch.(tasks)
+    return MonteCarloTest(n_sims, stat, sim_stats)
 end
 
-function NoBootstrapTest(
+function MonteCarloTest(
     S::Type{<:Statistic}, PP::Type{<:AbstractPointProcess}, h::History; kwargs...
 )
     if isempty(h.times)
@@ -97,5 +108,5 @@ function NoBootstrapTest(
     end
 
     pp_est = fit(PP, h)
-    return NoBootstrapTest(S, pp_est, h; kwargs...)
+    return MonteCarloTest(S, pp_est, h; kwargs...)
 end

@@ -19,7 +19,7 @@ function StatsAPI.fit(
     return PoissonProcess(λ, mark_dist)
 end
 
-function StatsAPI.fit(pptype::Type{<:PoissonProcess}, args...; kwargs...)
+function StatsAPI.fit(pptype::Type{PoissonProcess{R,D}}, args...; kwargs...) where {R,D}
     ss = suffstats(pptype, args...)
     return fit(pptype, ss)
 end
@@ -29,7 +29,8 @@ end
 function fit_map(
     ::Type{MultivariatePoissonProcess{R}},
     prior::MultivariatePoissonProcessPrior,
-    ss::PoissonProcessStats,
+    ss::PoissonProcessStats;
+    kwargs...,
 ) where {R<:Real}
     (; α, β) = prior
     posterior_nb_events = [sum(==(i), ss.marks) for i in 1:length(α)] .+ α

@@ -1,5 +1,5 @@
 """
-    BootstrapTest <: PPTest
+    BootstrapTest <: PointProcessTest
 
 An object containing the results of a bootstrap-based goodness-of-fit test.
 The p-value of the test is calculated as
@@ -10,7 +10,7 @@ The p-value of the test is calculated as
 - `stat::Float64`: observed test statistic value
 - `sim_stats::Vector{Float64}`: test statistics from bootstrap simulations
 """
-struct BootstrapTest <: PPTest
+struct BootstrapTest <: PointProcessTest
     n_sims::Int
     stat::Float64
     sim_stats::Vector{Float64}
@@ -19,11 +19,11 @@ end
 `stat` and `sim_stats` set to type `Float64`, because the `ksstats`
 function from `HypothesisTests.jl` always returns a `Float64` value
 If implementation changes, could define
-`BootstrapTest{R} <: PPTest where {R<:Real}`
+`BootstrapTest{R} <: PointProcessTest where {R<:Real}`
 =#
 
 function StatsAPI.pvalue(bt::BootstrapTest)
-    (count(>=(bt.stat), bt.sim_stats) + 1) / (bt.n_sims + 1)
+    return (count(>=(bt.stat), bt.sim_stats) + 1) / (bt.n_sims + 1)
 end
 
 """
@@ -70,21 +70,32 @@ function BootstrapTest(
         throw(ArgumentError("Test is not valid for empty event history."))
     end
 
+    # Estimate process and calculate statistic from data
     pp_est = fit(PP, h; rng=rng)
     stat = statistic(S, pp_est, h)
 
+    # Initialize vector with test statistics from simulations
     sim_stats = Vector{Float64}(undef, n_sims)
 
-    # one RNG per thread, seeded deterministically from the master rng
-    rngs = [Xoshiro(rand(rng, UInt)) for _ in 1:Threads.nthreads()]
+    # Split sim_stats in one chunk per thread
+    chunk_size = max(1, length(sim_stats) ÷ Threads.nthreads())
+    chunks = Iterators.partition(sim_stats, chunk_size)
 
-    Threads.@threads for i in 1:n_sims
-        tid = Threads.threadid()
-        local_rng = rngs[tid]
+    tasks = map(chunks) do chunk
+        Threads.@spawn begin
 
-        sim = simulate(local_rng, pp_est, h.tmin, h.tmax)
-        sim_est = fit(PP, sim, rng=local_rng)
-        sim_stats[i] = statistic(S, sim_est, sim)
+            # Local rng seeded deterministically from the master rng 
+            local_rng = Xoshiro(rand(rng, UInt))
+
+            for i in eachindex(chunk)
+                # Simulates a process and uses the process estimated from
+                # the simulation to calculate the test statistic
+                sim = simulate(local_rng, pp_est, h.tmin, h.tmax)
+                sim_est = fit(PP, sim, rng=local_rng)
+                chunk[i] = statistic(S, sim_est, sim)
+            end
+        end
     end
+    fetch.(tasks)
     return BootstrapTest(n_sims, stat, sim_stats)
 end

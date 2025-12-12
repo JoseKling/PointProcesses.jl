@@ -104,7 +104,7 @@ HawkesProcess
 ```@docs
 Statistic
 statistic
-PPTest
+PointProcessTest
 pvalue
 ```
 ### Statistic
@@ -122,8 +122,8 @@ BootstrapTest(S::Type{<:Statistic}, PP::Type{<:AbstractPointProcess}, h::History
 
 ### NoBootstrapTest
 ```@docs
-NoBootstrapTest
-NoBootstrapTest(S::Type{<:Statistic}, pp::AbstractPointProcess, h::History)
+MonteCarloTest
+MonteCarloTest(S::Type{<:Statistic}, pp::AbstractPointProcess, h::History)
 ```
 
 ## Index
