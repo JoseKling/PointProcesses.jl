@@ -10,19 +10,21 @@ These provide analytical solutions for bounds and integrals where possible.
 Analytical integral for polynomial intensity functions with identity link.
 For log link, we use numerical integration.
 =#
-function integrated_intensity(f::PolynomialIntensity, a, b, config::IntegrationConfig)
+function integrated_intensity(
+    f::PolynomialIntensity, lb::T, ub::T, config::IntegrationConfig
+) where {T}
     if f.link === :identity
         # Analytical integral for polynomial
-        result = zero(promote_type(eltype(f.coefficients), typeof(a), typeof(b)))
+        result = zero(promote_type(eltype(f.coefficients), typeof(lb), typeof(ub)))
         for (i, coef) in enumerate(f.coefficients)
             power = i
-            result += coef * (b^power - a^power) / power
+            result += coef * (ub^power - lb^power) / power
         end
         return result
     else
         # Numerical integration for log link using config
         integrand(t, p) = f(t)
-        prob = IntegralProblem(integrand, (a, b))  # 1D domain (lb, ub)
+        prob = IntegralProblem(integrand, (lb, ub))  # 1D domain (lb, ub)
         integral = solve(
             prob,
             config.solver;
@@ -50,12 +52,14 @@ end
 ## ExponentialIntensity optimizations
 
 # Analytical integral for exponential intensity: ∫ a*exp(b*t) dt = (a/b)*(exp(b*b) - exp(b*a))
-function integrated_intensity(f::ExponentialIntensity, a, b, config::IntegrationConfig)
+function integrated_intensity(
+    f::ExponentialIntensity, lb::T, ub::T, config::IntegrationConfig
+) where {T}
     if abs(f.b) < 1e-10
         # b ≈ 0, treat as constant
-        return f.a * (b - a)
+        return f.a * (ub - lb)
     end
-    return (f.a / f.b) * (exp(f.b * b) - exp(f.b * a))
+    return (f.a / f.b) * (exp(f.b * ub) - exp(f.b * lb))
 end
 
 #=
@@ -86,14 +90,14 @@ end
 Analytical integral for sinusoidal intensity: ∫ (a + b*sin(ω*t + φ)) dt
 =#
 function integrated_intensity(
-    f::SinusoidalIntensity, t_start, t_end, config::IntegrationConfig
-)
-    linear_part = f.a * (t_end - t_start)
+    f::SinusoidalIntensity, lb::T, ub::T, config::IntegrationConfig
+) where {T}
+    linear_part = f.a * (ub - lb)
     if abs(f.ω) < 1e-10
         # ω ≈ 0, sin term is approximately constant
-        sin_part = f.b * sin(f.φ) * (t_end - t_start)
+        sin_part = f.b * sin(f.φ) * (ub - lb)
     else
-        sin_part = -(f.b / f.ω) * (cos(f.ω * t_end + f.φ) - cos(f.ω * t_start + f.φ))
+        sin_part = -(f.b / f.ω) * (cos(f.ω * ub + f.φ) - cos(f.ω * lb + f.φ))
     end
     return linear_part + sin_part
 end
@@ -112,20 +116,19 @@ end
 ## PiecewiseConstantIntensity optimizations
 
 function integrated_intensity(
-    f::PiecewiseConstantIntensity, a, b, config::IntegrationConfig
-)
-    # Find the intervals that overlap with [a, b]
-    start_idx = searchsortedlast(f.breakpoints, a)
-    end_idx = searchsortedlast(f.breakpoints, b)
-
+    f::PiecewiseConstantIntensity, lb::T, ub::T, config::IntegrationConfig
+) where {T}
+    # Find the intervals that overlap with [lb, ub]
+    start_idx = searchsortedlast(f.breakpoints, lb)
+    end_idx = searchsortedlast(f.breakpoints, ub)
     # Clamp to valid range
     start_idx = max(1, min(start_idx, length(f.rates)))
     end_idx = max(1, min(end_idx, length(f.rates)))
 
     if start_idx == end_idx
-        # Entire interval [a, b] is within a single constant region
+        # Entire interval [lb, ub] is within a single constant region
         if start_idx > 0 && start_idx <= length(f.rates)
-            return f.rates[start_idx] * (b - a)
+            return f.rates[start_idx] * (ub - lb)
         else
             return zero(eltype(f.rates))
         end
@@ -136,7 +139,7 @@ function integrated_intensity(
 
     # First partial interval
     if start_idx > 0 && start_idx <= length(f.rates)
-        integral += f.rates[start_idx] * (f.breakpoints[start_idx + 1] - a)
+        integral += f.rates[start_idx] * (f.breakpoints[start_idx + 1] - lb)
     end
 
     # Complete intervals in between
@@ -148,7 +151,7 @@ function integrated_intensity(
 
     # Last partial interval
     if end_idx > 0 && end_idx <= length(f.rates)
-        integral += f.rates[end_idx] * (b - f.breakpoints[end_idx])
+        integral += f.rates[end_idx] * (ub - f.breakpoints[end_idx])
     end
 
     return integral
@@ -173,9 +176,11 @@ end
 
 ## LinearCovariateIntensity
 
-function integrated_intensity(f::LinearCovariateIntensity, a, b, config::IntegrationConfig)
+function integrated_intensity(
+    f::LinearCovariateIntensity, lb::T, ub::T, config::IntegrationConfig
+) where {T}
     integrand(t, p) = f(t)
-    prob = IntegralProblem(integrand, (a, b))  # 1D
+    prob = IntegralProblem(integrand, (lb, ub))  # 1D
     integral = solve(
         prob,
         config.solver;
@@ -196,10 +201,10 @@ end
 
 ## Generic fallback for custom functions
 
-#Numerical integral for arbitrary callable intensity functions.
-function integrated_intensity(f::F, a, b, config::IntegrationConfig) where {F}
+# Numerical integral for arbitrary callable intensity functions.
+function integrated_intensity(f::F, lb::T, ub::T, config::IntegrationConfig) where {F,T}
     integrand(t, p) = f(t)
-    prob = IntegralProblem(integrand, (a, b))  # 1D
+    prob = IntegralProblem(integrand, (lb, ub))  # 1D
     integral = solve(
         prob,
         config.solver;
@@ -210,7 +215,7 @@ function integrated_intensity(f::F, a, b, config::IntegrationConfig) where {F}
     return integral.u
 end
 
-#Numerical bound for arbitrary callable intensity functions.
+# Numerical bound for arbitrary callable intensity functions.
 function intensity_bound(f::F, t::T, h::History) where {F,T}
     lookahead = T(1.0)
     n_samples = 100

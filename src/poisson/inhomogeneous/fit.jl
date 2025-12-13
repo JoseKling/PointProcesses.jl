@@ -103,9 +103,9 @@ function StatsAPI.fit(
     for i in 2:length(histories)
         combined = History(
             vcat(event_times(combined), event_times(histories[i])),
-            vcat(event_marks(combined), event_marks(histories[i])),
             min(min_time(combined), min_time(histories[i])),
             max(max_time(combined), max_time(histories[i])),
+            vcat(event_marks(combined), event_marks(histories[i])),
         )
     end
     return fit(pptype, combined, args...)

@@ -86,7 +86,7 @@ Compute a local upper bound on the ground intensity.
 This delegates to `intensity_bound` defined for specific intensity function types
 in intensity_methods.jl. Analytical bounds are used when available.
 """
-function ground_intensity_bound(pp::InhomogeneousPoissonProcess, t::T, h) where {T}
+function ground_intensity_bound(pp::InhomogeneousPoissonProcess, t::T, h::History) where {T}
     return intensity_bound(pp.intensity_function, t, h)
 end
 
@@ -99,8 +99,12 @@ This delegates to `integrated_intensity` defined for specific intensity function
 in intensity_methods.jl. Analytical integrals are used when available, otherwise
 numerical integration is performed using the configuration stored in `pp.integration_config`.
 """
-function integrated_ground_intensity(pp::InhomogeneousPoissonProcess, h, a, b)
-    return integrated_intensity(pp.intensity_function, a, b, pp.integration_config)
+function integrated_ground_intensity(
+    pp::InhomogeneousPoissonProcess, h::History, t_start::T, t_end::T
+) where {T}
+    return integrated_intensity(
+        pp.intensity_function, t_start, t_end, pp.integration_config
+    )
 end
 
 ## Simulation
