@@ -39,7 +39,7 @@ Upper bound for polynomial intensity over an interval.
 
 For polynomials, we sample densely and add a margin.
 =#
-function intensity_bound(f::PolynomialIntensity{R}, t::T) where {R,T}
+function intensity_bound(f::PolynomialIntensity{R}, t::T, h::History) where {R,T}
     lookahead = T(1.0)
     n_samples = 50
     ts = range(t, t + lookahead; length=n_samples)
@@ -65,7 +65,7 @@ If b > 0 (increasing), max is at right endpoint.
 If b < 0 (decreasing), max is at left endpoint.
 If b ≈ 0 (constant), use constant bound.
 =#
-function intensity_bound(f::ExponentialIntensity{R}, t::T) where {R,T}
+function intensity_bound(f::ExponentialIntensity{R}, t::T, h::History) where {R,T}
     lookahead = T(1.0)
     if f.b > 1e-10
         # Increasing: max at t + lookahead
@@ -103,7 +103,7 @@ Upper bound for sinusoidal intensity.
 
 Maximum is a + |b| (when sin = 1 if b > 0, or sin = -1 if b < 0).
 =#
-function intensity_bound(f::SinusoidalIntensity{R}, t::T) where {R,T}
+function intensity_bound(f::SinusoidalIntensity{R}, t::T, h::History) where {R,T}
     B = f.a + abs(f.b)
     L = typemax(T)  # Bound holds for all time
     return (B, L)
@@ -154,7 +154,7 @@ function integrated_intensity(
     return integral
 end
 
-function intensity_bound(f::PiecewiseConstantIntensity{R}, t::T) where {R,T}
+function intensity_bound(f::PiecewiseConstantIntensity{R}, t::T, h::History) where {R,T}
     idx = searchsortedlast(f.breakpoints, t)
 
     if idx == 0 || idx >= length(f.breakpoints)
@@ -186,7 +186,7 @@ function integrated_intensity(f::LinearCovariateIntensity, a, b, config::Integra
     return integral.u
 end
 
-function intensity_bound(f::LinearCovariateIntensity{R}, t::T) where {R,T}
+function intensity_bound(f::LinearCovariateIntensity{R}, t::T, h::History) where {R,T}
     lookahead = T(1.0)
     n_samples = 100
     ts = range(t, t + lookahead; length=n_samples)
@@ -211,7 +211,7 @@ function integrated_intensity(f::F, a, b, config::IntegrationConfig) where {F}
 end
 
 #Numerical bound for arbitrary callable intensity functions.
-function intensity_bound(f::F, t::T) where {F,T}
+function intensity_bound(f::F, t::T, h::History) where {F,T}
     lookahead = T(1.0)
     n_samples = 100
     ts = range(t, t + lookahead; length=n_samples)

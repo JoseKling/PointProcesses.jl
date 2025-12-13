@@ -114,16 +114,14 @@ end
 function StatsAPI.fit(
     ::Type{<:InhomogeneousPoissonProcess{PiecewiseConstantIntensity{R},D}},
     h::History,
-    n_bins::Int;
+    breakpoints::Vector;
     kwargs...,
 ) where {R,D}
     # Fit mark distribution independently
     mark_dist = fit(D, h.marks)
 
-    # Create equal-width bins
-    breakpoints = collect(range(h.tmin, h.tmax; length=n_bins + 1))
-
     # Count events in each bin
+    n_bins = length(breakpoints) - 1
     rates = zeros(R, n_bins)
     for i in 1:n_bins
         # Count events in bin [breakpoints[i], breakpoints[i+1])
@@ -140,4 +138,22 @@ function StatsAPI.fit(
 
     intensity = PiecewiseConstantIntensity(breakpoints, rates)
     return InhomogeneousPoissonProcess(intensity, mark_dist)
+end
+
+function StatsAPI.fit(
+    ::Type{<:InhomogeneousPoissonProcess{PiecewiseConstantIntensity{R},D}},
+    h::History,
+    n_bins::Int;
+    kwargs...,
+) where {R,D}
+    # Create equal-width bins
+    breakpoints = collect(range(h.tmin, h.tmax; length=n_bins + 1))
+
+    # Delegate to the breakpoints method
+    return fit(
+        InhomogeneousPoissonProcess{PiecewiseConstantIntensity{R},D},
+        h,
+        breakpoints;
+        kwargs...,
+    )
 end
