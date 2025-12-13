@@ -728,4 +728,58 @@ rng = Random.seed!(12345)
             @test L == 1.0
         end
     end
+
+    @testset "Convenience constructors" begin
+        @testset "InhomogeneousPoissonProcess without marks" begin
+            # Test convenience constructor for unmarked process
+            intensity = PolynomialIntensity([1.0, 0.5])
+            pp = InhomogeneousPoissonProcess(intensity)
+
+            @test pp isa InhomogeneousPoissonProcess
+            @test pp.intensity_function === intensity
+            @test pp.mark_dist isa Dirac{Nothing}
+            @test pp.mark_dist.value === nothing
+            @test pp.integration_config isa IntegrationConfig
+
+            # Test that it simulates correctly
+            h = simulate(rng, pp, 0.0, 10.0)
+            @test issorted(event_times(h))
+            @test all(m === nothing for m in event_marks(h))
+        end
+
+        @testset "InhomogeneousPoissonProcess with custom integration config" begin
+            intensity = ExponentialIntensity(2.0, 0.1)
+            custom_config = IntegrationConfig(abstol=1e-10, reltol=1e-10, maxiters=5000)
+            pp = InhomogeneousPoissonProcess(intensity; integration_config=custom_config)
+
+            @test pp isa InhomogeneousPoissonProcess
+            @test pp.intensity_function === intensity
+            @test pp.mark_dist isa Dirac{Nothing}
+            @test pp.integration_config === custom_config
+            @test pp.integration_config.abstol == 1e-10
+            @test pp.integration_config.reltol == 1e-10
+            @test pp.integration_config.maxiters == 5000
+        end
+    end
+
+    @testset "IntegrationConfig show method" begin
+        @testset "Default config" begin
+            config = IntegrationConfig()
+            config_str = string(config)
+            @test occursin("IntegrationConfig", config_str)
+            @test occursin("QuadGKJL", config_str)
+            @test occursin("abstol=1.0e-8", config_str)
+            @test occursin("reltol=1.0e-8", config_str)
+            @test occursin("maxiters=1000", config_str)
+        end
+
+        @testset "Custom config" begin
+            config = IntegrationConfig(abstol=1e-12, reltol=1e-10, maxiters=10000)
+            config_str = string(config)
+            @test occursin("IntegrationConfig", config_str)
+            @test occursin("abstol=1.0e-12", config_str)
+            @test occursin("reltol=1.0e-10", config_str)
+            @test occursin("maxiters=10000", config_str)
+        end
+    end
 end
