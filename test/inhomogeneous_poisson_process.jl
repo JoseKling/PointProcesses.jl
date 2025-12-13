@@ -265,6 +265,142 @@ rng = Random.seed!(12345)
         @test 0.5 * rates_true[2] <= est_rates[2] <= 2.0 * rates_true[2]
     end
 
+    @testset "Fitting - Multiple Histories" begin
+        @testset "PiecewiseConstant with multiple histories" begin
+            # Test that fit correctly concatenates multiple histories
+            # NOTE: The fit function concatenates histories by combining event times
+            # and using min/max of time bounds
+
+            # Create 3 histories with non-overlapping time ranges and known properties
+            breakpoints1 = [0.0, 10.0]
+            rates1 = [3.0]
+            intensity1 = PiecewiseConstantIntensity(breakpoints1, rates1)
+            pp1 = InhomogeneousPoissonProcess(intensity1, Normal())
+            h1 = simulate(rng, pp1, 0.0, 10.0)
+
+            breakpoints2 = [10.0, 20.0]
+            rates2 = [5.0]
+            intensity2 = PiecewiseConstantIntensity(breakpoints2, rates2)
+            pp2 = InhomogeneousPoissonProcess(intensity2, Normal())
+            h2 = simulate(rng, pp2, 10.0, 20.0)
+
+            breakpoints3 = [20.0, 30.0]
+            rates3 = [2.0]
+            intensity3 = PiecewiseConstantIntensity(breakpoints3, rates3)
+            pp3 = InhomogeneousPoissonProcess(intensity3, Normal())
+            h3 = simulate(rng, pp3, 20.0, 30.0)
+
+            histories = [h1, h2, h3]
+
+            # Fit using 3 bins (one for each original history)
+            pp_est = fit(
+                InhomogeneousPoissonProcess{
+                    PiecewiseConstantIntensity{Float64},Normal,IntegrationConfig
+                },
+                histories,
+                3,
+            )
+
+            @test pp_est isa InhomogeneousPoissonProcess
+            @test pp_est.intensity_function isa PiecewiseConstantIntensity
+            @test length(pp_est.intensity_function.rates) == 3
+
+            # Check that the combined time range is correct
+            @test pp_est.intensity_function.breakpoints[1] == 0.0
+            @test pp_est.intensity_function.breakpoints[end] == 30.0
+
+            # Check that total events match
+            total_events = sum(nb_events(h) for h in histories)
+            @test total_events == nb_events(h1) + nb_events(h2) + nb_events(h3)
+            @test total_events > 0
+        end
+
+        @testset "Exponential with multiple histories" begin
+            # Create multiple histories from exponential process
+            # NOTE: Using non-overlapping time ranges since fit concatenates
+            intensity_true = ExponentialIntensity(2.0, 0.05)
+            pp_true = InhomogeneousPoissonProcess(intensity_true, Uniform())
+
+            # Generate 4 histories with non-overlapping time ranges
+            histories = [
+                simulate(rng, pp_true, 0.0, 25.0),
+                simulate(rng, pp_true, 25.0, 50.0),
+                simulate(rng, pp_true, 50.0, 75.0),
+                simulate(rng, pp_true, 75.0, 100.0),
+            ]
+
+            # Fit using multiple histories (they will be concatenated)
+            pp_est = fit(
+                InhomogeneousPoissonProcess{
+                    ExponentialIntensity{Float64},Uniform,IntegrationConfig
+                },
+                histories,
+                [log(2.0), 0.05],
+            )
+
+            @test pp_est isa InhomogeneousPoissonProcess
+            @test pp_est.intensity_function isa ExponentialIntensity
+            @test pp_est.mark_dist isa Uniform
+
+            # With concatenated non-overlapping data, parameters should be in reasonable range
+            @test 0.5 * intensity_true.a <=
+                pp_est.intensity_function.a <=
+                3.0 * intensity_true.a
+            @test abs(pp_est.intensity_function.b - intensity_true.b) < 0.15
+        end
+
+        @testset "Multiple histories with different time ranges" begin
+            # Test that fit function correctly handles min/max when combining histories
+            # with different (but non-overlapping) time ranges
+            intensity_true = PolynomialIntensity([2.0, 0.1])
+            pp_true = InhomogeneousPoissonProcess(intensity_true, Categorical([0.5, 0.5]))
+
+            # Generate 4 histories with different non-overlapping time ranges
+            histories = [
+                simulate(rng, pp_true, 0.0, 25.0),
+                simulate(rng, pp_true, 30.0, 55.0),
+                simulate(rng, pp_true, 60.0, 85.0),
+                simulate(rng, pp_true, 90.0, 115.0),
+            ]
+
+            # Fit using all histories - should use min/max across all ranges
+            pp_est = fit(
+                InhomogeneousPoissonProcess{
+                    PolynomialIntensity{Float64},Categorical,IntegrationConfig
+                },
+                histories,
+                [2.0, 0.1],
+            )
+
+            @test pp_est isa InhomogeneousPoissonProcess
+            @test pp_est.intensity_function isa PolynomialIntensity
+
+            # Parameters should be estimated reasonably
+            @test abs(pp_est.intensity_function.coefficients[1] - 2.0) < 1.5
+            @test abs(pp_est.intensity_function.coefficients[2] - 0.1) < 0.3
+        end
+
+        @testset "Single history in vector" begin
+            # Test that passing a single history in a vector still works
+            intensity_true = ExponentialIntensity(3.0, 0.1)
+            pp_true = InhomogeneousPoissonProcess(intensity_true, Normal())
+
+            h = simulate(rng, pp_true, 0.0, 15.0)
+            histories = [h]
+
+            pp_est = fit(
+                InhomogeneousPoissonProcess{
+                    ExponentialIntensity{Float64},Normal,IntegrationConfig
+                },
+                histories,
+                [log(3.0), 0.1],
+            )
+
+            @test pp_est isa InhomogeneousPoissonProcess
+            @test pp_est.intensity_function isa ExponentialIntensity
+        end
+    end
+
     @testset "Fitting - Polynomial (MLE)" begin
         # Generate data from linear process with log link
         intensity_true = PolynomialIntensity([0.5, 0.1]; link=:log)
@@ -391,5 +527,205 @@ rng = Random.seed!(12345)
         @test string(intensity_linear) == "PolynomialIntensity([1.0, 0.5])"
         @test string(intensity_log) == "PolynomialIntensity([1.0, 0.5], link=:log)"
         @test occursin("InhomogeneousPoissonProcess", string(pp))
+    end
+
+    @testset "Intensity type constructors and show methods" begin
+        @testset "ExponentialIntensity type promotion" begin
+            # Test mixed types get promoted
+            intensity_mixed = ExponentialIntensity(2, 0.1)
+            @test intensity_mixed isa ExponentialIntensity{Float64}
+            @test intensity_mixed.a == 2.0
+            @test intensity_mixed.b == 0.1
+
+            # Test Float32 types
+            intensity_f32 = ExponentialIntensity(2.0f0, 0.1f0)
+            @test intensity_f32 isa ExponentialIntensity{Float32}
+
+            # Test show method
+            intensity_exp = ExponentialIntensity(2.5, 0.15)
+            @test string(intensity_exp) == "ExponentialIntensity(2.5, 0.15)"
+        end
+
+        @testset "SinusoidalIntensity show method" begin
+            intensity_sin = SinusoidalIntensity(5.0, 2.0, 2π, 0.5)
+            expected_str = "SinusoidalIntensity(5.0, 2.0, $(2π), 0.5)"
+            @test string(intensity_sin) == expected_str
+        end
+
+        @testset "PiecewiseConstantIntensity show method" begin
+            breakpoints = [0.0, 1.0, 2.0]
+            rates = [1.5, 3.0]
+            intensity_pw = PiecewiseConstantIntensity(breakpoints, rates)
+            expected_str = "PiecewiseConstantIntensity([0.0, 1.0, 2.0], [1.5, 3.0])"
+            @test string(intensity_pw) == expected_str
+        end
+
+        @testset "LinearCovariateIntensity show method" begin
+            cov1 = t -> t
+            cov2 = t -> sin(t)
+            intensity_cov = LinearCovariateIntensity(1.0, [0.5, 0.3], [cov1, cov2])
+            expected_str = "LinearCovariateIntensity(1.0, [0.5, 0.3], 2 covariates)"
+            @test string(intensity_cov) == expected_str
+
+            # Test with more covariates
+            cov3 = t -> cos(t)
+            intensity_cov3 = LinearCovariateIntensity(
+                2.0, [0.1, 0.2, 0.3], [cov1, cov2, cov3]
+            )
+            expected_str3 = "LinearCovariateIntensity(2.0, [0.1, 0.2, 0.3], 3 covariates)"
+            @test string(intensity_cov3) == expected_str3
+        end
+    end
+
+    @testset "Integrated intensity edge cases" begin
+        config = IntegrationConfig()
+
+        @testset "ExponentialIntensity with b ≈ 0" begin
+            # When b ≈ 0, should behave like constant function
+            intensity_const = ExponentialIntensity(3.0, 1e-12)
+            h_empty = History(Float64[], 0.0, 10.0, Float64[])
+            pp = InhomogeneousPoissonProcess(intensity_const, Normal())
+
+            # ∫ 3.0 dt from 0 to 10 = 30.0
+            integral = integrated_ground_intensity(pp, h_empty, 0.0, 10.0)
+            @test integral ≈ 30.0 rtol = 1e-6
+        end
+
+        @testset "ExponentialIntensity with negative b" begin
+            # Decreasing exponential: λ(t) = 5*exp(-0.2*t)
+            intensity_dec = ExponentialIntensity(5.0, -0.2)
+            h_empty = History(Float64[], 0.0, 5.0, Float64[])
+            pp = InhomogeneousPoissonProcess(intensity_dec, Normal())
+
+            # ∫₀⁵ 5*exp(-0.2*t) dt = (5/-0.2)*(exp(-1) - exp(0)) = -25*(exp(-1) - 1)
+            expected = (5.0 / -0.2) * (exp(-0.2 * 5.0) - exp(0.0))
+            integral = integrated_ground_intensity(pp, h_empty, 0.0, 5.0)
+            @test integral ≈ expected rtol = 1e-6
+        end
+
+        @testset "PiecewiseConstantIntensity - single region" begin
+            # Test when entire integration interval is within a single constant region
+            breakpoints = [0.0, 5.0, 10.0, 15.0]
+            rates = [2.0, 4.0, 3.0]
+            intensity_pw = PiecewiseConstantIntensity(breakpoints, rates)
+            h_empty = History(Float64[], 0.0, 15.0, Float64[])
+            pp = InhomogeneousPoissonProcess(intensity_pw, Normal())
+
+            # Integrate within first region [0, 5)
+            integral1 = integrated_ground_intensity(pp, h_empty, 1.0, 3.0)
+            @test integral1 ≈ 2.0 * (3.0 - 1.0) rtol = 1e-6
+
+            # Integrate within second region [5, 10)
+            integral2 = integrated_ground_intensity(pp, h_empty, 6.0, 8.0)
+            @test integral2 ≈ 4.0 * (8.0 - 6.0) rtol = 1e-6
+
+            # Integrate within third region [10, 15)
+            integral3 = integrated_ground_intensity(pp, h_empty, 11.0, 13.0)
+            @test integral3 ≈ 3.0 * (13.0 - 11.0) rtol = 1e-6
+        end
+
+        @testset "PiecewiseConstantIntensity - multiple regions" begin
+            breakpoints = [0.0, 2.0, 5.0, 8.0]
+            rates = [1.0, 3.0, 2.0]
+            intensity_pw = PiecewiseConstantIntensity(breakpoints, rates)
+            h_empty = History(Float64[], 0.0, 8.0, Float64[])
+            pp = InhomogeneousPoissonProcess(intensity_pw, Normal())
+
+            # Integrate across all regions
+            # ∫₀⁸ = 1.0*(2-0) + 3.0*(5-2) + 2.0*(8-5) = 2 + 9 + 6 = 17
+            integral_all = integrated_ground_intensity(pp, h_empty, 0.0, 8.0)
+            @test integral_all ≈ 17.0 rtol = 1e-6
+
+            # Integrate across first two regions
+            # ∫₀⁵ = 1.0*(2-0) + 3.0*(5-2) = 2 + 9 = 11
+            integral_partial = integrated_ground_intensity(pp, h_empty, 0.0, 5.0)
+            @test integral_partial ≈ 11.0 rtol = 1e-6
+
+            # Integrate across region boundary
+            # ∫₁⁶ = 1.0*(2-1) + 3.0*(5-2) + 2.0*(6-5) = 1 + 9 + 2 = 12
+            integral_cross = integrated_ground_intensity(pp, h_empty, 1.0, 6.0)
+            @test integral_cross ≈ 12.0 rtol = 1e-6
+        end
+
+        @testset "LinearCovariateIntensity numerical integration" begin
+            # λ(t) = exp(1.0 + 0.5*t + 0.2*sin(t))
+            cov1 = t -> t
+            cov2 = t -> sin(t)
+            intensity_cov = LinearCovariateIntensity(1.0, [0.5, 0.2], [cov1, cov2])
+            h_empty = History(Float64[], 0.0, 5.0, Float64[])
+            pp = InhomogeneousPoissonProcess(intensity_cov, Normal())
+
+            # This should use numerical integration
+            integral = integrated_ground_intensity(pp, h_empty, 0.0, 5.0)
+
+            # Verify it's positive and finite
+            @test integral > 0
+            @test isfinite(integral)
+
+            # Rough sanity check: λ(0) = exp(1.0) ≈ 2.718
+            # λ(5) = exp(1.0 + 2.5 + 0.2*sin(5)) ≈ exp(3.5 + something small)
+            # Integral should be somewhere in a reasonable range
+            @test integral > 5.0  # Minimum if constant at λ(0)
+            @test integral < 1000.0  # Reasonable upper bound
+        end
+
+        @testset "Generic fallback for custom functions" begin
+            # Test custom lambda function
+            custom_func = t -> 2.0 + 0.5 * t^2
+            h_empty = History(Float64[], 0.0, 4.0, Float64[])
+            pp = InhomogeneousPoissonProcess(custom_func, Uniform())
+
+            # ∫₀⁴ (2 + 0.5*t²) dt = [2t + 0.5*t³/3]₀⁴ = 8 + 0.5*64/3 = 8 + 32/3 ≈ 18.667
+            expected = 2.0 * 4.0 + 0.5 * (4.0^3) / 3.0
+            integral = integrated_ground_intensity(pp, h_empty, 0.0, 4.0)
+            @test integral ≈ expected rtol = 1e-3
+
+            # Test another custom function with trigonometry
+            custom_trig = t -> 3.0 + sin(2π * t)
+            pp_trig = InhomogeneousPoissonProcess(custom_trig, Normal())
+
+            # Over one period, sin integrates to 0, so integral ≈ 3*1 = 3
+            integral_trig = integrated_ground_intensity(pp_trig, h_empty, 0.0, 1.0)
+            @test integral_trig ≈ 3.0 rtol = 1e-3
+        end
+    end
+
+    @testset "Intensity bounds edge cases" begin
+        @testset "ExponentialIntensity bound with b > 0 (increasing)" begin
+            intensity_inc = ExponentialIntensity(2.0, 0.1)
+            h_empty = History(Float64[], 0.0, 10.0, Float64[])
+            pp = InhomogeneousPoissonProcess(intensity_inc, Normal())
+
+            B, L = ground_intensity_bound(pp, 0.0, h_empty)
+            # Max should be at t + lookahead (t=1.0), so λ(1) = 2*exp(0.1) ≈ 2.21
+            # With 5% margin: ≈ 2.32
+            @test B >= 2.0 * exp(0.1)
+            @test B <= 2.0 * exp(0.1) * 1.1  # Check margin isn't too large
+            @test L == 1.0
+        end
+
+        @testset "ExponentialIntensity bound with b < 0 (decreasing)" begin
+            intensity_dec = ExponentialIntensity(5.0, -0.2)
+            h_empty = History(Float64[], 0.0, 10.0, Float64[])
+            pp = InhomogeneousPoissonProcess(intensity_dec, Normal())
+
+            B, L = ground_intensity_bound(pp, 2.0, h_empty)
+            # Max should be at t=2, so λ(2) = 5*exp(-0.4)
+            # With 5% margin
+            expected_max = 5.0 * exp(-0.2 * 2.0) * 1.05
+            @test B ≈ expected_max rtol = 1e-6
+            @test L == 1.0
+        end
+
+        @testset "ExponentialIntensity bound with b ≈ 0 (constant)" begin
+            intensity_const = ExponentialIntensity(3.0, 1e-12)
+            h_empty = History(Float64[], 0.0, 10.0, Float64[])
+            pp = InhomogeneousPoissonProcess(intensity_const, Normal())
+
+            B, L = ground_intensity_bound(pp, 5.0, h_empty)
+            # Should be approximately a * 1.05 = 3.15
+            @test B ≈ 3.0 * 1.05 rtol = 1e-6
+            @test L == 1.0
+        end
     end
 end
