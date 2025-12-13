@@ -151,6 +151,18 @@ rng = Random.seed!(12345)
             @test integral ≈ 5.0 rtol = 1e-3
         end
 
+        @testset "Integrated intensity with ω ≈ 0" begin
+            # When ω ≈ 0, sin(ω*t + φ) ≈ sin(φ) (approximately constant)
+            intensity_zero_omega = SinusoidalIntensity(5.0, 2.0, 1e-12, π / 4)
+            pp_zero_omega = InhomogeneousPoissonProcess(intensity_zero_omega, Uniform())
+            h_empty = History(Float64[], 0.0, 10.0, Float64[])
+
+            # ∫₀¹⁰ (5 + 2*sin(φ)) dt ≈ (5 + 2*sin(π/4)) * 10
+            expected = (5.0 + 2.0 * sin(π / 4)) * 10.0
+            integral = integrated_ground_intensity(pp_zero_omega, h_empty, 0.0, 10.0)
+            @test integral ≈ expected rtol = 1e-3
+        end
+
         @testset "Intensity bounds" begin
             h_empty = History(Float64[], 0.0, 10.0, Float64[])
             B, L = ground_intensity_bound(pp, 0.0, h_empty)
@@ -726,6 +738,51 @@ rng = Random.seed!(12345)
             # Should be approximately a * 1.05 = 3.15
             @test B ≈ 3.0 * 1.05 rtol = 1e-6
             @test L == 1.0
+        end
+    end
+
+    @testset "Marked intensity function" begin
+        @testset "Continuous marks" begin
+            # Test that intensity(pp, m, t, h) = ground_intensity(pp, t, h) * pdf(mark_dist, m)
+            intensity_func = PolynomialIntensity([2.0, 0.3])
+            mark_dist = Normal(0.0, 1.0)
+            pp = InhomogeneousPoissonProcess(intensity_func, mark_dist)
+            h_empty = History(Float64[], 0.0, 10.0, Float64[])
+
+            t = 5.0
+            m = 1.5
+
+            # ground_intensity at t=5: λ(5) = 2.0 + 0.3*5 = 3.5
+            expected_ground = 2.0 + 0.3 * 5.0
+
+            # intensity(m, t, h) = λ(t) * pdf(Normal(0,1), 1.5)
+            expected_full = expected_ground * pdf(mark_dist, m)
+
+            @test ground_intensity(pp, t, h_empty) ≈ expected_ground
+            @test intensity(pp, m, t, h_empty) ≈ expected_full
+
+            # Test with different mark value
+            m2 = -0.5
+            @test intensity(pp, m2, t, h_empty) ≈ expected_ground * pdf(mark_dist, m2)
+        end
+
+        @testset "Discrete marks" begin
+            # Test with categorical marks
+            intensity_func = ExponentialIntensity(3.0, 0.05)
+            mark_dist = Categorical([0.3, 0.5, 0.2])
+            pp = InhomogeneousPoissonProcess(intensity_func, mark_dist)
+            h_empty = History(Float64[], 0.0, 10.0, Float64[])
+
+            t = 2.0
+            # ground_intensity at t=2: λ(2) = 3*exp(0.05*2) = 3*exp(0.1)
+            expected_ground = 3.0 * exp(0.05 * 2.0)
+
+            @test ground_intensity(pp, t, h_empty) ≈ expected_ground
+
+            # For categorical marks, pdf gives the probability mass
+            @test intensity(pp, 1, t, h_empty) ≈ expected_ground * 0.3
+            @test intensity(pp, 2, t, h_empty) ≈ expected_ground * 0.5
+            @test intensity(pp, 3, t, h_empty) ≈ expected_ground * 0.2
         end
     end
 
