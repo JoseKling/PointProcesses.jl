@@ -15,8 +15,9 @@ using Integrals: Integrals, IntegralProblem, solve, QuadGKJL
 using LinearAlgebra: dot
 using Optim: Optim, optimize, LBFGS
 using Random: rand
-using Random: AbstractRNG, default_rng
-using StatsAPI: StatsAPI, fit
+using Random: AbstractRNG, default_rng, Xoshiro
+using StatsAPI: StatsAPI, fit, HypothesisTest, pvalue
+using HypothesisTests: ExactOneSampleKSTest, ksstats
 
 ## Hidden names
 
@@ -27,7 +28,7 @@ using StatsAPI: StatsAPI, fit
 export logdensityof, densityof # DensityInterface
 export fit # StatsAPI
 export fit_map
-export convert
+export HypothesisTest, pvalue # HypothesisTests
 
 ## History
 
@@ -68,6 +69,11 @@ export ParametricIntensity
 export from_params
 export IntegrationConfig
 
+## Goodness of fit tests tests
+
+export Statistic, KSDistance, statistic
+export PointProcessTest, BootstrapTest, MonteCarloTest
+
 # Includes
 
 include("history.jl")
@@ -92,4 +98,9 @@ include("poisson/inhomogeneous/fit.jl")
 # Hawkes
 include("hawkes/hawkes_process.jl")
 
+include("HypothesisTests/point_process_tests.jl")
+include("HypothesisTests/statistic.jl")
+include("HypothesisTests/Statistics/KSDistance.jl")
+include("HypothesisTests/PPTests/bootstrap_test.jl")
+include("HypothesisTests/PPTests/monte_carlo_test.jl")
 end

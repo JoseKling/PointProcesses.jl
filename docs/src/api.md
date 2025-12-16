@@ -68,11 +68,6 @@ simulate
 
 ```@docs
 logdensityof
-```
-
-### Learning
-
-```@docs
 integrated_ground_intensity
 ground_intensity_bound
 fit
@@ -126,6 +121,33 @@ IntegrationConfig
 
 ```@docs
 HawkesProcess
+```
+
+## Goodness-of-fit tests
+
+```@docs
+Statistic
+statistic
+PointProcessTest
+pvalue
+```
+### Statistic
+
+```@docs
+KSDistance
+```
+
+### BootstrapTest
+
+```@docs
+BootstrapTest
+BootstrapTest(S::Type{<:Statistic}, PP::Type{<:AbstractPointProcess}, h::History)
+```
+
+### NoBootstrapTest
+```@docs
+MonteCarloTest
+MonteCarloTest(S::Type{<:Statistic}, pp::AbstractPointProcess, h::History)
 ```
 
 ## Index

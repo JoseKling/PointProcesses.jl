@@ -16,7 +16,13 @@ struct History{T<:Real,M}
     tmax::T
     marks::Vector{M}
 
-    function History(times, tmin, tmax, marks=fill(nothing, length(times)); check=true)
+    function History(
+        times::Vector{<:Real},
+        tmin::Real,
+        tmax::Real,
+        marks=fill(nothing, length(times));
+        check=true,
+    )
         if check
             if tmin >= tmax
                 throw(
