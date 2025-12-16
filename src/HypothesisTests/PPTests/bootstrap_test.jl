@@ -81,11 +81,14 @@ function BootstrapTest(
     chunk_size = max(1, length(sim_stats) ÷ Threads.nthreads())
     chunks = Iterators.partition(sim_stats, chunk_size)
 
+    # Lock for accessing the master rng safely
+    l = ReentrantLock()
+
     tasks = map(chunks) do chunk
         Threads.@spawn begin
 
             # Local rng seeded deterministically from the master rng 
-            local_rng = Xoshiro(rand(rng, UInt))
+            local_rng = lock(() -> Xoshiro(rand(rng, UInt)), l)
 
             for i in eachindex(chunk)
                 # Simulates a process and uses the process estimated from
