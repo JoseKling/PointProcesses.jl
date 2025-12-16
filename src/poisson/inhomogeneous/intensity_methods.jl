@@ -41,12 +41,28 @@ Upper bound for polynomial intensity over an interval.
 
 For polynomials, we sample densely and add a margin.
 =#
-function intensity_bound(f::PolynomialIntensity{R}, t::T, h::History) where {R,T}
-    lookahead = T(1.0)
-    n_samples = 50
+function intensity_bound(
+    f::PolynomialIntensity{R},
+    t::T;
+    lookahead::T=one(T),        # default if you don't have history
+    n_samples::Int=10 * length(f.coefficients),  # scale with degree
+) where {R,T}
     ts = range(t, t + lookahead; length=n_samples)
     max_val = maximum(f(ti) for ti in ts)
     return (max_val * T(1.1), lookahead)
+end
+
+function intensity_bound(
+    f::PolynomialIntensity{R},
+    t::T,
+    h::History;
+    lookahead_factor::Real=1/100,
+    min_lookahead::T=T(1e-3),
+    n_samples::Int=10 * length(f.coefficients),
+) where {R,T}
+    dur = duration(h)             # or max_time(h) - min_time(h)
+    lookahead = max(T(lookahead_factor * dur), min_lookahead)
+    return intensity_bound(f, t; lookahead=lookahead, n_samples=n_samples)
 end
 
 ## ExponentialIntensity optimizations
@@ -69,8 +85,7 @@ If b > 0 (increasing), max is at right endpoint.
 If b < 0 (decreasing), max is at left endpoint.
 If b ≈ 0 (constant), use constant bound.
 =#
-function intensity_bound(f::ExponentialIntensity{R}, t::T, h::History) where {R,T}
-    lookahead = T(1.0)
+function intensity_bound(f::ExponentialIntensity{R}, t::T; lookahead::T=one(T)) where {R,T}
     if f.b > 1e-10
         # Increasing: max at t + lookahead
         B = f(t + lookahead) * T(1.05)  # small margin
@@ -82,6 +97,18 @@ function intensity_bound(f::ExponentialIntensity{R}, t::T, h::History) where {R,
         B = f.a * T(1.05)
     end
     return (B, lookahead)
+end
+
+function intensity_bound(
+    f::ExponentialIntensity{R},
+    t::T,
+    h::History;
+    lookahead_factor::Real=1/100,
+    min_lookahead::T=T(1e-3),
+) where {R,T}
+    dur = duration(h)
+    lookahead = max(T(lookahead_factor * dur), min_lookahead)
+    return intensity_bound(f, t; lookahead=lookahead)
 end
 
 ## SinusoidalIntensity optimizations
@@ -165,13 +192,12 @@ function intensity_bound(f::PiecewiseConstantIntensity{R}, t::T, h::History) whe
         return (zero(R), typemax(T))
     end
 
-    # Maximum rate from current position to end
-    max_rate = maximum(f.rates[idx:end])
+    # Return current rate (exact) and time to next breakpoint
+    # This avoids rejections in Ogata's algorithm within constant pieces
+    current_rate = f.rates[idx]
+    time_to_next_breakpoint = f.breakpoints[idx + 1] - t
 
-    # Lookahead until the end of the domain
-    L = f.breakpoints[end] - t
-
-    return (max_rate, L)
+    return (current_rate, time_to_next_breakpoint)
 end
 
 ## LinearCovariateIntensity
@@ -191,12 +217,25 @@ function integrated_intensity(
     return integral.u
 end
 
-function intensity_bound(f::LinearCovariateIntensity{R}, t::T, h::History) where {R,T}
-    lookahead = T(1.0)
-    n_samples = 100
+function intensity_bound(
+    f::LinearCovariateIntensity{R}, t::T; lookahead::T=one(T), n_samples::Int=100
+) where {R,T}
     ts = range(t, t + lookahead; length=n_samples)
     max_intensity = maximum(f(ti) for ti in ts)
     return (max_intensity * T(1.1), lookahead)
+end
+
+function intensity_bound(
+    f::LinearCovariateIntensity{R},
+    t::T,
+    h::History;
+    lookahead_factor::Real=1/100,
+    min_lookahead::T=T(1e-3),
+    n_samples::Int=100,
+) where {R,T}
+    dur = duration(h)
+    lookahead = max(T(lookahead_factor * dur), min_lookahead)
+    return intensity_bound(f, t; lookahead=lookahead, n_samples=n_samples)
 end
 
 ## Generic fallback for custom functions
@@ -216,10 +255,21 @@ function integrated_intensity(f::F, lb::T, ub::T, config::IntegrationConfig) whe
 end
 
 # Numerical bound for arbitrary callable intensity functions.
-function intensity_bound(f::F, t::T, h::History) where {F,T}
-    lookahead = T(1.0)
-    n_samples = 100
+function intensity_bound(f::F, t::T; lookahead::T=one(T), n_samples::Int=100) where {F,T}
     ts = range(t, t + lookahead; length=n_samples)
     max_intensity = maximum(f(ti) for ti in ts)
     return (max_intensity * T(1.1), lookahead)
+end
+
+function intensity_bound(
+    f::F,
+    t::T,
+    h::History;
+    lookahead_factor::Real=1/100,
+    min_lookahead::T=T(1e-3),
+    n_samples::Int=100,
+) where {F,T}
+    dur = duration(h)
+    lookahead = max(T(lookahead_factor * dur), min_lookahead)
+    return intensity_bound(f, t; lookahead=lookahead, n_samples=n_samples)
 end

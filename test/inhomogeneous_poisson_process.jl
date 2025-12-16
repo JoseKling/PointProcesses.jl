@@ -709,11 +709,13 @@ rng = Random.seed!(12345)
             pp = InhomogeneousPoissonProcess(intensity_inc, Normal())
 
             B, L = ground_intensity_bound(pp, 0.0, h_empty)
-            # Max should be at t + lookahead (t=1.0), so λ(1) = 2*exp(0.1) ≈ 2.21
-            # With 5% margin: ≈ 2.32
-            @test B >= 2.0 * exp(0.1)
-            @test B <= 2.0 * exp(0.1) * 1.1  # Check margin isn't too large
-            @test L == 1.0
+            # History-aware: lookahead = 1/100 * duration(h) = 1/100 * 10.0 = 0.1
+            # Max should be at t + lookahead = 0.1, so λ(0.1) = 2*exp(0.1*0.1) = 2*exp(0.01)
+            # With 5% margin: 2*exp(0.01)*1.05 ≈ 2.121
+            expected_lookahead = 10.0 / 100  # duration / lookahead_factor
+            expected_bound = 2.0 * exp(0.1 * expected_lookahead) * 1.05
+            @test B ≈ expected_bound rtol = 1e-6
+            @test L ≈ expected_lookahead rtol = 1e-6
         end
 
         @testset "ExponentialIntensity bound with b < 0 (decreasing)" begin
@@ -722,11 +724,13 @@ rng = Random.seed!(12345)
             pp = InhomogeneousPoissonProcess(intensity_dec, Normal())
 
             B, L = ground_intensity_bound(pp, 2.0, h_empty)
-            # Max should be at t=2, so λ(2) = 5*exp(-0.4)
+            # History-aware: lookahead = 1/100 * duration(h) = 1/100 * 10.0 = 0.1
+            # Max should be at t=2 (decreasing function), so λ(2) = 5*exp(-0.4)
             # With 5% margin
+            expected_lookahead = 10.0 / 100
             expected_max = 5.0 * exp(-0.2 * 2.0) * 1.05
             @test B ≈ expected_max rtol = 1e-6
-            @test L == 1.0
+            @test L ≈ expected_lookahead rtol = 1e-6
         end
 
         @testset "ExponentialIntensity bound with b ≈ 0 (constant)" begin
@@ -735,9 +739,11 @@ rng = Random.seed!(12345)
             pp = InhomogeneousPoissonProcess(intensity_const, Normal())
 
             B, L = ground_intensity_bound(pp, 5.0, h_empty)
+            # History-aware: lookahead = 1/100 * duration(h) = 1/100 * 10.0 = 0.1
             # Should be approximately a * 1.05 = 3.15
+            expected_lookahead = 10.0 / 100
             @test B ≈ 3.0 * 1.05 rtol = 1e-6
-            @test L == 1.0
+            @test L ≈ expected_lookahead rtol = 1e-6
         end
     end
 
