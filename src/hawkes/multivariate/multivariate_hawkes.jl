@@ -24,7 +24,7 @@ This is the 'Linear Multidimensional EHP' in Section 2 of
 - `α::Matrix{<:Real}`: Jump size.
 - `ω::Vector{<:Real}`: Decay rate.
 """
-struct MultivariateHawkesProcess{T<:Real} <: HawkesProcess
+struct MultivariateHawkesProcess{T} <: HawkesProcess{T,Categorical{Float64,Vector{Float64}}}
     μ::T
     α::Matrix{T}
     ω::Vector{T}
@@ -41,7 +41,6 @@ end
 function HawkesProcess(
     μ::Vector{<:Real}, α::Matrix{<:Real}, ω::Vector{<:Real}; check_args::Bool=true
 )
-    sum(μ) == 0 && return PoissonProcess(sum(μ))
     check_args && check_args_Hawkes(μ, α, ω)
     R = promote_type(eltype(μ), eltype(α), eltype(ω))
     return MultivariateHawkesProcess(
@@ -64,12 +63,8 @@ function check_args_Hawkes(μ::Vector{<:Real}, α::Matrix{<:Real}, ω::Vector{<:
         throw(DimensionMismatch("α and ω must have the same length"))
     end
     if any(α ./ ω' .>= 1)
-        throw(
-            DomainError(
-                "α = $α, ω = $ω",
-                "HawkesProcess: αᵢⱼ/ωⱼ must be smaller than 1 for all i,j. Stability condition.",
-            ),
-        )
+        @warn """HawkesProcess: There are parameters αᵢⱼ and ωⱼ with
+        αᵢⱼ / ωⱼ >= 1. This may cause problems, especially in simulations."""
     end
     if any(ω .<= zero(ω))
         throw(

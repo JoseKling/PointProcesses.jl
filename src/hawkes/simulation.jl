@@ -1,6 +1,6 @@
 function simulate(rng::AbstractRNG, hp::HawkesProcess, tmin::Real, tmax::Real)
-    h = simulate(rng, PoissonProcess(hp.μ, mark_distribution(hp)), tmin, tmax)
-    sim_desc = generate_descendants!(rng, h, hp) # Recursively generates descendants from first events
+    h = simulate(rng, PoissonProcess(hp.μ, hp.mark_dist), tmin, tmax)
+    generate_descendants!(rng, h, hp) # Recursively generates descendants from first events
     perm = sortperm(h.times)
     h.times .= h.times[perm]
     h.marks .= h.marks[perm]
@@ -8,7 +8,7 @@ function simulate(rng::AbstractRNG, hp::HawkesProcess, tmin::Real, tmax::Real)
 end
 
 function simulate(hp::HawkesProcess, tmin::Real, tmax::Real)
-    simulate(default_rng(), hp, tmin, tmax)
+    return simulate(default_rng(), hp, tmin, tmax)
 end
 
 #=

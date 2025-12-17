@@ -1,7 +1,7 @@
 name = "PointProcesses"
 uuid = "af0b7596-9bb0-472a-a012-63904f2b4c55"
-authors = ["Guillaume Dalle", "José Kling"]
 version = "0.6.0"
+authors = ["Guillaume Dalle", "José Kling"]
 
 [deps]
 DensityInterface = "b429d917-457f-4dbc-8f4c-0cc954292b1d"

@@ -8,6 +8,13 @@ function StatsAPI.fit(
     return PoissonProcess(λ, mark_dist)
 end
 
+function StatsAPI.fit(
+    ::Type{PoissonProcess{R,Dirac{Nothing}}}, ss::PoissonProcessStats{R1,R2}
+) where {R<:Real,R1<:Real,R2<:Real}
+    λ = convert(R, ss.nb_events / ss.duration)
+    return PoissonProcess(λ, Dirac(nothing))
+end
+
 function StatsAPI.fit(pptype::Type{<:PoissonProcess}, args...; kwargs...)
     ss = suffstats(pptype, args...; kwargs...)
     return fit(pptype, ss)

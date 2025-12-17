@@ -40,6 +40,14 @@ DocMeta.setdocmeta!(PointProcesses, :DocTestSetup, :(using PointProcesses); recu
         end
     end
     @testset verbose = true "Hawkes" begin
-        include("hawkes.jl")
+        @testset verbose = true "Unmarked Univariate" begin
+            include("hawkes_unmarked.jl")
+        end
+        @testset verbose = true "Univariate" begin
+            include("hawkes_univariate.jl")
+        end
+        @testset verbose = true "Multivariate" begin
+            include("hawkes_multivariate.jl")
+        end
     end
 end
