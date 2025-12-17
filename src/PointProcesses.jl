@@ -10,8 +10,8 @@ module PointProcesses
 using DensityInterface: DensityInterface, HasDensity, densityof, logdensityof
 using Distributions: Distributions, UnivariateDistribution, MultivariateDistribution
 using Distributions: Categorical, Exponential, Poisson, Uniform, Dirac
-using Distributions: fit, suffstats, probs
-using LinearAlgebra: dot
+using Distributions: fit, suffstats, probs, mean, support, pdf
+using LinearAlgebra: dot, diagm
 using Random: rand
 using Random: AbstractRNG, default_rng, Xoshiro
 using StatsAPI: StatsAPI, fit, HypothesisTest, pvalue
@@ -47,10 +47,15 @@ export simulate_ogata, simulate
 
 ## Models
 
+### Poisson processes
 export PoissonProcess
 export UnivariatePoissonProcess
 export MultivariatePoissonProcess, MultivariatePoissonProcessPrior
+
+### Hawkes processes
 export HawkesProcess
+export UnivariateHawkesProcess, UnmarkedUnivariateHawkesProcess
+export MultivariateHawkesProcess
 
 ## Goodness of fit tests tests
 
@@ -71,6 +76,16 @@ include("poisson/fit.jl")
 include("poisson/simulation.jl")
 
 include("hawkes/hawkes_process.jl")
+include("hawkes/simulation.jl")
+include("hawkes/univariate/univariate_hawkes.jl")
+include("hawkes/univariate/intensity.jl")
+include("hawkes/univariate/time_change.jl")
+include("hawkes/univariate/fit.jl")
+include("hawkes/univariate/simulation.jl")
+include("hawkes/multivariate/multivariate_hawkes.jl")
+include("hawkes/multivariate/intensity.jl")
+include("hawkes/multivariate/time_change.jl")
+include("hawkes/multivariate/simulation.jl")
 
 include("HypothesisTests/point_process_tests.jl")
 include("HypothesisTests/statistic.jl")

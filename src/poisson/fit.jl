@@ -19,7 +19,7 @@ function StatsAPI.fit(
     return PoissonProcess(λ, mark_dist)
 end
 
-function StatsAPI.fit(pptype::Type{PoissonProcess{R,D}}, args...; kwargs...) where {R,D}
+function StatsAPI.fit(pptype::Type{<:PoissonProcess}, args...; kwargs...)
     ss = suffstats(pptype, args...)
     return fit(pptype, ss)
 end

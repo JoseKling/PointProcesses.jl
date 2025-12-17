@@ -6,11 +6,11 @@ h = simulate(rng, bpp)
 
 @test min_time(bpp) == 0.0
 @test max_time(bpp) == 1000.0
-@test ground_intensity(bpp, 0, h) == sum(intensities)
-@test mark_distribution(bpp, 100.0, h) == Categorical(intensities / sum(intensities))
+@test ground_intensity(bpp, h, 0) == sum(intensities)
+@test mark_distribution(bpp, h, 100.0) == Categorical(intensities / sum(intensities))
 @test mark_distribution(bpp, 0.0) == Categorical(intensities / sum(intensities))
-@test intensity(bpp, 1, 0, h) == intensities[1]
-@test log_intensity(bpp, 2, 1.0, h) == log(intensities[2])
+@test intensity(bpp, 1, h, 0) == intensities[1]
+@test log_intensity(bpp, 2, h, 1.0) == log(intensities[2])
 
 @test ground_intensity_bound(bpp, 243, h) == (sum(intensities), typemax(Int))
 @test ground_intensity_bound(bpp, 243.0, h) == (sum(intensities), Inf)

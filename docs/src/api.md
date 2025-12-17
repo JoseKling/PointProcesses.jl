@@ -99,6 +99,18 @@ MultivariatePoissonProcessPrior
 HawkesProcess
 ```
 
+### Univariate
+
+```@docs
+UnivariateHawkesProcess
+```
+
+### Multivariate
+
+```@docs
+MultivariateHawkesProcess
+```
+
 ## Goodness-of-fit tests
 
 ```@docs

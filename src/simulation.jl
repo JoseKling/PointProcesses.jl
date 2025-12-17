@@ -5,6 +5,7 @@ Simulate the event times of a homogeneous Poisson process with parameter λ on t
 Internal function to use in all other simulation algorithms.
 =#
 function simulate_poisson_times(rng::AbstractRNG, λ, tmin, tmax)
+    λ == 0 && return Float64[]
     N = rand(rng, Poisson(λ * (tmax - tmin)))
     times = [rand(rng, Uniform(tmin, tmax)) for _ in 1:N] # rand(rng, Uniform(tmin, tmax), N) always outputs a `Float64`
     sort!(times)
@@ -19,9 +20,8 @@ Simulate a temporal point process `pp` on interval `[tmin, tmax)` using Ogata's 
 # Technical Remark
 To infer the type of the marks, the implementation assumes that there is method of `mark_distribution` without the argument `h` such that it corresponds to the distribution of marks in case the history is empty.
 """
-function simulate_ogata(
-    rng::AbstractRNG, pp::AbstractPointProcess, tmin::T, tmax::T
-) where {T<:Real}
+function simulate_ogata(rng::AbstractRNG, pp::AbstractPointProcess, tmin::Real, tmax::Real)
+    T = promote_type(typeof(tmin), typeof(tmax))
     M = typeof(rand(mark_distribution(pp, tmin)))
     h = History(; times=T[], marks=M[], tmin=tmin, tmax=tmax)
     t = tmin
@@ -31,12 +31,12 @@ function simulate_ogata(
         if τ > L
             t = t + L
         elseif τ <= L
-            U_max = ground_intensity(pp, t + τ, h) / B
+            U_max = ground_intensity(pp, h, t + τ) / B
             U = rand(rng, typeof(U_max))
             if U < U_max
                 m = rand(rng, mark_distribution(pp, t + τ, h))
                 if t + τ < tmax
-                    push!(h, t + τ, m; check=false)
+                    push!(h, t + τ, m; check_args=false)
                 end
             end
             t = t + τ

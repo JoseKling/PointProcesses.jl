@@ -16,14 +16,8 @@ struct History{T<:Real,M}
     tmax::T
     marks::Vector{M}
 
-    function History(
-        times::Vector{<:Real},
-        tmin::Real,
-        tmax::Real,
-        marks=fill(nothing, length(times));
-        check=true,
-    )
-        if check
+    function History(times, tmin, tmax, marks=fill(nothing, length(times)); check_args=true)
+        if check_args
             if tmin >= tmax
                 throw(
                     DomainError(
@@ -55,8 +49,8 @@ struct History{T<:Real,M}
     end
 end
 
-function History(; times, tmin, tmax, marks=fill(nothing, length(times)), check=true)
-    History(times, tmin, tmax, marks; check)
+function History(; times, tmin, tmax, marks=fill(nothing, length(times)), check_args=true)
+    History(times, tmin, tmax, marks; check_args)
 end
 
 function Base.show(io::IO, h::History{T,M}) where {T,M}
@@ -64,6 +58,19 @@ function Base.show(io::IO, h::History{T,M}) where {T,M}
         io, "History{$T,$M} with $(nb_events(h)) events on interval [$(h.tmin), $(h.tmax))"
     )
 end
+
+"""
+    length(h)
+
+Alias for `nb_events(h)`.
+"""
+Base.length(h::History) = nb_events(h)
+
+Base.firstindex(h::History) = 1
+Base.lastindex(h::History) = length(h)
+Base.getindex(h::History, i::Int) = (h.times[i], h.marks[i])
+Base.getindex(h::History, I::Vararg{Int}) = [(h.times[i], h.marks[i]) for i in I]
+Base.getindex(h::History, I::AbstractVector{<:Int}) = getindex(h, I...)
 
 """
     event_times(h)
@@ -119,13 +126,6 @@ Count events in `h`.
 nb_events(h::History) = length(h.marks)
 
 """
-    length(h)
-
-Alias for `nb_events(h)`.
-"""
-Base.length(h::History) = nb_events(h)
-
-"""
     nb_events(h, tmin, tmax)
 
 Count events in `h` during the interval `[tmin, tmax)`.
@@ -162,8 +162,8 @@ duration(h::History) = max_time(h) - min_time(h)
 
 Add event `(t, m)` inside the interval `[h.tmin, h.tmax)` at the end of history `h`.
 """
-function Base.push!(h::History, t::Real, m; check=true)
-    if check
+function Base.push!(h::History, t::Real, m; check_args=true)
+    if check_args
         @assert h.tmin <= t < h.tmax
         @assert (length(h) == 0) || (h.times[end] <= t)
     end
@@ -177,8 +177,8 @@ end
 
 Append events `(ts, ms)` inside the interval `[h.tmin, h.tmax)` at the end of history `h`.
 """
-function Base.append!(h::History, ts::Vector{<:Real}, ms; check=true)
-    if check
+function Base.append!(h::History, ts::Vector{<:Real}, ms; check_args=true)
+    if check_args
         perm = sortperm(ts)
         ts .= ts[perm]
         ms .= ms[perm]
@@ -206,7 +206,7 @@ function Base.cat(h1::History, h2::History)
     )
     times = [h1.times; h2.times]
     marks = [h1.marks; h2.marks]
-    return History(; times=times, tmin=h1.tmin, tmax=h2.tmax, marks=marks, check=false)
+    return History(; times=times, tmin=h1.tmin, tmax=h2.tmax, marks=marks, check_args=false)
 end
 
 """
@@ -219,7 +219,9 @@ function time_change(h::History, Λ)
     new_marks = copy(event_marks(h))
     new_tmin = Λ(min_time(h))
     new_tmax = Λ(max_time(h))
-    return History(; times=new_times, marks=new_marks, tmin=new_tmin, tmax=new_tmax)
+    return History(;
+        times=new_times, marks=new_marks, tmin=new_tmin, tmax=new_tmax, check_args=false
+    )
 end
 
 """
@@ -236,7 +238,7 @@ function split_into_chunks(h::History{T,M}, chunk_duration) where {T,M}
     for (a, b) in zip(limits[1:(end - 1)], limits[2:end])
         times = [t for t in event_times(h) if a <= t < b]
         marks = [m for (t, m) in zip(event_times(h), event_marks(h)) if a <= t < b]
-        chunk = History(; times=times, marks=marks, tmin=a, tmax=b, check=false)
+        chunk = History(; times=times, marks=marks, tmin=a, tmax=b, check_args=false)
         push!(chunks, chunk)
     end
     return chunks
