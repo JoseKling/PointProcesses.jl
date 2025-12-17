@@ -13,6 +13,11 @@ h = History([0.2, 0.8, 1.1], 0.0, 2.0, ["a", "b", "c"]);
 @test event_marks(h) == ["a", "b", "c"]
 @test event_marks(h, 0.2, 0.8) == ["a"]
 @test event_marks(h, 0.8, 0.2) == []
+@test h[begin] == (0.2, "a")
+@test h[end] == (1.1, "c")
+@test h[2] == (0.8, "b")
+@test h[1, 2] == [(0.2, "a"), (0.8, "b")]
+@test h[1:3] == [(0.2, "a"), (0.8, "b"), (1.1, "c")]
 
 push!(h, 1.7, "d")
 

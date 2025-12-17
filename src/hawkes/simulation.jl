@@ -38,11 +38,12 @@ function generate_descendants!(
 end
 
 # generates the descendants of one single parent using the inverse transform method
-function descendants(
-    rng::AbstractRNG, parent::T, α::Real, ω::Real, tmax::Real
-) where {T<:Real}
-    activation_integral = (α / ω) * (one(T) - exp(ω * (parent - tmax)))
+function descendants(rng::AbstractRNG, parent::R, α::Real, ω::Real, tmax::R) where {R<:Real}
+    T = float(R)
+    αT = T(α)
+    ωT = T(ω)
+    activation_integral = (αT / ωT) * (one(T) - exp(ωT * (parent - tmax)))
     sim_transf = simulate_poisson_times(rng, one(T), zero(T), activation_integral)
-    @. sim_transf = parent - (inv(ω) * log(one(T) - ((ω / α) * sim_transf))) # Inverse of integral of the activation function
+    @. sim_transf = parent - (inv(ωT) * log(one(T) - ((ωT / αT) * sim_transf))) # Inverse of integral of the activation function
     return sim_transf
 end

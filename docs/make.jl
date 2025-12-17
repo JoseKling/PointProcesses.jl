@@ -1,6 +1,7 @@
 using Documenter
 using DocumenterCitations
 using PointProcesses
+using Random
 
 bib = CitationBibliography(joinpath(@__DIR__, "src", "refs.bib"); style=:authoryear)
 

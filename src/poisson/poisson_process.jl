@@ -112,6 +112,13 @@ function log_intensity(pp::PoissonProcess, m)
     return log(ground_intensity(pp)) + logdensityof(mark_distribution(pp), m)
 end
 
+## Time change
+function time_change(h::History, pp::PoissonProcess)
+    times = (h.times .- h.tmin) .* ground_intensity(pp)
+    tmax = (h.tmax - h.tmin) * ground_intensity(pp)
+    return History(; times=times, tmin=0, tmax=tmax, marks=h.marks)
+end
+
 ## Implementing AbstractPointProcess interface
 
 ground_intensity(pp::PoissonProcess, t, h) = ground_intensity(pp)

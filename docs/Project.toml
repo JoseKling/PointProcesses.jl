@@ -4,5 +4,8 @@ DocumenterCitations = "daee34ce-89f3-4625-b898-19384cb65244"
 PointProcesses = "af0b7596-9bb0-472a-a012-63904f2b4c55"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
+[sources]
+PointProcesses = {path = ".."}
+
 [compat]
 Documenter = "1"

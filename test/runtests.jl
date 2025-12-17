@@ -50,4 +50,7 @@ DocMeta.setdocmeta!(PointProcesses, :DocTestSetup, :(using PointProcesses); recu
             include("hawkes_multivariate.jl")
         end
     end
+    @testset verbose = true "PPTests" begin
+        include("pp_tests.jl")
+    end
 end
