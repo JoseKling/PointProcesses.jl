@@ -21,7 +21,7 @@ DocMeta.setdocmeta!(PointProcesses, :DocTestSetup, :(using PointProcesses); recu
     end
     @testset verbose = false "Code Linting" begin
             if VERSION >= v"1.11"
-                JET.test_package(PointProcesses; target_defined_modules=true)
+                JET.test_package(PointProcesses; target_modules=(PointProcesses,))
             end
     end
     @testset verbose = false "Doctests" begin

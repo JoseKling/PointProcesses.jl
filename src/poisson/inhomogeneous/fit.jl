@@ -122,7 +122,7 @@ function StatsAPI.fit(
 
     # Count events in each bin
     n_bins = length(breakpoints) - 1
-    rates = zeros(R, n_bins)
+    rates = Vector{R}(undef, n_bins)
     for i in 1:n_bins
         # Count events in bin [breakpoints[i], breakpoints[i+1])
         bin_start = breakpoints[i]
