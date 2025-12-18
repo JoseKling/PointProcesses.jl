@@ -19,7 +19,12 @@ import Pkg; Pkg.add(url="https://github.com/JoseKling/PointProcesses.jl")
 ## Mathematical background
 
 Temporal point processes are a way to describe collections of events with time stamps.
-Please refer to the tutorial [rasmussen2018](@cite) for details.
+You can refer to the materials below for details.
+- [rasmussen2018](@cite) -- Compact introductory notes on point processes
+- [Laub2021](@cite) -- More detailed, but still introductory level, material focused on Hawkes processes
+- [DaleyJones2013](@cite) -- Comprehensive and formal presentation of point processes 
+
+# Bibliography
 
 ```@bibliography
 ```

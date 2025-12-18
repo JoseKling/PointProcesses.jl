@@ -9,7 +9,7 @@ DocMeta.setdocmeta!(PointProcesses, :DocTestSetup, :(using PointProcesses); recu
 
 makedocs(;
     modules=[PointProcesses],
-    authors="Guillaume Dalle, José Kling",
+    authors="Guillaume Dalle, José Kling, Julien Chevallier, Ryan Senne",
     sitename="PointProcesses.jl",
     format=Documenter.HTML(),
     pages=["Home" => "index.md", "API reference" => "api.md"],

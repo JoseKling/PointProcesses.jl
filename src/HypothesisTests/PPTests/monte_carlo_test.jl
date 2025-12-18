@@ -39,9 +39,9 @@ a `pp` is a `Type{<:AbstractPointProcess}`, the method uses null hypothesis 2.
 
 Notice that this test is better suited when the parameter θ₀ is known (form 1), since this
 procedure does not account for parameter estimation error. For more details on this, see
-[Jogesh Babu and Rao (2004)](http://www.jstor.org/stable/25053332),
-[Reynaud-Bouret et. al. (2014)](https://doi.org/10.1186/2190-8567-4-3), 
-[Kling and Vetter (2025)](https://doi.org/10.1111/sjos.70029).
+[BabuRao2004](@cite),
+[ReynaudBouret2014](@cite), 
+[Kling2025](@cite).
 
 # Arguments
 - `S::Type{<:Statistic}`: the type of test statistic to use
