@@ -57,11 +57,10 @@ function intensity_bound(
     t::T,
     h::History;
     lookahead_factor::Real=1/100,
-    min_lookahead::T=T(1e-3),
     n_samples::Int=10 * length(f.coefficients),
 ) where {R,T}
     dur = duration(h)             # or max_time(h) - min_time(h)
-    lookahead = max(T(lookahead_factor * dur), min_lookahead)
+    lookahead = T(lookahead_factor * dur)
     return intensity_bound(f, t; lookahead=lookahead, n_samples=n_samples)
 end
 
@@ -100,14 +99,10 @@ function intensity_bound(f::ExponentialIntensity{R}, t::T; lookahead::T=one(T)) 
 end
 
 function intensity_bound(
-    f::ExponentialIntensity{R},
-    t::T,
-    h::History;
-    lookahead_factor::Real=1/100,
-    min_lookahead::T=T(1e-3),
+    f::ExponentialIntensity{R}, t::T, h::History; lookahead_factor::Real=1/100
 ) where {R,T}
     dur = duration(h)
-    lookahead = max(T(lookahead_factor * dur), min_lookahead)
+    lookahead = T(lookahead_factor * dur)
     return intensity_bound(f, t; lookahead=lookahead)
 end
 
@@ -230,11 +225,10 @@ function intensity_bound(
     t::T,
     h::History;
     lookahead_factor::Real=1/100,
-    min_lookahead::T=T(1e-3),
     n_samples::Int=100,
 ) where {R,T}
     dur = duration(h)
-    lookahead = max(T(lookahead_factor * dur), min_lookahead)
+    lookahead = T(lookahead_factor * dur)
     return intensity_bound(f, t; lookahead=lookahead, n_samples=n_samples)
 end
 
@@ -262,14 +256,9 @@ function intensity_bound(f::F, t::T; lookahead::T=one(T), n_samples::Int=100) wh
 end
 
 function intensity_bound(
-    f::F,
-    t::T,
-    h::History;
-    lookahead_factor::Real=1/100,
-    min_lookahead::T=T(1e-3),
-    n_samples::Int=100,
+    f::F, t::T, h::History; lookahead_factor::Real=1/100, n_samples::Int=100
 ) where {F,T}
     dur = duration(h)
-    lookahead = max(T(lookahead_factor * dur), min_lookahead)
+    lookahead = T(lookahead_factor * dur)
     return intensity_bound(f, t; lookahead=lookahead, n_samples=n_samples)
 end
