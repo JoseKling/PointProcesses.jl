@@ -3,7 +3,7 @@ using DensityInterface
 using Documenter
 using Distributions
 using ForwardDiff
-using JuliaFormatter
+using JET
 using LinearAlgebra
 using PointProcesses
 using Random
@@ -19,8 +19,10 @@ DocMeta.setdocmeta!(PointProcesses, :DocTestSetup, :(using PointProcesses); recu
     @testset verbose = false "Code quality (Aqua.jl)" begin
         Aqua.test_all(PointProcesses; ambiguities=false, deps_compat=(; check_extras=false))
     end
-    @testset verbose = false "Formatting" begin
-        @test format(PointProcesses; verbose=false, overwrite=false)
+    @testset verbose = false "Code Linting" begin
+            if VERSION >= v"1.11"
+                JET.test_package(PointProcesses; target_defined_modules=true)
+            end
     end
     @testset verbose = false "Doctests" begin
         doctest(PointProcesses)
