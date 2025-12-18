@@ -38,6 +38,9 @@ DocMeta.setdocmeta!(PointProcesses, :DocTestSetup, :(using PointProcesses); recu
         @testset verbose = true "Marked" begin
             include("marked_poisson_process.jl")
         end
+        @testset verbose = true "Inhomogeneous" begin
+            include("inhomogeneous_poisson_process.jl")
+        end
     end
     @testset verbose = true "Hawkes" begin
         include("hawkes.jl")
