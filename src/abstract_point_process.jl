@@ -78,7 +78,7 @@ Compute the log probability density function for a temporal point process `pp` a
 ```
 The default method uses a loop over events combined with `integrated_ground_intensity`, but it should be reimplemented for specific processes if faster computation is possible.
 """
-function DensityInterface.logdensityof(pp::AbstractPointProcess, h)
+function DensityInterface.logdensityof(pp::AbstractPointProcess, h::History)
     l = -integrated_ground_intensity(pp, h, min_time(h), max_time(h))
     for (t, m) in zip(event_times(h), event_marks(h))
         l += log_intensity(pp, m, t, h)
