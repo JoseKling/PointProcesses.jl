@@ -34,10 +34,13 @@ function negative_loglikelihood_ipp(
     log_sum = zero(eltype(h.times))
     for t in h.times
         λ = f(t)
-        if λ <= 0
-            return Inf  # Invalid parameters: intensity must be positive
+        if !(λ > 0) || !isfinite(λ)
+            return Inf
         end
         log_sum += log(λ)
+        if !isfinite(log_sum)
+            return Inf
+        end
     end
 
     # Compute integrated intensity

@@ -20,6 +20,7 @@ using Distributions
 using StableRNGs
 using Plots
 using StatsAPI
+using SpecialFunctions: erf
 
 # ## Simulating Hippocampal Place Cell Data
 # Hippocampal place cells are neurons that fire when an animal is in a specific location.
@@ -237,3 +238,7 @@ plot!(t_range, pp_poly.(t_range), label="Polynomial", linewidth=2, alpha=0.7)
 plot!(t_range, pp_gauss.(t_range), label="Gaussian (Custom)", linewidth=2, alpha=0.7, linestyle=:dash)
 
 scatter!(h.times, zeros(length(h.times)), marker=:vline, markersize=8, label="Spikes", color=:red, alpha=0.5)
+
+# From what we can see the PolynomialIntensity and the custom GaussianIntensity learn an isomorphic representation of the true underlying intensity function.
+# However, the custom GaussianIntensity has the advantage of interpretability, as its parameters directly correspond to meaningful features of the place field (peak rate, center, width).
+# This makes it easier to draw conclusions about the neuron's firing behavior based on the fitted model. 
