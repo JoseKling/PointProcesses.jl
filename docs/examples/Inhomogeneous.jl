@@ -5,15 +5,15 @@
 
 # ## A Quick Recap of Inhomogeneous Poisson Processes
 # An inhomogeneous Poisson process is a type of point process where the intensity function varies over time or space.
-# The intensity function, denoted as λ(t) for time or λ(x) for space, describes the expected number of events per unit time or space at a given point.
+# The intensity function, denoted as ``λ(t)`` for time or ``λ(x)`` for space, describes the expected number of events per unit time or space at a given point.
 # In the context of neural data, inhomogeneous Poisson processes are often used to model the firing rates of neurons that change in response to stimuli or other factors.
 # Importantly, all Inhomogeneous Poisson processes have the same general likelihood function form, which is given by:
-# $$L(λ; {t_i}) = exp(-∫ λ(t) dt) * ∏ λ(t_i)$$
-# where {t_i} are the observed event times.
+# ``L(λ; {t_i}) = \text{exp}(-∫ λ(t) dt) * ∏ λ(t_i)``
+# where ``{t_i}`` are the observed event times.
 # This likelihood function consists of two main components:
-# 1. The exponential term exp(-∫ λ(t) dt) represents the probability of observing no events in the intervals where no events were recorded.
-# 2. The product term ∏ λ(t_i) accounts for the likelihood of observing events at the specific times {t_i}.
-# This general form allows for flexibility in modeling various types of inhomogeneous Poisson processes by specifying different intensity functions λ(t).
+# 1. The exponential term ``\text{exp}(-∫ λ(t) dt)`` represents the probability of observing no events in the intervals where no events were recorded.
+# 2. The product term ``∏ λ(t_i)`` accounts for the likelihood of observing events at the specific times ``{t_i}``.
+# This general form allows for flexibility in modeling various types of inhomogeneous Poisson processes by specifying different intensity functions ``λ(t)``.
 
 using PointProcesses
 using Distributions
@@ -92,7 +92,7 @@ scatter!(h.times, zeros(length(h.times)), marker=:vline, markersize=10, label="S
 # A polynomial model can capture smooth variations. We'll use a quadratic polynomial with log link
 # to ensure the intensity stays positive:
 
-# Initial parameter guess for a quadratic: log(λ(t)) = a₀ + a₁*t + a₂*t²
+# Initial parameter guess for a quadratic: ``\log(λ(t)) = a₀ + a₁*t + a₂*t²``
 init_params = [2.0, 0.0, -0.1]
 
 pp_poly = fit(
