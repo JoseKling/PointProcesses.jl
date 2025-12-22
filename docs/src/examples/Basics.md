@@ -94,7 +94,8 @@ counts to be roughly Poisson distributed with rate λ * Δt in each bin of width
 ````@example Basics
 bin_width = 1.0
 bins = collect(h.tmin:bin_width:h.tmax)           # bin edges
-counts = fit(Histogram, h.times, bins).weights    # counts per bin
+counts = fit(Histogram, h.times, bins).weights;    # counts per bin
+nothing #hide
 ````
 
 Plot counts over time (counts/bin_width is a crude rate estimate)

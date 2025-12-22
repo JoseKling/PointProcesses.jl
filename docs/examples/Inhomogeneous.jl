@@ -174,10 +174,10 @@ pp_gauss = fit(
     init_params_gauss
 )
 
-println("Fitted Gaussian parameters:")
-println("  Peak rate: ", pp_gauss.peak_rate, " Hz")
-println("  Center: ", pp_gauss.center)
-println("  Width: ", pp_gauss.width)
+println("Fitted Gaussian parameters:") # hide
+println("  Peak rate: ", pp_gauss.peak_rate, " Hz") # hide
+println("  Center: ", pp_gauss.center) # hide
+println("  Width: ", pp_gauss.width) # hide
 
 # Visualize our custom Gaussian fit:
 plot(
@@ -209,12 +209,12 @@ models = [
     ("Gaussian (Custom)", pp_gauss),
 ]
 
-println("\nModel Comparison (Negative Log-Likelihood):")
-println("-" ^ 50)
-for (name, model) in models
-    nll = compute_nll(model, h)
-    println("  $name: ", round(nll, digits=2))
-end
+println("\nModel Comparison (Negative Log-Likelihood):") # hide
+println("-" ^ 50) # hide
+for (name, model) in models # hide
+    nll = compute_nll(model, h) # hide
+    println("  $name: ", round(nll, digits=2)) # hide 
+end # hide
 
 # ## Visualizing All Models Together
 plot(

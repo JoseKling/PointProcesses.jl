@@ -261,12 +261,12 @@ models = [
     ("Gaussian (Custom)", pp_gauss),
 ]
 
-println("\nModel Comparison (Negative Log-Likelihood):")
-println("-" ^ 50)
-for (name, model) in models
-    nll = compute_nll(model, h)
-    println("  $name: ", round(nll, digits=2))
-end
+println("\nModel Comparison (Negative Log-Likelihood):") # hide
+println("-" ^ 50) # hide
+for (name, model) in models # hide
+    nll = compute_nll(model, h) # hide
+    println("  $name: ", round(nll, digits=2)) # hide
+end # hide
 ````
 
 ## Visualizing All Models Together
