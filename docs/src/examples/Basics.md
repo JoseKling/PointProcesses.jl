@@ -79,9 +79,15 @@ h = History(event_times, 0.0, maximum(event_times) + 1.0)
 Let's visualize our event times as a raster plot:
 
 ````@example Basics
-raster = plot(xlabel="Time", ylabel="Events", title="Raster Plot of Event Times", ylim=(-0.1, 1), yticks=false)
+raster = plot(;
+    xlabel="Time",
+    ylabel="Events",
+    title="Raster Plot of Event Times",
+    ylim=(-0.1, 1),
+    yticks=false,
+)
 for time in h.times
-    vline!([time,], color=:blue, linewidth=2, label=false)
+    vline!([time]; color=:blue, linewidth=2, label=false)
 end
 
 raster
@@ -101,13 +107,15 @@ nothing #hide
 Plot counts over time (counts/bin_width is a crude rate estimate)
 
 ````@example Basics
-bin_centers = (bins[1:end-1] .+ bins[2:end]) ./ 2
+bin_centers = (bins[1:(end - 1)] .+ bins[2:end]) ./ 2
 
 p_counts = plot(
-    bin_centers, counts;
+    bin_centers,
+    counts;
     seriestype=:bar,
-    xlabel="Time", ylabel="Count per bin",
-    title="Binned event counts"
+    xlabel="Time",
+    ylabel="Count per bin",
+    title="Binned event counts",
 )
 
 p_counts
@@ -159,11 +167,11 @@ p_waiting = histogram(
     label="Empirical",
 )
 
-x = range(0, stop=maximum(waiting_times), length=400)
+x = range(0; stop=maximum(waiting_times), length=400)
 plot!(
     p_waiting,
     x,
-    pdf.(Exponential( 1 / λ_est), x);
+    pdf.(Exponential(1 / λ_est), x);
     label="Exponential(λ̂=$(round(λ_est, digits=2)))",
     linewidth=2,
     color=:red,
@@ -178,7 +186,7 @@ Let's fit the actual model now using PointProcesses.jl and run soem, formal stat
 ### Fitting a Homogeneous Poisson Process
 
 ````@example Basics
-pp_model = fit(PoissonProcess{Float64, Dirac{Nothing}}, h)
+pp_model = fit(PoissonProcess{Float64,Dirac{Nothing}}, h)
 
 println("Estimated rate λ̂ = ", pp_model.λ) # hide
 ````
@@ -192,7 +200,8 @@ emp_q = quantile(waiting_times, q)
 theo_q = quantile.(Exponential(1 / λ_est), q)   # Exp with mean 1/λ_est
 
 pqq = plot(
-    theo_q, emp_q;
+    theo_q,
+    emp_q;
     seriestype=:scatter,
     xlabel="Theoretical quantiles: Exp(mean=1/λ̂)",
     ylabel="Empirical waiting-time quantiles",

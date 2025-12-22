@@ -8,7 +8,7 @@ Welcome to the documentation of [PointProcesses.jl](https://github.com/JoseKling
 
 ## What are Point Processes?
 
-Briefly, point processes are statistical models of random events in time or space. Point processes are parameterized by their intensity functions, or the instantaneous rate in time. A such, these models are useful anytime one is interested in how often one would see an event (e.g., buses arriving, eauthquakes occuring, neurons firing.)
+Briefly, point processes are statistical models of random events in time or space. Point processes are parameterized by their intensity functions, or the instantaneous rate in time. A such, these models are useful anytime one is interested in how often one would see an event (e.g., buses arriving, earthquakes occuring, neurons firing.)
 
 ## Installation
 

@@ -47,7 +47,7 @@ Visualize the true intensity function:
 t_range = 0.0:0.01:10.0
 plot(
     t_range,
-    gaussian_place_field.(t_range),
+    gaussian_place_field.(t_range);
     xlabel="Position (arbitrary units)",
     ylabel="Firing rate (Hz)",
     label="True place field",
@@ -75,7 +75,7 @@ Visualize the spike times as a raster plot:
 ````@example Inhomogeneous
 scatter!(
     h.times,
-    zeros(length(h)),
+    zeros(length(h));
     marker=:vline,
     markersize=10,
     label="Observed spikes",
@@ -94,7 +94,7 @@ The simplest approach is to bin the data and estimate a constant rate in each bi
 pp_piecewise = fit(
     InhomogeneousPoissonProcess{PiecewiseConstantIntensity{Float64},Dirac{Nothing}},
     h,
-    20  # number of bins
+    20,  # number of bins
 )
 ````
 
@@ -103,15 +103,28 @@ Visualize the fit:
 ````@example Inhomogeneous
 plot(
     t_range,
-    gaussian_place_field.(t_range),
+    gaussian_place_field.(t_range);
     xlabel="Position",
     ylabel="Firing rate (Hz)",
     label="True intensity",
     linewidth=2,
     title="Piecewise Constant Fit",
 )
-plot!(t_range, pp_piecewise.intensity_function.(t_range), label="Fitted intensity", linewidth=2)
-scatter!(h.times, zeros(length(h.times)), marker=:vline, markersize=10, label="Spikes", color=:red, alpha=0.6)
+plot!(
+    t_range,
+    pp_piecewise.intensity_function.(t_range);
+    label="Fitted intensity",
+    linewidth=2,
+)
+scatter!(
+    h.times,
+    zeros(length(h.times));
+    marker=:vline,
+    markersize=10,
+    label="Spikes",
+    color=:red,
+    alpha=0.6,
+)
 
 ### 2. Polynomial Intensity with Log Link
 ````
@@ -124,12 +137,7 @@ Initial parameter guess for a quadratic: ``\log(λ(t)) = a₀ + a₁*t + a₂*t�
 ````@example Inhomogeneous
 init_params = [2.0, 0.0, -0.1]
 
-pp_poly = fit(
-    PolynomialIntensity{Float64},
-    h,
-    init_params;
-    link=:log
-)
+pp_poly = fit(PolynomialIntensity{Float64}, h, init_params; link=:log)
 ````
 
 Visualize the polynomial fit:
@@ -137,15 +145,23 @@ Visualize the polynomial fit:
 ````@example Inhomogeneous
 plot(
     t_range,
-    gaussian_place_field.(t_range),
+    gaussian_place_field.(t_range);
     xlabel="Position",
     ylabel="Firing rate (Hz)",
     label="True intensity",
     linewidth=2,
     title="Polynomial Intensity Fit (Log Link)",
 )
-plot!(t_range, pp_poly.(t_range), label="Fitted intensity", linewidth=2)
-scatter!(h.times, zeros(length(h.times)), marker=:vline, markersize=10, label="Spikes", color=:red, alpha=0.6)
+plot!(t_range, pp_poly.(t_range); label="Fitted intensity", linewidth=2)
+scatter!(
+    h.times,
+    zeros(length(h.times));
+    marker=:vline,
+    markersize=10,
+    label="Spikes",
+    color=:red,
+    alpha=0.6,
+)
 
 println("Fitted polynomial coefficients: ", pp_poly.coefficients)
 ````
@@ -186,7 +202,9 @@ end
 Define how to construct from parameters (for optimization):
 
 ````@example Inhomogeneous
-function PointProcesses.from_params(::Type{GaussianIntensity{R}}, params::AbstractVector) where {R}
+function PointProcesses.from_params(
+    ::Type{GaussianIntensity{R}}, params::AbstractVector
+) where {R}
     peak_rate = exp(params[1])
     center = params[2]
     width = exp(params[3])
@@ -215,11 +233,7 @@ Now fit our custom Gaussian model:
 ````@example Inhomogeneous
 init_params_gauss = [log(15.0), 5.0, log(2.0)]  #- [log(peak), center, log(width)]
 
-pp_gauss = fit(
-    GaussianIntensity{Float64},
-    h,
-    init_params_gauss
-)
+pp_gauss = fit(GaussianIntensity{Float64}, h, init_params_gauss)
 
 println("Fitted Gaussian parameters:") # hide
 println("  Peak rate: ", pp_gauss.peak_rate, " Hz") # hide
@@ -232,7 +246,7 @@ Visualize our custom Gaussian fit:
 ````@example Inhomogeneous
 plot(
     t_range,
-    gaussian_place_field.(t_range),
+    gaussian_place_field.(t_range);
     xlabel="Position",
     ylabel="Firing rate (Hz)",
     label="True intensity",
@@ -240,8 +254,16 @@ plot(
     title="Custom Gaussian Intensity Fit",
     legend=:topright,
 )
-plot!(t_range, pp_gauss.(t_range), label="Fitted intensity", linewidth=2, linestyle=:dash)
-scatter!(h.times, zeros(length(h.times)), marker=:vline, markersize=10, label="Spikes", color=:red, alpha=0.6)
+plot!(t_range, pp_gauss.(t_range); label="Fitted intensity", linewidth=2, linestyle=:dash)
+scatter!(
+    h.times,
+    zeros(length(h.times));
+    marker=:vline,
+    markersize=10,
+    label="Spikes",
+    color=:red,
+    alpha=0.6,
+)
 ````
 
 ## Model Comparison
@@ -265,7 +287,7 @@ println("\nModel Comparison (Negative Log-Likelihood):") # hide
 println("-" ^ 50) # hide
 for (name, model) in models # hide
     nll = compute_nll(model, h) # hide
-    println("  $name: ", round(nll, digits=2)) # hide
+    println("  $name: ", round(nll; digits=2)) # hide
 end # hide
 ````
 
@@ -274,7 +296,7 @@ end # hide
 ````@example Inhomogeneous
 plot(
     t_range,
-    gaussian_place_field.(t_range),
+    gaussian_place_field.(t_range);
     xlabel="Position",
     ylabel="Firing rate (Hz)",
     label="True intensity",
@@ -284,11 +306,32 @@ plot(
     color=:black,
 )
 
-plot!(t_range, pp_piecewise.intensity_function.(t_range), label="Piecewise", linewidth=2, alpha=0.7)
-plot!(t_range, pp_poly.(t_range), label="Polynomial", linewidth=2, alpha=0.7)
-plot!(t_range, pp_gauss.(t_range), label="Gaussian (Custom)", linewidth=2, alpha=0.7, linestyle=:dash)
+plot!(
+    t_range,
+    pp_piecewise.intensity_function.(t_range);
+    label="Piecewise",
+    linewidth=2,
+    alpha=0.7,
+)
+plot!(t_range, pp_poly.(t_range); label="Polynomial", linewidth=2, alpha=0.7)
+plot!(
+    t_range,
+    pp_gauss.(t_range);
+    label="Gaussian (Custom)",
+    linewidth=2,
+    alpha=0.7,
+    linestyle=:dash,
+)
 
-scatter!(h.times, zeros(length(h.times)), marker=:vline, markersize=8, label="Spikes", color=:red, alpha=0.5)
+scatter!(
+    h.times,
+    zeros(length(h.times));
+    marker=:vline,
+    markersize=8,
+    label="Spikes",
+    color=:red,
+    alpha=0.5,
+)
 ````
 
 From what we can see the PolynomialIntensity and the custom GaussianIntensity learn an isomorphic representation of the true underlying intensity function.

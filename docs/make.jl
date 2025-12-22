@@ -24,9 +24,7 @@ for example_file in sort(example_files)
     input_path = joinpath(examples_dir, example_file)
 
     # Generate markdown from Literate.jl
-    Literate.markdown(input_path, output_dir;
-                      documenter=true,
-                      credit=false)
+    Literate.markdown(input_path, output_dir; documenter=true, credit=false)
 
     # Create a page entry (remove .jl extension and add .md)
     page_name = replace(example_file, ".jl" => "")
@@ -36,9 +34,7 @@ for example_file in sort(example_files)
 end
 
 # Build pages list dynamically
-pages = Any[
-    "Home" => "index.md",
-]
+pages = Any["Home" => "index.md",]
 
 # Add examples section if there are any examples
 if !isempty(example_pages)
