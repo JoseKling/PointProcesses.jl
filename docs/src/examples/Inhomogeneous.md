@@ -221,10 +221,10 @@ pp_gauss = fit(
     init_params_gauss
 )
 
-println("Fitted Gaussian parameters:")
-println("  Peak rate: ", pp_gauss.peak_rate, " Hz")
-println("  Center: ", pp_gauss.center)
-println("  Width: ", pp_gauss.width)
+println("Fitted Gaussian parameters:") # hide
+println("  Peak rate: ", pp_gauss.peak_rate, " Hz") # hide
+println("  Center: ", pp_gauss.center) # hide
+println("  Width: ", pp_gauss.width) # hide
 ````
 
 Visualize our custom Gaussian fit:

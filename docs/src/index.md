@@ -2,6 +2,10 @@
 
 Welcome to the documentation of [PointProcesses.jl](https://github.com/JoseKling/PointProcesses.jl), a package for modeling, simulation and inference with temporal point processes.
 
+!!! warning "PointProcesses.jl is under active development"
+    While there is lots of functionality, certain elements may not be polished,
+    and bugs likely exist. Please report issues on GitHub.
+
 ## What are Point Processes?
 
 Briefly, point processes are statistical models of random events in time or space. Point processes are parameterized by their intensity functions, or the instantaneous rate in time. A such, these models are useful anytime one is interested in how often one would see an event (e.g., buses arriving, eauthquakes occuring, neurons firing.)
@@ -84,6 +88,7 @@ fitted_ipp = fit(InhomogeneousPoissonProcess{PolynomialIntensity{2}}, simulated)
 ## Parametric Intensity Functions
 
 For inhomogeneous Poisson processes, choose from:
+
 - **`PolynomialIntensity`**: λ(t) = a₀ + a₁t + a₂t² + ...
 - **`ExponentialIntensity`**: λ(t) = a·exp(b·t)
 - **`SinusoidalIntensity`**: λ(t) = a + b·sin(ωt + φ)
