@@ -93,8 +93,8 @@ end
 raster
 ````
 
-Looking at this plot its difficult to tell whether the event times are consistent with a homogeneous Poisson process.
-We can bin the data in small time windows to get a sense of the event rate over time. From the assumptiosn above, we expect the distirbution of
+Looking at this plot, it's difficult to tell whether the event times are consistent with a homogeneous Poisson process.
+We can bin the data in small time windows to get a sense of the event rate over time. From the assumptions above, we expect the distribution of
 counts to be roughly Poisson distributed with rate λ * Δt in each bin of width Δt.
 
 ````@example Basics
@@ -121,7 +121,7 @@ p_counts = plot(
 p_counts
 ````
 
-This is still difficult to tell. To get a better sense of whether the data is consistent with a homogeneous Poisson process, we can consider an alternative view of the homogeenous
+This is still difficult to tell. To get a better sense of whether the data is consistent with a homogeneous Poisson process, we can consider an alternative view of the homogeneous
 point process based on the distribution of its waiting times. We discuss this below.
 
 ### Two Equivalent Views
@@ -145,7 +145,7 @@ Conditioned on N(T) = n, the event times are uniformly distributed on [0, T].
 These two perspectives define the same stochastic process and will both be useful
 for understanding likelihood-based inference.
 
-Lets now calcualte the waiting times and see how "exponential" they look:
+Lets now calculate the waiting times and see how "exponential" they look:
 
 ````@example Basics
 waiting_times = diff(vcat(h.tmin, h.times));   # includes waiting time from tmin to first event
@@ -180,8 +180,8 @@ plot!(
 p_waiting
 ````
 
-This could be maybe exponential, but there is some signs that it is not. For example, why do we not see any waiting times below approxiamtely 0.1s?
-Let's fit the actual model now using PointProcesses.jl and run soem, formal statistical tests.
+This could be maybe exponential, but there is some signs that it is not. For example, why do we not see any waiting times below approximately 0.1s?
+Let's fit the actual model now using PointProcesses.jl and run some formal statistical tests.
 
 ### Fitting a Homogeneous Poisson Process
 
