@@ -5,9 +5,8 @@
 # and fit models to observed data. For further, and more advanced pedagogy, please refer to
 # any of the following great resources:
 #
-# - Daley & Vere-Jones, *An Introduction to the Theory of Point Processes*, Volume I & II
-# - Cox & Isham, *Point Processes*
-# - (Add more resources here)
+# - [DaleyJones2013](@cite)
+# - [Cox2018](@cite)
 #
 # The focus of this tutorial is intentionally narrow: we aim to build intuition by starting
 # with the simplest point process model and making the connection between

@@ -20,7 +20,7 @@ Conditions:
 - μ, α, ω >= 0
 - ψ = α/ω < 1 → Stability condition. ψ is the expected number of events each event generates
 
-Following the notation from [E. Lewis, G. Mohler (2011)](https://arxiv.org/pdf/1801.08273).
+Following the notation from [Lewis2011](@cite).
 """
 struct HawkesProcess{T<:Real} <: AbstractPointProcess
     μ::T
@@ -49,7 +49,7 @@ end
 """
     StatsAPI.fit(rng, ::Type{HawkesProcess{T}}, h::History; step_tol::Float64 = 1e-6, max_iter::Int = 1000) where {T<:Real}
 
-Expectation-Maximization algorithm from [E. Lewis, G. Mohler (2011)](https://arxiv.org/pdf/1801.08273)).
+Expectation-Maximization algorithm from [Lewis2011](@cite).
 The relevant calculations are in page 4, equations 6-13.
 
 Let (t₁ < ... < tₙ) be the event times over the interval [0, T). We use the immigrant-descendant representation,
@@ -58,7 +58,7 @@ activation function α exp(-ω(t - tᵢ)).
 
 The algorithm consists in the following steps:
 1. Start with some initial guess for the parameters μ, ψ, and ω. ψ = α ω is the branching factor.
-2. Calculate λ(tᵢ; μ, ψ, ω) (`lambda_ts` in the code) using the procedure in [Ozaki (1979)](https://doi.org/10.1007/bf02480272).
+2. Calculate λ(tᵢ; μ, ψ, ω) (`lambda_ts` in the code) using the procedure in [Ozaki1979](@cite).
 3. For each tᵢ and each j < i, calculate Dᵢⱼ = P(tᵢ is a descendant of tⱼ) as
 
     Dᵢⱼ = ψ ω exp(-ω(tᵢ - tⱼ)) / λ(tᵢ; μ, ψ, ω).

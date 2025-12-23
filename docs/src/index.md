@@ -115,14 +115,15 @@ pval = pvalue(test)  # p-value for goodness-of-fit
 ## Mathematical Background
 
 Temporal point processes are stochastic models characterized by their **conditional intensity function** λ(t|ℋₜ), which represents the instantaneous rate of events at time t given the history ℋₜ of events up to that time.
+.
 
-For a detailed introduction, see the tutorial by [rasmussen2018](@cite).
+- [rasmussen2018](@cite) -- Compact introductory notes on point processes
+- [Laub2021](@cite) -- More detailed, but still introductory level, material focused on Hawkes processes
+- [DaleyJones2013](@cite) -- Comprehensive and formal presentation of point processes 
+
 
 ## Citation
 
 If you use PointProcesses.jl in your research, please cite:
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.8157372.svg)](https://doi.org/10.5281/zenodo.8157372)
-
-```@bibliography
-```

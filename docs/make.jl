@@ -41,12 +41,15 @@ if !isempty(example_pages)
     push!(pages, "Examples" => example_pages)
 end
 
-# Add API reference at the end
+# Add API reference
 push!(pages, "API reference" => "api.md")
+
+# Add Bibliography at the end
+push!(pages, "Bibliography" => "bibliography.md")
 
 makedocs(;
     modules=[PointProcesses],
-    authors="Guillaume Dalle, José Kling",
+    authors="Guillaume Dalle, José Kling, Julien Chevallier, Ryan Senne",
     sitename="PointProcesses.jl",
     format=Documenter.HTML(),
     pages=pages,

@@ -39,7 +39,7 @@ history, and λ(t; θ) is a a parametrization of the intensity, then the null hy
     H₀: There exists parameters θₒ such that λ₀(t) = λ(t; θ₀)
 
 This procedure is specifically aimed for testing hypotheses where parameters need to
-be estimated. Details are provided in [Kling and Vetter (2025)](https://doi.org/10.1111/sjos.70029).
+be estimated. Details are provided in [Kling2025](@cite).
 
 # Arguments
 - `S::Type{<:Statistic}`: the type of test statistic to use
