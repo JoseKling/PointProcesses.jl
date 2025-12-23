@@ -6,8 +6,10 @@ authors = ["Guillaume Dalle", "José Kling", "Julien Chevallier", "Ryan Senne"]
 [deps]
 DensityInterface = "b429d917-457f-4dbc-8f4c-0cc954292b1d"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+Integrals = "de52edbc-65ea-441a-8357-d3a637375a31"
 HypothesisTests = "09f84164-cd44-5f33-b23f-e6b0d136a0d5"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Optim = "429524aa-4258-5aef-a3af-852621145aeb"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 StatsAPI = "82ae8749-77ed-4fe6-ae5f-f523153014b0"
@@ -15,9 +17,11 @@ StatsAPI = "82ae8749-77ed-4fe6-ae5f-f523153014b0"
 [compat]
 DensityInterface = "0.4"
 Distributions = "0.25"
+Integrals = "4.7.1"
 HypothesisTests = "0.11.5"
 JuliaFormatter = "2.2.0"
 LinearAlgebra = "1.10"
+Optim = "1.7"
 Random = "1.10"
 Statistics = "1.10"
 StatsAPI = "1.6"
@@ -30,9 +34,10 @@ Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 JuliaFormatter = "98e50ef6-434e-11e9-1051-2b60c6c9e899"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Optim = "429524aa-4258-5aef-a3af-852621145aeb"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Aqua", "Distributions", "Documenter", "ForwardDiff", "JuliaFormatter", "LinearAlgebra", "Random", "Statistics", "Test"]
+test = ["Aqua", "Distributions", "Documenter", "ForwardDiff", "JuliaFormatter", "LinearAlgebra", "Optim", "Random", "Statistics", "Test"]

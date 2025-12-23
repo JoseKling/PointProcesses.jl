@@ -38,6 +38,8 @@ gf = ForwardDiff.gradient(f1, 3 * ones(10))
 @test !has_events(h4)
 @test !has_events(h4bis)
 @test DensityKind(pp) == HasDensity()
+@test length(pp) == 10
+@test length(pp0) == 10
 @test λ_error1 < 0.1
 @test λ_error2 < 0.1
 @test λ_error3 < 0.1

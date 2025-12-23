@@ -11,7 +11,9 @@ using DensityInterface: DensityInterface, HasDensity, densityof, logdensityof
 using Distributions: Distributions, UnivariateDistribution, MultivariateDistribution
 using Distributions: Categorical, Exponential, Poisson, Uniform, Dirac
 using Distributions: fit, suffstats, probs
+using Integrals: Integrals, IntegralProblem, solve, QuadGKJL
 using LinearAlgebra: dot
+using Optim: Optim, optimize, LBFGS
 using Random: rand
 using Random: AbstractRNG, default_rng, Xoshiro
 using StatsAPI: StatsAPI, fit, HypothesisTest, pvalue
@@ -50,7 +52,22 @@ export simulate_ogata, simulate
 export PoissonProcess
 export UnivariatePoissonProcess
 export MultivariatePoissonProcess, MultivariatePoissonProcessPrior
+export InhomogeneousPoissonProcess
 export HawkesProcess
+
+## Intensity functions for inhomogeneous processes
+
+export PolynomialIntensity
+export ExponentialIntensity
+export SinusoidalIntensity
+export PiecewiseConstantIntensity
+export LinearCovariateIntensity
+
+## Parametric intensity traits and configuration
+
+export ParametricIntensity
+export from_params
+export IntegrationConfig
 
 ## Goodness of fit tests tests
 
@@ -70,6 +87,15 @@ include("poisson/prior.jl")
 include("poisson/fit.jl")
 include("poisson/simulation.jl")
 
+# IPP
+include("poisson/inhomogeneous/integration_config.jl")
+include("poisson/inhomogeneous/parametric_intensity.jl")
+include("poisson/inhomogeneous/intensity_functions.jl")
+include("poisson/inhomogeneous/intensity_methods.jl")
+include("poisson/inhomogeneous/inhomogeneous_poisson_process.jl")
+include("poisson/inhomogeneous/fit.jl")
+
+# Hawkes
 include("hawkes/hawkes_process.jl")
 
 include("HypothesisTests/point_process_tests.jl")
