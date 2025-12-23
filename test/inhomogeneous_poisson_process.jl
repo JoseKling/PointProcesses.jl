@@ -845,4 +845,327 @@ rng = Random.seed!(12345)
             @test occursin("maxiters=10000", config_str)
         end
     end
+
+    @testset "Fitting - PiecewiseConstant with Dirac (unmarked)" begin
+        @testset "Fit with explicit breakpoints vector" begin
+            # Generate data from known piecewise constant process
+            breakpoints_true = [0.0, 3.0, 7.0, 10.0]
+            rates_true = [1.5, 4.0, 2.5]
+            intensity_true = PiecewiseConstantIntensity(breakpoints_true, rates_true)
+            pp_true = InhomogeneousPoissonProcess(intensity_true, Dirac(nothing))
+
+            h = simulate(rng, pp_true, 0.0, 10.0)
+
+            # Fit using same breakpoints
+            pp_est = fit(
+                InhomogeneousPoissonProcess{
+                    PiecewiseConstantIntensity{Float64},Dirac{Nothing}
+                },
+                h,
+                breakpoints_true,
+            )
+
+            @test pp_est isa InhomogeneousPoissonProcess
+            @test pp_est.intensity_function isa PiecewiseConstantIntensity
+            @test pp_est.mark_dist isa Dirac{Nothing}
+            @test pp_est.mark_dist.value === nothing
+            @test length(pp_est.intensity_function.rates) == 3
+
+            # Check breakpoints are preserved
+            @test pp_est.intensity_function.breakpoints == breakpoints_true
+
+            # Rates should be roughly similar to true rates (allow wide tolerance due to randomness)
+            est_rates = pp_est.intensity_function.rates
+            for i in 1:3
+                @test 0.3 * rates_true[i] <= est_rates[i] <= 3.0 * rates_true[i]
+            end
+
+            # Verify all estimated rates are non-negative
+            @test all(r >= 0 for r in est_rates)
+        end
+
+        @testset "Fit with custom breakpoints" begin
+            # Create uneven breakpoints
+            custom_breakpoints = [0.0, 2.0, 5.0, 12.0]
+            intensity_true = PiecewiseConstantIntensity([0.0, 6.0, 12.0], [3.0, 2.0])
+            pp_true = InhomogeneousPoissonProcess(intensity_true, Dirac(nothing))
+
+            h = simulate(rng, pp_true, 0.0, 12.0)
+
+            # Fit with different breakpoints than data generation
+            pp_est = fit(
+                InhomogeneousPoissonProcess{
+                    PiecewiseConstantIntensity{Float64},Dirac{Nothing}
+                },
+                h,
+                custom_breakpoints,
+            )
+
+            @test pp_est isa InhomogeneousPoissonProcess
+            @test pp_est.intensity_function.breakpoints == custom_breakpoints
+            @test length(pp_est.intensity_function.rates) == 3
+            @test pp_est.mark_dist.value === nothing
+
+            # All rates should be positive
+            @test all(r >= 0 for r in pp_est.intensity_function.rates)
+        end
+
+        @testset "Fit with no events in some bins" begin
+            # Create sparse data where some bins might be empty
+            breakpoints = [0.0, 2.0, 4.0, 6.0, 8.0, 10.0]
+            # Only put events in middle of range
+            h = History([4.5, 4.8, 5.2, 5.5, 5.9], 0.0, 10.0)
+
+            pp_est = fit(
+                InhomogeneousPoissonProcess{
+                    PiecewiseConstantIntensity{Float64},Dirac{Nothing}
+                },
+                h,
+                breakpoints,
+            )
+
+            @test pp_est isa InhomogeneousPoissonProcess
+            @test length(pp_est.intensity_function.rates) == 5
+
+            # Bins without events should have rate 0
+            @test pp_est.intensity_function.rates[1] == 0.0  # [0, 2)
+            @test pp_est.intensity_function.rates[2] == 0.0  # [2, 4)
+            @test pp_est.intensity_function.rates[3] > 0.0   # [4, 6) - has events
+            @test pp_est.intensity_function.rates[4] == 0.0  # [6, 8)
+            @test pp_est.intensity_function.rates[5] == 0.0  # [8, 10)
+        end
+
+        @testset "Fit with single bin" begin
+            # Edge case: single bin (constant rate)
+            breakpoints = [0.0, 10.0]
+            intensity_true = PolynomialIntensity([3.0])  # constant
+            pp_true = InhomogeneousPoissonProcess(intensity_true, Dirac(nothing))
+
+            h = simulate(rng, pp_true, 0.0, 10.0)
+
+            pp_est = fit(
+                InhomogeneousPoissonProcess{
+                    PiecewiseConstantIntensity{Float64},Dirac{Nothing}
+                },
+                h,
+                breakpoints,
+            )
+
+            @test pp_est isa InhomogeneousPoissonProcess
+            @test length(pp_est.intensity_function.rates) == 1
+            @test pp_est.mark_dist.value === nothing
+
+            # Rate should be approximately count / duration
+            expected_rate = length(h.times) / 10.0
+            @test pp_est.intensity_function.rates[1] ≈ expected_rate
+        end
+
+        @testset "Type stability with different Real types" begin
+            # Test with Float32
+            breakpoints_f32 = Float32[0.0, 5.0, 10.0]
+            h = History([1.0, 2.0, 6.0, 7.0, 8.0], 0.0, 10.0)
+
+            pp_est = fit(
+                InhomogeneousPoissonProcess{
+                    PiecewiseConstantIntensity{Float32},Dirac{Nothing}
+                },
+                h,
+                breakpoints_f32,
+            )
+
+            @test pp_est.intensity_function isa PiecewiseConstantIntensity{Float32}
+            @test eltype(pp_est.intensity_function.rates) == Float32
+        end
+    end
+
+    @testset "Fitting - ParametricIntensity with Dirac (unmarked)" begin
+        @testset "Polynomial intensity with Dirac marks" begin
+            # Generate data from linear process
+            intensity_true = PolynomialIntensity([2.0, 0.3])
+            pp_true = InhomogeneousPoissonProcess(intensity_true, Dirac(nothing))
+
+            h = simulate(rng, pp_true, 0.0, 20.0)
+
+            # Fit polynomial intensity
+            pp_est = fit(
+                InhomogeneousPoissonProcess{PolynomialIntensity{Float64},Dirac{Nothing}},
+                h,
+                [2.0, 0.3],
+            )
+
+            @test pp_est isa InhomogeneousPoissonProcess
+            @test pp_est.intensity_function isa PolynomialIntensity
+            @test pp_est.mark_dist isa Dirac{Nothing}
+            @test pp_est.mark_dist.value === nothing
+
+            # Check parameters are reasonable
+            @test abs(pp_est.intensity_function.coefficients[1] - 2.0) < 1.0
+            @test abs(pp_est.intensity_function.coefficients[2] - 0.3) < 0.5
+
+            # Verify the fitted model can simulate
+            h_new = simulate(rng, pp_est, 0.0, 10.0)
+            @test issorted(event_times(h_new))
+            @test all(m === nothing for m in event_marks(h_new))
+        end
+
+        @testset "Polynomial intensity with log link" begin
+            # Generate data with log link (ensures positivity)
+            intensity_true = PolynomialIntensity([1.5, 0.05]; link=:log)
+            pp_true = InhomogeneousPoissonProcess(intensity_true, Dirac(nothing))
+
+            h = simulate(rng, pp_true, 0.0, 30.0)
+
+            # Fit with log link
+            pp_est = fit(
+                InhomogeneousPoissonProcess{PolynomialIntensity{Float64},Dirac{Nothing}},
+                h,
+                [1.5, 0.05];
+                link=:log,
+            )
+
+            @test pp_est isa InhomogeneousPoissonProcess
+            @test pp_est.intensity_function.link === :log
+            @test pp_est.mark_dist.value === nothing
+
+            # Verify positivity over range
+            @test all(pp_est.intensity_function(t) > 0 for t in 0.0:0.5:30.0)
+
+            # Parameters should be in reasonable range
+            @test abs(pp_est.intensity_function.coefficients[1] - 1.5) < 1.0
+            @test abs(pp_est.intensity_function.coefficients[2] - 0.05) < 0.1
+        end
+
+        @testset "Exponential intensity with Dirac marks" begin
+            # Generate data from exponential process
+            intensity_true = ExponentialIntensity(3.0, 0.08)
+            pp_true = InhomogeneousPoissonProcess(intensity_true, Dirac(nothing))
+
+            h = simulate(rng, pp_true, 0.0, 15.0)
+
+            # Fit exponential intensity
+            pp_est = fit(
+                InhomogeneousPoissonProcess{ExponentialIntensity{Float64},Dirac{Nothing}},
+                h,
+                [log(3.0), 0.08],
+            )
+
+            @test pp_est isa InhomogeneousPoissonProcess
+            @test pp_est.intensity_function isa ExponentialIntensity
+            @test pp_est.mark_dist isa Dirac{Nothing}
+            @test pp_est.mark_dist.value === nothing
+
+            # Check parameters are in reasonable range
+            @test 0.5 * intensity_true.a <=
+                pp_est.intensity_function.a <=
+                4.0 * intensity_true.a
+            @test abs(pp_est.intensity_function.b - intensity_true.b) < 0.15
+
+            # Verify positivity
+            @test all(pp_est.intensity_function(t) > 0 for t in 0.0:0.5:15.0)
+        end
+
+        @testset "Sinusoidal intensity with Dirac marks" begin
+            # Generate data from sinusoidal process
+            intensity_true = SinusoidalIntensity(6.0, 2.5, 2π, 0.0)
+            pp_true = InhomogeneousPoissonProcess(intensity_true, Dirac(nothing))
+
+            h = simulate(rng, pp_true, 0.0, 8.0)
+
+            # Fit sinusoidal intensity
+            pp_est = fit(
+                InhomogeneousPoissonProcess{SinusoidalIntensity{Float64},Dirac{Nothing}},
+                h,
+                [log(6.0), 0.4, 0.0];
+                ω=2π,
+            )
+
+            @test pp_est isa InhomogeneousPoissonProcess
+            @test pp_est.intensity_function isa SinusoidalIntensity
+            @test pp_est.mark_dist isa Dirac{Nothing}
+            @test pp_est.mark_dist.value === nothing
+            @test pp_est.intensity_function.ω ≈ 2π
+
+            # Check constraint a >= |b| is satisfied
+            @test pp_est.intensity_function.a >= abs(pp_est.intensity_function.b)
+
+            # Parameters should be in reasonable range
+            @test 2.0 <= pp_est.intensity_function.a <= 12.0
+            @test abs(pp_est.intensity_function.b) <= pp_est.intensity_function.a
+
+            # Verify positivity throughout period
+            @test all(pp_est.intensity_function(t) >= 0 for t in 0.0:0.05:1.0)
+        end
+
+        @testset "Custom integration config" begin
+            # Test that integration_config is properly passed through
+            intensity_true = PolynomialIntensity([2.5, 0.2])
+            pp_true = InhomogeneousPoissonProcess(intensity_true, Dirac(nothing))
+
+            h = simulate(rng, pp_true, 0.0, 20.0)
+
+            # Fit with custom integration config
+            custom_config = IntegrationConfig(abstol=1e-10, reltol=1e-10, maxiters=5000)
+            pp_est = fit(
+                InhomogeneousPoissonProcess{PolynomialIntensity{Float64},Dirac{Nothing}},
+                h,
+                [2.5, 0.2];
+                integration_config=custom_config,
+            )
+
+            @test pp_est isa InhomogeneousPoissonProcess
+            @test pp_est.mark_dist.value === nothing
+
+            # Verify fitting succeeded with custom config
+            @test pp_est.intensity_function isa PolynomialIntensity
+            @test abs(pp_est.intensity_function.coefficients[1] - 2.5) < 1.5
+        end
+
+        @testset "Quadratic polynomial with Dirac marks" begin
+            # Test higher-degree polynomial
+            intensity_true = PolynomialIntensity([1.0, 0.5, 0.05])
+            pp_true = InhomogeneousPoissonProcess(intensity_true, Dirac(nothing))
+
+            h = simulate(rng, pp_true, 0.0, 15.0)
+
+            # Fit quadratic
+            pp_est = fit(
+                InhomogeneousPoissonProcess{PolynomialIntensity{Float64},Dirac{Nothing}},
+                h,
+                [1.0, 0.5, 0.05],
+            )
+
+            @test pp_est isa InhomogeneousPoissonProcess
+            @test length(pp_est.intensity_function.coefficients) == 3
+            @test pp_est.mark_dist.value === nothing
+
+            # Check all coefficients are in reasonable range
+            for i in 1:3
+                @test abs(
+                    pp_est.intensity_function.coefficients[i] -
+                    intensity_true.coefficients[i],
+                ) < 2.0
+            end
+        end
+
+        @testset "Pass through additional kwargs" begin
+            # Test that optimizer kwargs are properly passed through
+            intensity_true = PolynomialIntensity([2.0, 0.1])
+            pp_true = InhomogeneousPoissonProcess(intensity_true, Dirac(nothing))
+
+            h = simulate(rng, pp_true, 0.0, 25.0)
+
+            # Fit with custom optimizer settings
+            pp_est = fit(
+                InhomogeneousPoissonProcess{PolynomialIntensity{Float64},Dirac{Nothing}},
+                h,
+                [2.0, 0.1];
+                optimizer=LBFGS(),
+                autodiff=:forward,
+            )
+
+            @test pp_est isa InhomogeneousPoissonProcess
+            @test pp_est.intensity_function isa PolynomialIntensity
+            @test pp_est.mark_dist.value === nothing
+        end
+    end
 end

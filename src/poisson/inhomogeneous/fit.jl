@@ -34,10 +34,13 @@ function negative_loglikelihood_ipp(
     log_sum = zero(eltype(h.times))
     for t in h.times
         λ = f(t)
-        if λ <= 0
-            return Inf  # Invalid parameters: intensity must be positive
+        if !(λ > 0) || !isfinite(λ)
+            return Inf
         end
         log_sum += log(λ)
+        if !isfinite(log_sum)
+            return Inf
+        end
     end
 
     # Compute integrated intensity
@@ -78,6 +81,18 @@ function StatsAPI.fit(
 end
 
 function StatsAPI.fit(
+    ::Type{<:InhomogeneousPoissonProcess{F,Dirac{Nothing}}},
+    h::History,
+    init_params;
+    integration_config=IntegrationConfig(),
+    kwargs...,
+) where {F<:ParametricIntensity}
+    # For unmarked processes, skip fitting the mark distribution
+    intensity = fit(F, h, init_params; integration_config=integration_config, kwargs...)
+    return InhomogeneousPoissonProcess(intensity, Dirac(nothing))
+end
+
+function StatsAPI.fit(
     ::Type{<:InhomogeneousPoissonProcess{F,D}},
     h::History,
     init_params;
@@ -109,6 +124,32 @@ function StatsAPI.fit(
         )
     end
     return fit(pptype, combined, args...)
+end
+
+function StatsAPI.fit(
+    ::Type{<:InhomogeneousPoissonProcess{PiecewiseConstantIntensity{R},Dirac{Nothing}}},
+    h::History,
+    breakpoints::Vector;
+    kwargs...,
+) where {R}
+    # Count events in each bin
+    n_bins = length(breakpoints) - 1
+    rates = Vector{R}(undef, n_bins)
+    for i in 1:n_bins
+        # Count events in bin [breakpoints[i], breakpoints[i+1])
+        bin_start = breakpoints[i]
+        bin_end = breakpoints[i + 1]
+        bin_width = bin_end - bin_start
+
+        # Count events in this bin
+        count = sum(bin_start .<= h.times .< bin_end)
+
+        # Estimate rate as count / duration
+        rates[i] = count / bin_width
+    end
+
+    intensity = PiecewiseConstantIntensity(breakpoints, rates)
+    return InhomogeneousPoissonProcess(intensity, Dirac(nothing))
 end
 
 function StatsAPI.fit(
