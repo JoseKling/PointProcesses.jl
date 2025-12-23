@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Inhomogeneous · PointProcesses.jl</title><meta name="title" content="Inhomogeneous · PointProcesses.jl"/><meta property="og:title" content="Inhomogeneous · PointProcesses.jl"/><meta property="twitter:title" content="Inhomogeneous · PointProcesses.jl"/><meta name="description" content="Documentation for PointProcesses.jl."/><meta property="og:description" content="Documentation for PointProcesses.jl."/><meta property="twitter:description" content="Documentation for PointProcesses.jl."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img class="docs-light-only" src="../../assets/logo.svg" alt="PointProcesses.jl logo"/><img class="docs-dark-only" src="../../assets/logo-dark.svg" alt="PointProcesses.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">PointProcesses.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../Basics/">Basics</a></li><li class="is-active"><a class="tocitem" href>Inhomogeneous</a><ul class="internal"><li><a class="tocitem" href="#A-Quick-Recap-of-Inhomogeneous-Poisson-Processes"><span>A Quick Recap of Inhomogeneous Poisson Processes</span></a></li><li><a class="tocitem" href="#Simulating-Hippocampal-Place-Cell-Data"><span>Simulating Hippocampal Place Cell Data</span></a></li><li><a class="tocitem" href="#Fitting-Parametric-Models"><span>Fitting Parametric Models</span></a></li><li><a class="tocitem" href="#Creating-a-Custom-Intensity-Function"><span>Creating a Custom Intensity Function</span></a></li><li><a class="tocitem" href="#Model-Comparison"><span>Model Comparison</span></a></li><li><a class="tocitem" href="#Visualizing-All-Models-Together"><span>Visualizing All Models Together</span></a></li></ul></li></ul></li><li><a class="tocitem" href="../../api/">API reference</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Inhomogeneous</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Inhomogeneous</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/JoseKling/PointProcesses.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/JoseKling/PointProcesses.jl/blob/main/docs/examples/Inhomogeneous.jl" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Fitting-Data-to-an-Inhomogeneous-Poisson-Process-Model"><a class="docs-heading-anchor" href="#Fitting-Data-to-an-Inhomogeneous-Poisson-Process-Model">Fitting Data to an Inhomogeneous Poisson Process Model</a><a id="Fitting-Data-to-an-Inhomogeneous-Poisson-Process-Model-1"></a><a class="docs-heading-anchor-permalink" href="#Fitting-Data-to-an-Inhomogeneous-Poisson-Process-Model" title="Permalink"></a></h1><p>This tutorial demonstrates how to fit data to an inhomogeneous point process model, as well as how to develop a new model from scratch. We will generate point process data from a simulated &quot;Hippocampal Place Cell&quot; and then fit the model to the data.</p><h2 id="A-Quick-Recap-of-Inhomogeneous-Poisson-Processes"><a class="docs-heading-anchor" href="#A-Quick-Recap-of-Inhomogeneous-Poisson-Processes">A Quick Recap of Inhomogeneous Poisson Processes</a><a id="A-Quick-Recap-of-Inhomogeneous-Poisson-Processes-1"></a><a class="docs-heading-anchor-permalink" href="#A-Quick-Recap-of-Inhomogeneous-Poisson-Processes" title="Permalink"></a></h2><p>An inhomogeneous Poisson process is a type of point process where the intensity function varies over time or space. The intensity function, denoted as <span>$λ(t)$</span> for time or <span>$λ(x)$</span> for space, describes the expected number of events per unit time or space at a given point. In the context of neural data, inhomogeneous Poisson processes are often used to model the firing rates of neurons that change in response to stimuli or other factors. Importantly, all Inhomogeneous Poisson processes have the same general likelihood function form, which is given by: <span>$L(λ; {t_i}) = \text{exp}(-∫ λ(t) dt) * ∏ λ(t_i)$</span> where <span>${t_i}$</span> are the observed event times. This likelihood function consists of two main components:</p><ol><li>The exponential term <span>$\text{exp}(-∫ λ(t) dt)$</span> represents the probability of observing no events in the intervals where no events were recorded.</li><li>The product term <span>$∏ λ(t_i)$</span> accounts for the likelihood of observing events at the specific times <span>${t_i}$</span>.</li></ol><p>This general form allows for flexibility in modeling various types of inhomogeneous Poisson processes by specifying different intensity functions <span>$λ(t)$</span>.</p><pre><code class="language-julia hljs">using PointProcesses
+using Distributions
+using StableRNGs
+using Plots
+using StatsAPI
+using SpecialFunctions: erf</code></pre><h2 id="Simulating-Hippocampal-Place-Cell-Data"><a class="docs-heading-anchor" href="#Simulating-Hippocampal-Place-Cell-Data">Simulating Hippocampal Place Cell Data</a><a id="Simulating-Hippocampal-Place-Cell-Data-1"></a><a class="docs-heading-anchor-permalink" href="#Simulating-Hippocampal-Place-Cell-Data" title="Permalink"></a></h2><p>Hippocampal place cells are neurons that fire when an animal is in a specific location. As the animal moves through space, the firing rate varies, creating an inhomogeneous Poisson process. We&#39;ll simulate data where the animal makes multiple passes through the place field.</p><p>Let&#39;s create a Gaussian-like place field with peak firing at the center:</p><pre><code class="language-julia hljs">function gaussian_place_field(t; peak_rate=20.0, center=5.0, width=1.5)
+    return peak_rate * exp(-((t - center)^2) / (2 * width^2))
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">gaussian_place_field (generic function with 1 method)</code></pre><p>Visualize the true intensity function:</p><pre><code class="language-julia hljs">t_range = 0.0:0.01:10.0
+plot(
+    t_range,
+    gaussian_place_field.(t_range);
+    xlabel=&quot;Position (arbitrary units)&quot;,
+    ylabel=&quot;Firing rate (Hz)&quot;,
+    label=&quot;True place field&quot;,
+    linewidth=2,
+    title=&quot;Hippocampal Place Cell Firing Rate&quot;,
+)</code></pre><img src="db0dbac9.svg" alt="Example block output"/><p>Now let&#39;s simulate spike times from this intensity function:</p><pre><code class="language-julia hljs">rng = StableRNG(12345)
+pp_true = InhomogeneousPoissonProcess(gaussian_place_field)
+h = simulate(rng, pp_true, 0.0, 10.0)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">History{Float64,Nothing} with 62 events on interval [0.0, 10.0)</code></pre><p>Create a history object for our observed data:</p><pre><code class="language-julia hljs">println(&quot;Number of spikes observed: &quot;, length(h))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Number of spikes observed: 62</code></pre><p>Visualize the spike times as a raster plot:</p><pre><code class="language-julia hljs">scatter!(
+    h.times,
+    zeros(length(h));
+    marker=:vline,
+    markersize=10,
+    label=&quot;Observed spikes&quot;,
+    color=:red,
+    alpha=0.6,
+)</code></pre><img src="06f0f513.svg" alt="Example block output"/><h2 id="Fitting-Parametric-Models"><a class="docs-heading-anchor" href="#Fitting-Parametric-Models">Fitting Parametric Models</a><a id="Fitting-Parametric-Models-1"></a><a class="docs-heading-anchor-permalink" href="#Fitting-Parametric-Models" title="Permalink"></a></h2><p>Now we&#39;ll try to recover the underlying intensity function by fitting different (non-)parametric models.</p><h3 id="1.-Piecewise-Constant-Intensity-(Histogram-Estimator)"><a class="docs-heading-anchor" href="#1.-Piecewise-Constant-Intensity-(Histogram-Estimator)">1. Piecewise Constant Intensity (Histogram Estimator)</a><a id="1.-Piecewise-Constant-Intensity-(Histogram-Estimator)-1"></a><a class="docs-heading-anchor-permalink" href="#1.-Piecewise-Constant-Intensity-(Histogram-Estimator)" title="Permalink"></a></h3><p>The simplest approach is to bin the data and estimate a constant rate in each bin:</p><pre><code class="language-julia hljs">pp_piecewise = fit(
+    InhomogeneousPoissonProcess{PiecewiseConstantIntensity{Float64},Dirac{Nothing}},
+    h,
+    20,  # number of bins
+)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">InhomogeneousPoissonProcess(PiecewiseConstantIntensity([0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0, 9.5, 10.0], [0.0, 0.0, 2.0, 2.0, 2.0, 2.0, 10.0, 6.0, 22.0, 8.0, 16.0, 22.0, 16.0, 10.0, 2.0, 4.0, 0.0, 0.0, 0.0, 0.0]), Distributions.Dirac{Nothing}(
+value: nothing
+)
+)</code></pre><p>Visualize the fit:</p><pre><code class="language-julia hljs">plot(
+    t_range,
+    gaussian_place_field.(t_range);
+    xlabel=&quot;Position&quot;,
+    ylabel=&quot;Firing rate (Hz)&quot;,
+    label=&quot;True intensity&quot;,
+    linewidth=2,
+    title=&quot;Piecewise Constant Fit&quot;,
+)
+plot!(
+    t_range,
+    pp_piecewise.intensity_function.(t_range);
+    label=&quot;Fitted intensity&quot;,
+    linewidth=2,
+)
+scatter!(
+    h.times,
+    zeros(length(h.times));
+    marker=:vline,
+    markersize=10,
+    label=&quot;Spikes&quot;,
+    color=:red,
+    alpha=0.6,
+)
+
+### 2. Polynomial Intensity with Log Link</code></pre><img src="8bba9e33.svg" alt="Example block output"/><p>A polynomial model can capture smooth variations. We&#39;ll use a quadratic polynomial with log link to ensure the intensity stays positive:</p><p>Initial parameter guess for a quadratic: <span>$\log(λ(t)) = a₀ + a₁*t + a₂*t²$</span></p><pre><code class="language-julia hljs">init_params = [2.0, 0.0, -0.1]
+
+pp_poly = fit(PolynomialIntensity{Float64}, h, init_params; link=:log)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">PolynomialIntensity([-3.73586859660293, 2.6345845421223153, -0.2620698102128597], link=:log)</code></pre><p>Visualize the polynomial fit:</p><pre><code class="language-julia hljs">plot(
+    t_range,
+    gaussian_place_field.(t_range);
+    xlabel=&quot;Position&quot;,
+    ylabel=&quot;Firing rate (Hz)&quot;,
+    label=&quot;True intensity&quot;,
+    linewidth=2,
+    title=&quot;Polynomial Intensity Fit (Log Link)&quot;,
+)
+plot!(t_range, pp_poly.(t_range); label=&quot;Fitted intensity&quot;, linewidth=2)
+scatter!(
+    h.times,
+    zeros(length(h.times));
+    marker=:vline,
+    markersize=10,
+    label=&quot;Spikes&quot;,
+    color=:red,
+    alpha=0.6,
+)
+
+println(&quot;Fitted polynomial coefficients: &quot;, pp_poly.coefficients)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Fitted polynomial coefficients: [-3.73586859660293, 2.6345845421223153, -0.2620698102128597]</code></pre><h2 id="Creating-a-Custom-Intensity-Function"><a class="docs-heading-anchor" href="#Creating-a-Custom-Intensity-Function">Creating a Custom Intensity Function</a><a id="Creating-a-Custom-Intensity-Function-1"></a><a class="docs-heading-anchor-permalink" href="#Creating-a-Custom-Intensity-Function" title="Permalink"></a></h2><p>For our Gaussian place field, none of the built-in parametric models are ideal given our domain expertise. But do not worry! With PointProcesses.jl, you can easily create your own custom intensity functions by defining a few methods. Let&#39;s create a custom Gaussian intensity function!</p><p>First, we&#39;ll define the intensity function structure:</p><pre><code class="language-julia hljs">struct GaussianIntensity{R&lt;:Real} &lt;: ParametricIntensity
+    peak_rate::R
+    center::R
+    width::R
+
+    function GaussianIntensity(peak_rate::R, center::R, width::R) where {R&lt;:Real}
+        if peak_rate &lt;= 0
+            throw(ArgumentError(&quot;peak_rate must be positive&quot;))
+        end
+        if width &lt;= 0
+            throw(ArgumentError(&quot;width must be positive&quot;))
+        end
+        return new{R}(peak_rate, center, width)
+    end
+end</code></pre><p>Make it callable:</p><pre><code class="language-julia hljs">function (f::GaussianIntensity)(t)
+    return f.peak_rate * exp(-((t - f.center)^2) / (2 * f.width^2))
+end</code></pre><p>Define how to construct from parameters (for optimization):</p><pre><code class="language-julia hljs">function PointProcesses.from_params(
+    ::Type{GaussianIntensity{R}}, params::AbstractVector
+) where {R}
+    peak_rate = exp(params[1])
+    center = params[2]
+    width = exp(params[3])
+    return GaussianIntensity(peak_rate, center, width)
+end</code></pre><p>Define analytical integration (optional but recommended for speed when possible):</p><pre><code class="language-julia hljs">function PointProcesses.integrated_intensity(
+    f::GaussianIntensity, t_start::T, t_end::T, ::IntegrationConfig
+) where {T}
+    sqrt_2 = sqrt(2.0)
+    prefactor = f.peak_rate * f.width * sqrt(π / 2)
+
+    erf_upper = erf((t_end - f.center) / (sqrt_2 * f.width))
+    erf_lower = erf((t_start - f.center) / (sqrt_2 * f.width))
+
+    return prefactor * (erf_upper - erf_lower)
+end</code></pre><p>Now fit our custom Gaussian model:</p><pre><code class="language-julia hljs">init_params_gauss = [log(15.0), 5.0, log(2.0)]  #- [log(peak), center, log(width)]
+
+pp_gauss = fit(GaussianIntensity{Float64}, h, init_params_gauss)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Fitted Gaussian parameters:
+  Peak rate: 17.91239284210106 Hz
+  Center: 5.0264937803830225
+  Width: 1.381263402601143</code></pre><p>Visualize our custom Gaussian fit:</p><pre><code class="language-julia hljs">plot(
+    t_range,
+    gaussian_place_field.(t_range);
+    xlabel=&quot;Position&quot;,
+    ylabel=&quot;Firing rate (Hz)&quot;,
+    label=&quot;True intensity&quot;,
+    linewidth=2,
+    title=&quot;Custom Gaussian Intensity Fit&quot;,
+    legend=:topright,
+)
+plot!(t_range, pp_gauss.(t_range); label=&quot;Fitted intensity&quot;, linewidth=2, linestyle=:dash)
+scatter!(
+    h.times,
+    zeros(length(h.times));
+    marker=:vline,
+    markersize=10,
+    label=&quot;Spikes&quot;,
+    color=:red,
+    alpha=0.6,
+)</code></pre><img src="9d9d3121.svg" alt="Example block output"/><h2 id="Model-Comparison"><a class="docs-heading-anchor" href="#Model-Comparison">Model Comparison</a><a id="Model-Comparison-1"></a><a class="docs-heading-anchor-permalink" href="#Model-Comparison" title="Permalink"></a></h2><p>Let&#39;s compare all models by computing their negative log-likelihoods:</p><pre><code class="language-julia hljs">function compute_nll(intensity_func, h)
+    nll = -sum(log(intensity_func(t)) for t in h.times)
+    config = IntegrationConfig()
+    nll += PointProcesses.integrated_intensity(intensity_func, h.tmin, h.tmax, config)
+    return nll
+end
+
+models = [
+    (&quot;Piecewise Constant&quot;, pp_piecewise.intensity_function),
+    (&quot;Polynomial&quot;, pp_poly),
+    (&quot;Gaussian (Custom)&quot;, pp_gauss),
+]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">
+Model Comparison (Negative Log-Likelihood):
+--------------------------------------------------
+  Piecewise Constant: -93.32
+  Polynomial: -86.03
+  Gaussian (Custom): -86.03</code></pre><h2 id="Visualizing-All-Models-Together"><a class="docs-heading-anchor" href="#Visualizing-All-Models-Together">Visualizing All Models Together</a><a id="Visualizing-All-Models-Together-1"></a><a class="docs-heading-anchor-permalink" href="#Visualizing-All-Models-Together" title="Permalink"></a></h2><pre><code class="language-julia hljs">plot(
+    t_range,
+    gaussian_place_field.(t_range);
+    xlabel=&quot;Position&quot;,
+    ylabel=&quot;Firing rate (Hz)&quot;,
+    label=&quot;True intensity&quot;,
+    linewidth=3,
+    title=&quot;Comparison of All Fitted Models&quot;,
+    legend=:topright,
+    color=:black,
+)
+
+plot!(
+    t_range,
+    pp_piecewise.intensity_function.(t_range);
+    label=&quot;Piecewise&quot;,
+    linewidth=2,
+    alpha=0.7,
+)
+plot!(t_range, pp_poly.(t_range); label=&quot;Polynomial&quot;, linewidth=2, alpha=0.7)
+plot!(
+    t_range,
+    pp_gauss.(t_range);
+    label=&quot;Gaussian (Custom)&quot;,
+    linewidth=2,
+    alpha=0.7,
+    linestyle=:dash,
+)
+
+scatter!(
+    h.times,
+    zeros(length(h.times));
+    marker=:vline,
+    markersize=8,
+    label=&quot;Spikes&quot;,
+    color=:red,
+    alpha=0.5,
+)</code></pre><img src="0076bc58.svg" alt="Example block output"/><p>From what we can see the PolynomialIntensity and the custom GaussianIntensity learn an isomorphic representation of the true underlying intensity function. However, the custom GaussianIntensity has the advantage of interpretability, as its parameters directly correspond to meaningful features of the place field (peak rate, center, width). This makes it easier to draw conclusions about the neuron&#39;s firing behavior based on the fitted model.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../Basics/">« Basics</a><a class="docs-footer-nextpage" href="../../api/">API reference »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Tuesday 23 December 2025 07:42">Tuesday 23 December 2025</span>. Using Julia version 1.12.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
