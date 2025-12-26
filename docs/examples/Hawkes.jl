@@ -17,7 +17,42 @@
 # ``n = \frac{\alpha}{\beta}``. In the event that n < 1, the process is subcritical, meaning that events will eventually die out. If n = 1, the process is critical, and if n > 1, the process is supercritical, meaning that events can lead to an infinite cascade of events.
 
 # Let's now apply this theory, and develop more through the process, by fitting a Hawkes process to some data.
+using Clustering
 using CSV
 using DataFrames
+using Dates
 using PointProcesses
 using Plots
+
+# First let's open our data. This data records litter box entries taken from three cats over a period of one month. 
+data = CSV.read(joinpath(@__DIR__, "data", "cats.csv"), DataFrame)
+
+# This dataset has three cats in it, so let's first separate out each cat, using their weight to infer their identity
+cat_weights = [parse(Float64, split(i)[1]) for i in data.Value]
+clusters = kmeans(reshape(cat_weights, 1, :), 3; maxiter=100, display=:none)
+
+data.CatWeight = cat_weights
+data.CatID = clusters.assignments
+
+# Now that we have set this up we need to get the timestamps in a useable order for plotting. We can use the Dates package for this.
+fmt = dateformat"m/d I:M p"
+dt = DateTime("12/22 3:09 pm", fmt)
+
+function parse_timestamp_min(s::AbstractString; year=2024)
+    dt = DateTime(s, dateformat"m/d I:M p")
+    DateTime(year, month(dt), day(dt), hour(dt), minute(dt))
+end
+
+data.TimestampDT = parse_timestamp_min.(String.(data.Timestamp))
+
+t0 = minimum(data.TimestampDT)
+data.t = (data.TimestampDT .- t0) ./ Minute(1)  # Float64 minutes since first event
+
+# Since this dataset only has resolution up to the nearest minutw, we need to check if there are any "ties" as the Hawkes process model requires unique event times.
+if any(diff(sort(data.t)) .== 0)
+    println("Data contains tied event times. Please add small jitter to event times to make them unique.")
+else
+    println("Data contains no tied event times. Proceed with fitting. Yay!")
+end
+
+# Great! We can now move forward.
