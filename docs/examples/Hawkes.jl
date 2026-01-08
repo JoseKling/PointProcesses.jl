@@ -11,9 +11,9 @@
 # which controls how past events influence future events. 
 
 # One of the most common choices for this kernel is the exponential function: ``\phi(s) = \alpha\exp{-\beta s}``. In this model, α is the strength of self-exciting, and β controls the rate of excitation decay.
-# Given these, parameters, the intensity function is: ``λ(t|\mathcal H_t) = μ + \sum_{t_i < t} \alpha \exp{-\beta (t - t_i)}``. We assume that μ is constant for simplicity. But, we could generalzie this to be inhomogeneous.
+# Given these parameters, the intensity function is: ``λ(t|\mathcal H_t) = μ + \sum_{t_i < t} \alpha \exp{-\beta (t - t_i)}``. We assume that μ is constant for simplicity. But, we could generalize this to be inhomogeneous.
 
-# An important statistic of the Hawkes proces, is the branching ratio which is a measure of the expected number of "daughter" events, a "parent" event will create. For the exponential kernel, this is given by the following equation:
+# An important statistic of the Hawkes process is the branching ratio which is a measure of the expected number of "daughter" events, a "parent" event will create. For the exponential kernel, this is given by the following equation:
 # ``n = \frac{\alpha}{\beta}``. In the event that n < 1, the process is subcritical, meaning that events will eventually die out. If n = 1, the process is critical, and if n > 1, the process is supercritical, meaning that events can lead to an infinite cascade of events.
 
 # Let's now apply this theory, and develop more through the process, by fitting a Hawkes process to some data.
@@ -147,7 +147,7 @@ println("Monte Carlo Test p-value for Hawkes Process fit: ", p) # hide
 println("Assuming a significance level of 0.05, we " * (p < 0.05 ? "reject" : "fail to reject") * "",) # hide
 println("the null hypothesis that the Hawkes process is a good fit to the data.") # hide
 
-# From this analysis, it seems that we can can say that litter-box usage is indeed a self-exciting process, as the fitted Hawkes process provides a good fit to the data.
+# From this analysis, it seems that we can say that litter-box usage is indeed a self-exciting process, as the fitted Hawkes process provides a good fit to the data.
 # It's worth considering that we have ignored the identities of the cats in this analysis. A more thorough analysis could involve fitting a multivariate Hawkes process,
 # where each cat is represented as a separate dimension. This would allow us to capture the interactions between the cats more accurately. This will be the subject of a 
 # future tutorial.
