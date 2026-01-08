@@ -52,14 +52,31 @@ data.t = (data.TimestampDT .- t0) ./ Minute(1)  # Float64 minutes since first ev
 
 # Since this dataset only has resolution up to the nearest minute, we need to check if there are any "ties" as the Hawkes process model requires unique event times.
 if any(diff(sort(data.t)) .== 0)
-    println("Data contains tied event times. Please add small jitter to event times to make them unique.")
+    println(
+        "Data contains tied event times. Please add small jitter to event times to make them unique.",
+    )
 else
     println("Data contains no tied event times. Proceed with fitting. Yay!")
 end
 
 # Great! We can now move forward. First, let's visualize the data using a simple event plot.
-function eventplot(event_times::Vector{Float64}; title="Event Plot", xlabel="Time (minutes)", ylabel="Events")
-    scatter(event_times, ones(length(event_times)); markershape=:vline, markersize=10, label="", title=title, xlabel=xlabel, ylabel=ylabel, yticks=false)
+function eventplot(
+    event_times::Vector{Float64};
+    title="Event Plot",
+    xlabel="Time (minutes)",
+    ylabel="Events",
+)
+    scatter(
+        event_times,
+        ones(length(event_times));
+        markershape=:vline,
+        markersize=10,
+        label="",
+        title=title,
+        xlabel=xlabel,
+        ylabel=ylabel,
+        yticks=false,
+    )
 end
 
 cat1_times = data.t[data.CatID .== 1]
@@ -105,10 +122,7 @@ plot(
 # The goal of this analysis is to understand the self-exciting nature of the litter box entries. I.e., if one cat uses the litter box, 
 # does that increase the likelihood of another cat using it soon after? To do this, we can use the implementation in PointProcesses.jl
 full_history = History(data.t, 0.0, maximum(data.t) + 1.0)
-hawkes_model = fit(
-    HawkesProcess,
-    full_history,
-)
+hawkes_model = fit(HawkesProcess, full_history)
 
 println("Fitted Hawkes Process Parameters:") # hide
 println("Base intensity (μ): ", hawkes_model.μ) # hide
@@ -124,17 +138,21 @@ println("Branching ratio (n = α/ω): ", hawkes_model.α / hawkes_model.ω) #hid
 
 ts = sort(data.t)
 
-λ_hawkes(t::Real) =
+function λ_hawkes(t::Real)
     hawkes_model.μ +
     sum((hawkes_model.α * exp(-hawkes_model.ω * (t - ti)) for ti in ts if ti < t); init=0.0)
+end
 
 u = range(0.0, maximum(ts) + 1.0; length=2000)
 
-plot(u, λ_hawkes.(u);
-     xlabel="Time (minutes)",
-     ylabel="Fitted Hawkes intensity (events/min)",
-     title="Fitted Hawkes Process Intensity Function",
-     legend=false)
+plot(
+    u,
+    λ_hawkes.(u);
+    xlabel="Time (minutes)",
+    ylabel="Fitted Hawkes intensity (events/min)",
+    title="Fitted Hawkes Process Intensity Function",
+    legend=false,
+)
 
 # From the plot, we can observe how the intensity function varies over time, capturing the self-exciting nature of the litter box entries.
 # Like any good statistical analysis, it is important to assess goodness of fit. We will rely on the most useful method in point processes: the time-rescaling theorem.
@@ -144,7 +162,11 @@ test = MonteCarloTest(KSDistance{Exponential}, hawkes_model, full_history; n_sim
 
 p = pvalue(test) # hide
 println("Monte Carlo Test p-value for Hawkes Process fit: ", p) # hide
-println("Assuming a significance level of 0.05, we " * (p < 0.05 ? "reject" : "fail to reject") * "",) # hide
+println(
+    "Assuming a significance level of 0.05, we " *
+    (p < 0.05 ? "reject" : "fail to reject") *
+    "",
+) # hide
 println("the null hypothesis that the Hawkes process is a good fit to the data.") # hide
 
 # From this analysis, it seems that we can can say that litter-box usage is indeed a self-exciting process, as the fitted Hawkes process provides a good fit to the data.
