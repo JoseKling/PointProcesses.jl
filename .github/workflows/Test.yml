@@ -10,7 +10,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 
-# needed to allow julia-actions/cache to delete old caches that it has created
 permissions:
   actions: write
   contents: read
@@ -21,6 +20,9 @@ jobs:
     strategy:
       matrix:
         julia-version: ['lts', '1', 'pre']
+
+    # Allow failures only on the prerelease job
+    continue-on-error: ${{ matrix.julia-version == 'pre' }}
 
     steps:
       - uses: actions/checkout@v4
