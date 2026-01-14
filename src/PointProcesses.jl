@@ -32,8 +32,9 @@ export HypothesisTest, pvalue # HypothesisTests
 
 ## History
 
-export History
-export event_times, event_marks, min_time, max_time, min_mark, max_mark
+export History, UnivariateHistory
+export event_times, event_marks, event_dims
+export min_time, max_time, min_mark, max_mark, n_dims
 export nb_events, has_events, duration
 export time_change, split_into_chunks
 

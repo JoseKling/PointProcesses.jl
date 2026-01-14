@@ -43,7 +43,7 @@ function simulate(rng::AbstractRNG, hp::HawkesProcess, tmin, tmax)
     sim_desc = generate_descendants(rng, sim, tmax, hp.α, hp.ω) # Recursively generates descendants from first events
     append!(sim, sim_desc)
     sort!(sim)
-    return History(; times=sim, tmin=tmin, tmax=tmax, check=false)
+    return History(sim, tmin, tmax, check_args=false)
 end
 
 """
@@ -78,7 +78,7 @@ therefore, the interval of the process is transformed from T to N. Also, in equa
 """
 function StatsAPI.fit(
     ::Type{HawkesProcess{T}},
-    h::History;
+    h::UnivariateHistory;
     step_tol::Float64=1e-6,
     max_iter::Int=1000,
     rng::AbstractRNG=default_rng(),
@@ -149,12 +149,12 @@ function StatsAPI.fit(
 end
 
 # Type parameter for `HawkesProcess` was NOT explicitly provided
-function StatsAPI.fit(HP::Type{HawkesProcess}, h::History{H,M}; kwargs...) where {H<:Real,M}
+function StatsAPI.fit(HP::Type{<:HawkesProcess}, h::UnivariateHistory{H,M}; kwargs...) where {H<:Real,M}
     T = promote_type(Float64, H)
     return fit(HP{T}, h; kwargs...)
 end
 
-function time_change(h::History{R,M}, hp::HawkesProcess) where {R<:Real,M}
+function time_change(h::UnivariateHistory{R,M}, hp::HawkesProcess) where {R<:Real,M}
     T = float(R)
     n = nb_events(h)
     n == 0 && return History(T[], zero(T), T(hp.μ * duration(h)), event_marks(h))
@@ -178,7 +178,7 @@ function time_change(h::History{R,M}, hp::HawkesProcess) where {R<:Real,M}
     times .+= T.(hp.μ .* (h.times .- h.tmin))
     tmax += T(hp.μ * duration(h))
 
-    return History(; times=times, marks=h.marks, tmin=zero(T), tmax=tmax, check=false) # A time re-scaled process starts at t=0
+    return History(times, zero(T), tmax, event_marks(h); check_args=false) # A time re-scaled process starts at t=0
 end
 
 function ground_intensity(hp::HawkesProcess, h::History, t)

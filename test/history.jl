@@ -20,7 +20,7 @@ push!(h, 1.7, "d")
 
 h2 = History(; times=[2.3], marks=["e"], tmin=2.0, tmax=2.5)
 
-@test string(h2) == "History{Float64,String} with 1 events on interval [2.0, 2.5)"
+@test string(h2) == "UnivariateHistory{Float64,String} with 1 events on interval [2.0, 2.5)"
 
 h_cat = cat(h, h2)
 
@@ -37,9 +37,9 @@ append!(h2, [2.45, 2.4], ["g", "f"])
 @test h2.times == [2.3, 2.4, 2.45]
 @test h2.marks == ["e", "f", "g"]
 
-@test isa(History(rand(3), 0, BigFloat(1)), History{BigFloat,Nothing})
+@test isa(History(rand(3), 0, BigFloat(1)), UnivariateHistory{BigFloat,Nothing})
 @test_throws DomainError History(rand(3), 1, 0)
-@test_throws DimensionMismatch History(rand(3), 0, 1, ["a", "b"])
+@test_throws ArgumentError History(rand(3), 0, 1, ["a", "b"])
 @test_logs (:warn, "Events outside of provided interval were discarded.") History(
     [0.1, 1.1], 0, 1
 )
