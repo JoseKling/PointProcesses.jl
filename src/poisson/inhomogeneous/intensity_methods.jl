@@ -262,3 +262,37 @@ function intensity_bound(
     lookahead = T(lookahead_factor * dur)
     return intensity_bound(f, t; lookahead=lookahead, n_samples=n_samples)
 end
+
+"""
+    time_change(h::History, pp::InhomogeneousPoissonProcess)
+
+Time-rescaling transform (compensator transform) for an inhomogeneous Poisson process.
+
+Maps event times tᵢ to τᵢ = ∫_{tmin}^{tᵢ} λ(s) ds and sets tmax' = ∫_{tmin}^{tmax} λ(s) ds.
+Marks are preserved.
+"""
+function time_change(h::History, pp::InhomogeneousPoissonProcess)
+    ts = h.times
+    n = length(ts)
+
+    # Use a stable promoted type for accumulation
+    T = promote_type(eltype(ts), typeof(h.tmin), typeof(h.tmax))
+    new_times = Vector{T}(undef, n)
+
+    τ = zero(T)
+    prev = T(h.tmin)
+
+    for i in 1:n
+        t = T(ts[i])
+
+        # Incremental compensator: τ(tᵢ) = τ(tᵢ₋₁) + ∫_{tᵢ₋₁}^{tᵢ} λ(s) ds
+        τ += integrated_ground_intensity(pp, h, prev, t)
+        new_times[i] = τ
+        prev = t
+    end
+
+    # Transform the observation window endpoint as well
+    τmax = τ + integrated_ground_intensity(pp, h, prev, T(h.tmax))
+
+    return History(; times=new_times, tmin=zero(T), tmax=τmax, marks=h.marks)
+end
