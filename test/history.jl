@@ -1,3 +1,4 @@
+# Tests for univariate History
 h = History([0.2, 0.8, 1.1], 0.0, 2.0, ["a", "b", "c"]);
 
 @test duration(h) == 2.0
@@ -13,6 +14,8 @@ h = History([0.2, 0.8, 1.1], 0.0, 2.0, ["a", "b", "c"]);
 @test event_marks(h) == ["a", "b", "c"]
 @test event_marks(h, 0.2, 0.8) == ["a"]
 @test event_marks(h, 0.8, 0.2) == []
+@test ndims(h) == 1
+@test event_dims(h) == fill(nothing, 3)
 
 push!(h, 1.7, "d")
 
@@ -43,3 +46,42 @@ append!(h2, [2.45, 2.4], ["g", "f"])
 @test_logs (:warn, "Events outside of provided interval were discarded.") History(
     [0.1, 1.1], 0, 1
 )
+
+# Tests for multivariate History
+
+times1 = [0.1, 0.5]
+times2 = [0.2, 0.8]
+marks1 = ["a", "b"]
+marks2 = ["c", "d"]
+h_multi = History([times1, times2], 0.0, 1.0, [marks1, marks2])
+
+@test ndims(h_multi) == 2
+@test nb_events(h_multi) == 4
+@test event_times(h_multi) == [0.1, 0.2, 0.5, 0.8]
+@test event_marks(h_multi) == ["a", "c", "b", "d"]
+@test event_dims(h_multi) == [1, 2, 1, 2]
+
+# Test dimension-specific methods
+@test event_times(h_multi, 1) == [0.1, 0.5]
+@test event_times(h_multi, 2) == [0.2, 0.8]
+@test event_marks(h_multi, 1) == ["a", "b"]
+@test event_marks(h_multi, 2) == ["c", "d"]
+@test nb_events(h_multi, 1) == 2
+@test nb_events(h_multi, 2) == 2
+
+# Test time and dimension specific
+@test event_times(h_multi, 0.0, 0.3, 1) == [0.1]
+@test event_marks(h_multi, 0.0, 0.3, 2) == ["c"]
+@test nb_events(h_multi, 0.0, 0.3, 1) == 1
+
+# Test push! with dimension
+push!(h_multi, 0.85, "e", 1)
+@test nb_events(h_multi, 1) == 3
+@test event_marks(h_multi, 1) == ["a", "b", "e"]
+
+# Test append! with dimensions
+@test_throws AssertionError append!(h_multi, [0.8, 0.9], ["f", "g"], [2, 1])
+append!(h_multi, [0.95, 0.9], ["f", "g"], [2, 1])
+@test nb_events(h_multi) == 7
+@test event_times(h_multi, 1) == [0.1, 0.5, 0.85, 0.9]
+@test event_marks(h_multi, 1) == ["a", "b", "e", "g"]

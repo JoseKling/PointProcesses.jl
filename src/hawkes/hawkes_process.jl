@@ -43,7 +43,7 @@ function simulate(rng::AbstractRNG, hp::HawkesProcess, tmin, tmax)
     sim_desc = generate_descendants(rng, sim, tmax, hp.α, hp.ω) # Recursively generates descendants from first events
     append!(sim, sim_desc)
     sort!(sim)
-    return History(; times=sim, tmin=tmin, tmax=tmax, check=false)
+    return History(; times=sim, tmin=tmin, tmax=tmax, check_args=false)
 end
 
 """
@@ -178,7 +178,7 @@ function time_change(h::History{R,M}, hp::HawkesProcess) where {R<:Real,M}
     times .+= T.(hp.μ .* (h.times .- h.tmin))
     tmax += T(hp.μ * duration(h))
 
-    return History(; times=times, marks=h.marks, tmin=zero(T), tmax=tmax, check=false) # A time re-scaled process starts at t=0
+    return History(; times=times, marks=h.marks, tmin=zero(T), tmax=tmax, check_args=false) # A time re-scaled process starts at t=0
 end
 
 function ground_intensity(hp::HawkesProcess, h::History, t)

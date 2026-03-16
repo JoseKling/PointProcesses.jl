@@ -9,21 +9,26 @@ Linear event histories with temporal locations of type `T` and marks of type `M`
 - `tmin::T`: start time
 - `tmax::T`: end time
 - `marks::Vector{M}`: associated vector of event marks
+- `dims::Vector{D}`: associated vector of event dimensions
+- `N::Int`: number of dimensions
 """
-struct History{T<:Real,M}
+struct History{T<:Real,M,D}
     times::Vector{T}
     tmin::T
     tmax::T
     marks::Vector{M}
+    dims::Vector{D}
+    N::Int
 
     function History(
-        times::Vector{<:Real},
-        tmin::Real,
-        tmax::Real,
-        marks=fill(nothing, length(times));
-        check=true,
-    )
-        if check
+        times::Vector{R1},
+        tmin::R2,
+        tmax::R3,
+        marks::Vector{M}=fill(nothing, length(times)),
+        dims::Vector{D}=fill(nothing, length(times));
+        check_args=true,
+    ) where {R1<:Real,R2<:Real,R3<:Real,M,D}
+        if check_args
             if tmin >= tmax
                 throw(
                     DomainError(
@@ -32,31 +37,73 @@ struct History{T<:Real,M}
                     ),
                 )
             end
-            if length(marks) != length(times)
+            if length(marks) != length(times) || length(dims) != length(times)
                 throw(
-                    DimensionMismatch("There must be the same number of events and marks.")
+                    DimensionMismatch(
+                        "The fields `times`, `marks` and `dims` must have the same length."
+                    ),
                 )
             end
             if !isempty(times)
                 perm = sortperm(times)
                 times .= times[perm]
                 marks .= marks[perm]
+                dims .= dims[perm]
                 if times[1] < tmin || times[end] >= tmax
                     @warn "Events outside of provided interval were discarded."
                     il = searchsortedfirst(times, tmin)
                     ir = searchsortedfirst(times, tmax) - 1
                     times = times[il:ir]
                     marks = marks[il:ir]
+                    dims = dims[il:ir]
                 end
             end
+            if eltype(dims) != Nothing
+                ds = unique(dims)
+                dims = [findfirst(==(d), ds) for d in dims]
+            end
         end
-        T = promote_type(eltype(times), typeof(tmin), typeof(tmax))
-        return new{T,eltype(marks)}(times, tmin, tmax, marks)
+        T = promote_type(R1, R2, R3)
+        return new{T,M,D}(times, tmin, tmax, marks, dims, length(Set(dims)))
     end
 end
 
-function History(; times, tmin, tmax, marks=fill(nothing, length(times)), check=true)
-    History(times, tmin, tmax, marks; check)
+function History(
+    times::Vector{Vector{R1}}, tmin::R2, tmax::R3, marks::Vector{Vector{M}}; check_args=true
+) where {R1<:Real,R2<:Real,R3<:Real,M}
+    vec_times = vcat(times...)
+    vec_marks = vcat(marks...)
+    perm = sortperm(vec_times)
+    if length(times) == 1
+        vec_dims = fill(nothing, length(vec_times))
+    else
+        dims = [fill(i, length(times[i])) for i in 1:length(times)]
+        vec_dims = vcat(dims...)
+    end
+    return History(
+        vec_times[perm], tmin, tmax, vec_marks[perm], vec_dims[perm]; check_args=check_args
+    )
+end
+
+function History(
+    times::Vector{Vector{R1}}, tmin::R2, tmax::R3; check_args=true
+) where {R1<:Real,R2<:Real,R3<:Real}
+    nots = [fill(nothing, length(times[i])) for i in 1:length(times)]
+    return History(times, tmin, tmax, nots; check_args=check_args)
+end
+
+function History(; times, tmin, tmax, marks=nothing, dims=nothing, check_args=true)
+    if times isa Vector{<:Real}
+        marks === nothing && (marks = fill(nothing, length(times)))
+        dims === nothing && (dims = fill(nothing, length(times)))
+        return History(times, tmin, tmax, marks, dims; check_args=check_args)
+    else
+        marks === nothing &&
+            (marks = [fill(nothing, length(times[i])) for i in 1:length(times)])
+        dims === nothing &&
+            (dims = [fill(nothing, length(times[i])) for i in 1:length(times)])
+        return History(times, tmin, tmax, marks, dims; check_args=check_args)
+    end
 end
 
 function Base.show(io::IO, h::History{T,M}) where {T,M}
@@ -73,12 +120,33 @@ Return the sorted vector of event times for `h`.
 event_times(h::History) = h.times
 
 """
+    event_times(h, d)
+
+Return the sorted vector of event times for `h` in dimension `d`.
+"""
+event_times(h::History, d::Int) = h.N == 1 && d == 1 ? h.times : (@view h.times[h.dims .== d])
+
+"""
     event_times(h, tmin, tmax)
 
-Return the sorted vector of event times between `tmin` and `tmax` in `h`.
+Return the sorted vector of event times in the half-open interval `[tmin, tmax)` in `h`.
 """
-function event_times(h::History, tmin, tmax)
-    @view h.times[searchsortedfirst(h.times, tmin):(searchsortedfirst(h.times, tmax) - 1)]
+function event_times(h::History, tmin::Real, tmax::Real)
+    i_min = searchsortedfirst(h.times, tmin)
+    i_max = searchsortedfirst(h.times, tmax)
+    return @view h.times[i_min:(i_max - 1)]
+end
+
+"""
+    event_times(h, tmin, tmax, d)
+
+Return the sorted vector of event times in the half-open interval `[tmin, tmax)` in dimension `d` of `h`.
+"""
+function event_times(h::History, tmin::Real, tmax::Real, d::Int)
+    times = event_times(h, d)
+    i_min = searchsortedfirst(times, tmin)
+    i_max = searchsortedfirst(times, tmax)
+    return @view times[i_min:(i_max - 1)]
 end
 
 """
@@ -89,23 +157,70 @@ Return the vector of event marks for `h`, sorted according to their event times.
 event_marks(h::History) = h.marks
 
 """
+    event_marks(h, d)
+
+Return the vector of event marks in dimension `d` of `h`, sorted according to their event times.
+"""
+event_marks(h::History, d::Int) = h.N == 1 && d == 1 ? h.marks : (@view h.marks[h.dims .== d])
+
+"""
     event_marks(h, tmin, tmax)
 
-Return the sorted vector of marks of events between `tmin` and `tmax` in `h`.
+Return the sorted vector of marks of events in the half-open interval `[tmin, tmax)` in `h`.
 """
-function event_marks(h::History, tmin, tmax)
-    @view h.marks[searchsortedfirst(h.times, tmin):(searchsortedfirst(h.times, tmax) - 1)]
+function event_marks(h::History, tmin::Real, tmax::Real)
+    i_min = searchsortedfirst(h.times, tmin)
+    i_max = searchsortedfirst(h.times, tmax)
+    return @view h.marks[i_min:(i_max - 1)]
 end
 
 """
-    min_time(h)
+    event_marks(h, tmin, tmax, d)
+
+Return the sorted vector of marks of events in the half-open interval `[tmin, tmax)` in dimension `d` of `h`.
+"""
+function event_marks(h::History, tmin::Real, tmax::Real, d::Int)
+    marks = event_marks(h, d)
+    times = event_times(h, d)
+    i_min = searchsortedfirst(times, tmin)
+    i_max = searchsortedfirst(times, tmax)
+    return @view marks[i_min:(i_max - 1)]
+end
+
+"""
+    ndims(h)
+
+Return the number of dimensions of `h`.
+"""
+Base.ndims(h::History) = h.N
+
+"""
+    event_dims(h)
+
+Return the vector of event dimensions for `h`, sorted according to their event times.
+"""
+event_dims(h::History) = h.dims
+
+"""
+    event_dims(h, tmin, tmax)
+
+Return the vector of event dimensions for events between `tmin` and `tmax` in `h`, sorted according to their event times.
+"""
+function event_dims(h::History, tmin::Real, tmax::Real)
+    i_min = searchsortedfirst(h.times, tmin)
+    i_max = searchsortedfirst(h.times, tmax)
+    return @view h.dims[i_min:(i_max - 1)]
+end
+
+"""
+    min_time(h::History)
 
 Return the starting time of `h` (not the same as the first event time).
 """
 min_time(h::History) = h.tmin
 
 """
-    max_time(h)
+    max_time(h::History)
 
 Return the end time of `h` (not the same as the last event time).
 """
@@ -116,7 +231,37 @@ max_time(h::History) = h.tmax
 
 Count events in `h`.
 """
-nb_events(h::History) = length(h.marks)
+nb_events(h::History) = length(h.times)
+
+"""
+    nb_events(h, d)
+
+Count events in dimension `d` of `h`.
+"""
+nb_events(h::History, d::Int) = h.N == 1 && d == 1 ? length(h.times) : count(==(d), h.dims)
+
+"""
+    nb_events(h, tmin, tmax)
+
+Count events in `h` during the interval `[tmin, tmax)`.
+"""
+function nb_events(h::History, tmin::Real, tmax::Real)
+    i_min = searchsortedfirst(event_times(h), tmin)
+    i_max = searchsortedfirst(event_times(h), tmax)
+    return i_max - i_min
+end
+
+"""
+    nb_events(h, tmin, tmax, d::Int)
+
+Count events in dimension `d` of `h` during the interval `[tmin, tmax)`.
+"""
+function nb_events(h::History, tmin::Real, tmax::Real, d::Int)
+    times = event_times(h, d)
+    i_min = searchsortedfirst(times, tmin)
+    i_max = searchsortedfirst(times, tmax)
+    return i_max - i_min
+end
 
 """
     length(h)
@@ -126,29 +271,20 @@ Alias for `nb_events(h)`.
 Base.length(h::History) = nb_events(h)
 
 """
-    nb_events(h, tmin, tmax)
-
-Count events in `h` during the interval `[tmin, tmax)`.
-"""
-function nb_events(h::History, tmin, tmax)
-    i_min = searchsortedfirst(event_times(h), tmin)
-    i_max = searchsortedfirst(event_times(h), tmax)
-    return i_max - i_min
-end
-
-"""
     has_events(h)
 
-Check the presence of events in `h`.
+check the presence of events in `h`.
+`args` can be used to specify dimension and/or time interval.
 """
-has_events(h::History) = nb_events(h) > 0
+has_events(h::History, args...) = nb_events(h, args...) > 0
 
 """
-    has_events(h, tmin, tmax)
+    isempty(h, args...)
 
-Check the presence of events in `h` during the interval `[tmin, tmax)`.
+check the absence of events in `h`.
+`args` can be used to specify dimension and/or time interval.
 """
-has_events(h::History, tmin, tmax) = nb_events(h, tmin, tmax) > 0
+Base.isempty(h::History, args...) = !has_events(h, args...)
 
 """
     duration(h)
@@ -162,13 +298,15 @@ duration(h::History) = max_time(h) - min_time(h)
 
 Add event `(t, m)` inside the interval `[h.tmin, h.tmax)` at the end of history `h`.
 """
-function Base.push!(h::History, t::Real, m; check=true)
-    if check
+function Base.push!(h::History, t::Real, m=nothing, d=nothing; check_args=true)
+    if check_args
         @assert h.tmin <= t < h.tmax
         @assert (length(h) == 0) || (h.times[end] <= t)
+        @assert (d === nothing && h.N ==1) || 1 <= d <= h.N
     end
     push!(h.times, t)
     push!(h.marks, m)
+    push!(h.dims, d)
     return nothing
 end
 
@@ -177,16 +315,23 @@ end
 
 Append events `(ts, ms)` inside the interval `[h.tmin, h.tmax)` at the end of history `h`.
 """
-function Base.append!(h::History, ts::Vector{<:Real}, ms; check=true)
-    if check
+function Base.append!(h::History, ts::Vector{<:Real}, ms=fill(nothing, length(ts)), ds=fill(nothing, length(ts)); check_args=true)
+    if isempty(ts)
+        return nothing
+    end
+    if check_args
         perm = sortperm(ts)
         ts .= ts[perm]
         ms .= ms[perm]
+        ds .= ds[perm]
         @assert h.tmin <= ts[1] && ts[end] < h.tmax
-        @assert (length(h) == 0) || (h.times[end] <= ts[1])
+        @assert isempty(h) || (h.times[end] <= ts[1])
+        @assert length(ts) == length(ms) == length(ds)
+        @assert (eltype(ds) == Nothing && h.N == 1) || all(1 .<= ds .<= h.N)
     end
     append!(h.times, ts)
     append!(h.marks, ms)
+    append!(h.dims, ds)
     return nothing
 end
 
@@ -206,7 +351,8 @@ function Base.cat(h1::History, h2::History)
     )
     times = [h1.times; h2.times]
     marks = [h1.marks; h2.marks]
-    return History(; times=times, tmin=h1.tmin, tmax=h2.tmax, marks=marks, check=false)
+    dims = [h1.dims; h2.dims] 
+    return History(; times=times, tmin=h1.tmin, tmax=h2.tmax, marks=marks, dims=dims, check_args=false)
 end
 
 """
@@ -227,8 +373,8 @@ end
 
 Split `h` into a vector of consecutive histories with individual duration `chunk_duration`.
 """
-function split_into_chunks(h::History{T,M}, chunk_duration) where {T,M}
-    chunks = History{T,M}[]
+function split_into_chunks(h::History{T,M,D}, chunk_duration) where {T,M,D}
+    chunks = History{T,M,D}[]
     limits = collect(min_time(h):chunk_duration:max_time(h))
     if !(limits[end] ≈ max_time(h))
         push!(limits, max_time(h))
@@ -236,7 +382,8 @@ function split_into_chunks(h::History{T,M}, chunk_duration) where {T,M}
     for (a, b) in zip(limits[1:(end - 1)], limits[2:end])
         times = [t for t in event_times(h) if a <= t < b]
         marks = [m for (t, m) in zip(event_times(h), event_marks(h)) if a <= t < b]
-        chunk = History(; times=times, marks=marks, tmin=a, tmax=b, check=false)
+        dims  = [d for (t, d) in zip(event_times(h), event_dims(h)) if a <= t < b]
+        chunk = History(; times=times, marks=marks, dims=dims, tmin=a, tmax=b, check_args=false)
         push!(chunks, chunk)
     end
     return chunks
