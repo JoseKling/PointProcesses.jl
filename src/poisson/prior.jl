@@ -8,17 +8,19 @@ Gamma prior on all the event rates of a `MultivariatePoissonProcess`.
 - `α::Vector{R1}`
 - `β::R2`
 """
-struct MultivariatePoissonProcessPrior{R1<:Real,R2<:Real}
+struct PoissonProcessPrior{R1<:Real,R2<:Real}
     α::Vector{R1}
     β::R2
 end
 
 function DensityInterface.logdensityof(
-    prior::MultivariatePoissonProcessPrior, pp::PoissonProcess
+    prior::PoissonProcessPrior, pp::PoissonProcess
 )
+    ground_int = pp.λ
+    dim_int = ground_int ./ sum(ground_int)
     l = sum(
-        logdensityof(Gamma(prior.α[m], inv(prior.β); check_args=false), intensity(pp, m))
-        for m in 1:length(pp)
+        logdensityof(Gamma(prior.α[d], inv(prior.β); check_args=false), dim_int[d])
+        for d in 1:ndims(pp)
     )
     return l
 end

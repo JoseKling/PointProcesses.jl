@@ -19,6 +19,7 @@ end
 
 min_time(bpp::BoundedPointProcess) = bpp.tmin
 max_time(bpp::BoundedPointProcess) = bpp.tmax
+Base.ndims(bpp::BoundedPointProcess) = ndims(bpp.pp)
 
 """
     simulate([rng,] bpp::BoundedPointProcess)
@@ -29,16 +30,9 @@ function simulate(rng::AbstractRNG, bpp::BoundedPointProcess)
     return simulate(rng, bpp.pp, min_time(bpp), max_time(bpp))
 end
 
-ground_intensity(bpp::BoundedPointProcess, t, h) = ground_intensity(bpp.pp, t, h)
-mark_distribution(bpp::BoundedPointProcess, t, h) = mark_distribution(bpp.pp, t, h)
-mark_distribution(bpp::BoundedPointProcess, t) = mark_distribution(bpp.pp, t) # For simulate_ogata
-intensity(bpp::BoundedPointProcess, m, t, h) = intensity(bpp.pp, m, t, h)
-log_intensity(bpp::BoundedPointProcess, m, t, h) = log_intensity(bpp.pp, m, t, h)
-
-function ground_intensity_bound(bpp::BoundedPointProcess, t, h)
-    return ground_intensity_bound(bpp.pp, t, h)
-end
-
-function integrated_ground_intensity(bpp::BoundedPointProcess, h, a, b)
-    return integrated_ground_intensity(bpp.pp, h, a, b)
-end
+ground_intensity(bpp::BoundedPointProcess, args...) = ground_intensity(bpp.pp, args...)
+mark_distribution(bpp::BoundedPointProcess, args...) = mark_distribution(bpp.pp, args...)
+intensity(bpp::BoundedPointProcess, args...) = intensity(bpp.pp, args...)
+log_intensity(bpp::BoundedPointProcess, args...) = log_intensity(bpp.pp, args...)
+ground_intensity_bound(bpp::BoundedPointProcess, t, h) = ground_intensity_bound(bpp.pp, t, h)
+integrated_ground_intensity(bpp::BoundedPointProcess, h, a, b) = integrated_ground_intensity(bpp.pp, h, a, b)

@@ -9,7 +9,7 @@ module PointProcesses
 
 using DensityInterface: DensityInterface, HasDensity, densityof, logdensityof
 using Distributions: Distributions, UnivariateDistribution, MultivariateDistribution
-using Distributions: Categorical, Exponential, Poisson, Uniform, Dirac
+using Distributions: Categorical, Exponential, Poisson, Uniform, Dirac, Gamma
 using Distributions: fit, suffstats, probs
 using Integrals: Integrals, IntegralProblem, solve, QuadGKJL
 using LinearAlgebra: dot
@@ -43,7 +43,7 @@ export time_change, split_into_chunks
 export AbstractPointProcess
 export BoundedPointProcess
 export ground_intensity, mark_distribution
-export intensity, log_intensity, intensity_vector
+export intensity, log_intensity
 export ground_intensity_bound
 export integrated_ground_intensity
 export simulate_ogata, simulate
@@ -51,8 +51,8 @@ export simulate_ogata, simulate
 ## Models
 
 export PoissonProcess
-export UnivariatePoissonProcess
-export MultivariatePoissonProcess, MultivariatePoissonProcessPrior
+export UnmarkedPoissonProcess
+export PoissonProcessPrior
 export InhomogeneousPoissonProcess
 export HawkesProcess
 

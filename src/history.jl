@@ -25,7 +25,8 @@ struct History{T<:Real,M,D}
         tmin::R2,
         tmax::R3,
         marks::Vector{M}=fill(nothing, length(times)),
-        dims::Vector{D}=fill(nothing, length(times));
+        dims::Vector{D}=fill(nothing, length(times)),
+        N::Int=0;
         check_args=true,
     ) where {R1<:Real,R2<:Real,R3<:Real,M,D}
         if check_args
@@ -58,13 +59,10 @@ struct History{T<:Real,M,D}
                     dims = dims[il:ir]
                 end
             end
-            if eltype(dims) != Nothing
-                ds = unique(dims)
-                dims = [findfirst(==(d), ds) for d in dims]
-            end
         end
         T = promote_type(R1, R2, R3)
-        return new{T,M,D}(times, tmin, tmax, marks, dims, length(Set(dims)))
+        N == 0 && (N = length(Set(dims)))
+        return new{T,M,D}(times, tmin, tmax, marks, dims, N)
     end
 end
 
@@ -81,15 +79,15 @@ function History(
         vec_dims = vcat(dims...)
     end
     return History(
-        vec_times[perm], tmin, tmax, vec_marks[perm], vec_dims[perm]; check_args=check_args
+        vec_times[perm], tmin, tmax, vec_marks[perm], vec_dims[perm], length(times); check_args=check_args
     )
 end
 
 function History(
     times::Vector{Vector{R1}}, tmin::R2, tmax::R3; check_args=true
 ) where {R1<:Real,R2<:Real,R3<:Real}
-    nots = [fill(nothing, length(times[i])) for i in 1:length(times)]
-    return History(times, tmin, tmax, nots; check_args=check_args)
+    marks = [fill(nothing, length(times[i])) for i in 1:length(times)]
+    return History(times, tmin, tmax, marks; check_args=check_args)
 end
 
 function History(; times, tmin, tmax, marks=nothing, dims=nothing, check_args=true)
@@ -102,13 +100,39 @@ function History(; times, tmin, tmax, marks=nothing, dims=nothing, check_args=tr
             (marks = [fill(nothing, length(times[i])) for i in 1:length(times)])
         dims === nothing &&
             (dims = [fill(nothing, length(times[i])) for i in 1:length(times)])
-        return History(times, tmin, tmax, marks, dims; check_args=check_args)
+        return History(times, tmin, tmax, marks, dims, length(times); check_args=check_args)
     end
 end
 
 function Base.show(io::IO, h::History{T,M}) where {T,M}
     return print(
-        io, "History{$T,$M} with $(nb_events(h)) events on interval [$(h.tmin), $(h.tmax))"
+        io, "$(h.N)-dimensional History{$T,$M} with $(nb_events(h)) events on interval [$(h.tmin), $(h.tmax))"
+    )
+end
+
+# Alias
+
+const UnmarkedHistory{T<:Real,D} = History{T,Nothing,D}
+
+function Base.show(io::IO, h::UnmarkedHistory{T,D}) where {T,D}
+    return print(
+        io, "$(h.N)-dimensional UnmarkedHistory{$T} with $(nb_events(h)) events on interval [$(h.tmin), $(h.tmax))"
+    )
+end
+
+const UnivariateHistory{T<:Real,M} = History{T,M,Nothing}
+
+function Base.show(io::IO, h::UnivariateHistory{T,M}) where {T,M}
+    return print(
+        io, "UnivariateHistory{$T,$M} with $(nb_events(h)) events on interval [$(h.tmin), $(h.tmax))"
+    )
+end
+
+const UnmarkedUnivariateHistory{T<:Real} = History{T,Nothing,Nothing}
+
+function Base.show(io::IO, h::UnmarkedUnivariateHistory{T}) where {T}
+    return print(
+        io, "UnmarkedUnivariateHistory{$T} with $(nb_events(h)) events on interval [$(h.tmin), $(h.tmax))"
     )
 end
 

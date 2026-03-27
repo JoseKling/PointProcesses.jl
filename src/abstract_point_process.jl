@@ -7,6 +7,7 @@ abstract type AbstractPointProcess end
 
 @inline DensityInterface.DensityKind(::AbstractPointProcess) = HasDensity()
 
+Base.ndims
 ## Intensity functions
 
 """
@@ -46,6 +47,9 @@ function log_intensity(pp::AbstractPointProcess, m, t, h)
     return log(ground_intensity(pp, t, h)) + logdensityof(mark_distribution(pp, t, h), m)
 end
 
+function log_intensity(pp::AbstractPointProcess, m, t, h, d)
+    return log(ground_intensity(pp, t, h, d)) + logdensityof(mark_distribution(pp, t, h, d), m)
+end
 ## Simulation
 
 """
@@ -53,7 +57,7 @@ end
 
 Compute a local upper bound on the ground intensity for a temporal point process `pp` applied to history `h` at time `t`.
 
-Return a tuple of the form `(B, L)` satisfying `λg(t|h) ≤ B` for all `u ∈ [t, t+L)`.
+Return a tuple of the form `(B, L)` satisfying `λg(t|h) ≤ B` for all `u ∈ [t, t+L)` for each dimension.
 """
 function ground_intensity_bound end
 
@@ -85,6 +89,9 @@ function DensityInterface.logdensityof(pp::AbstractPointProcess, h::History)
     end
     return l
 end
+
+DensityInterface.densityof(::Dirac{Nothing}, ::Nothing) = 1.0
+DensityInterface.logdensityof(::Dirac{Nothing}, ::Nothing) = 0.0
 
 """
     fit(::Type{PP}, h)
