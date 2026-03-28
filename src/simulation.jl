@@ -17,34 +17,26 @@ end
 Simulate a temporal point process `pp` on interval `[tmin, tmax)` using Ogata's algorithm.
 
 # Technical Remark
-To infer the type of the marks, the implementation assumes that there is a method of `mark_distribution` without the argument `h` such that it corresponds to the distribution of marks in case the history is empty.
+To infer the type of the marks, the implementation assumes that there is method of `mark_distribution` without the argument `h` such that it corresponds to the distribution of marks in case the history is empty.
 """
 function simulate_ogata(
     rng::AbstractRNG, pp::AbstractPointProcess, tmin::T, tmax::T
 ) where {T<:Real}
-    M = eltype(rand.(mark_distribution(pp, tmin)))
-    N = ndims(pp)
-    D = N == 1 ? Nothing : Int
-    h = History(T[], tmin, tmax, M[], D[]; check_args=false)
+    M = typeof(rand(mark_distribution(pp, tmin)))
+    h = History(; times=T[], marks=M[], tmin=tmin, tmax=tmax)
     t = tmin
     while t < tmax
-        BLs = ground_intensity_bound(pp, t + eps(t), h)
-        τ = [BLs[d][1] > 0 ? rand(rng, Exponential(inv(BLs[d][1])), N) : typemax(inv(BLs[d][1])) for d in 1:N]
-        if all(τ) .> L
+        B, L = ground_intensity_bound(pp, t + eps(t), h)
+        τ = B > 0 ? rand(rng, Exponential(inv(B))) : typemax(inv(B))
+        if τ > L
             t = t + L
-        else
-            # get the indices of τ such that τ <= L
-            ds = findall(τ .<= L)
-            passed = false
-            for d in ds
-                U_max = ground_intensity(pp, t + τ, h, d) / B
-                U = rand(rng, typeof(U_max))
-                if U < U_max
-                    passed = true
-                    m = rand(rng, mark_distribution(pp, t + τ, h))
-                    if t + τ < tmax
-                        push!(h, t + τ, m; check_args=false)
-                    end
+        elseif τ <= L
+            U_max = ground_intensity(pp, t + τ, h) / B
+            U = rand(rng, typeof(U_max))
+            if U < U_max
+                m = rand(rng, mark_distribution(pp, t + τ, h))
+                if t + τ < tmax
+                    push!(h, t + τ, m; check_args=false)
                 end
             end
             t = t + τ

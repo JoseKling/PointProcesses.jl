@@ -13,126 +13,131 @@ Homogeneous temporal Poisson process with arbitrary mark distribution.
     PoissonProcess(λ, mark_dist)
 """
 struct PoissonProcess{R<:Real,D} <: AbstractPointProcess
-    λ::Vector{R}
-    mark_dist::Vector{D}
+    λ::R
+    mark_dist::D
 
-    function PoissonProcess(λ::Vector{R}, mark_dist::Vector{D}; check_args::Bool=true) where {R<:Real,D}
-        if check_args
-            all(λ .>= zero(λ)) ||
+    function PoissonProcess(λ::R, mark_dist::D; check_args::Bool=true) where {R<:Real,D}
+        check_args &&
+            λ < zero(λ) &&
             throw(
                 DomainError(
-                    λ, "PoissonProcess: the ground intensity λ must be non negative."
+                    "λ = $λ", "PoissonProcess: the ground intensity λ must be non negative."
                 ),
             )
-            length(λ) == length(mark_dist) ||
-            throw(
-                DimensionMismatch(
-                    "λ = $λ, mark_dist = $mark_dist.\nPoissonProcess: the length of λ and mark_dist must be the same.",
-                )
-            )
-        end
         return new{R,D}(λ, mark_dist)
     end
 end
 
-# Constructors
-function PoissonProcess(λ::Vector{R}, mark_dist::D; check_args::Bool=true) where {R<:Real,D}
-    return PoissonProcess(λ, fill(mark_dist, length(λ)); check_args=check_args)
-end
-
-function PoissonProcess(λ::Vector{R}; check_args::Bool=true) where {R<:Real}
-    return PoissonProcess(λ, fill(Dirac(nothing), length(λ)); check_args=check_args)
-end
-
-function PoissonProcess(λ::R, mark_dist::D; check_args::Bool=true) where {R<:Real,D}
-    return PoissonProcess([λ], [mark_dist]; check_args=check_args)
-end
-
-function PoissonProcess(λ::R; check_args::Bool=true) where {R<:Real}
-    return PoissonProcess([λ], [Dirac(nothing)]; check_args=check_args)
-end
-
-PoissonProcess() = PoissonProcess(1.0)
-
 function Base.show(io::IO, pp::PoissonProcess)
-    if ndims(pp) == 1
-        return print(io, "Univariate PoissonProcess($(pp.λ[1]), $(pp.mark_dist[1]))")
-    else
-        return print(io, "$(ndims(pp))-dimensional PoissonProcess($(pp.λ), $(pp.mark_dist))")
-    end
+    return print(io, "PoissonProcess($(pp.λ), $(pp.mark_dist))")
 end
 
 ## Alias 
 """
-    UnmarkedPoissonProcess{R}
+    UnivariatePoissonProcess{R}
 
-Homogeneous temporal Poisson process with scalar marginal intensities λ and no marks.
+Homogeneous univariate temporal Poisson process with scalar intensity `λ::R`.
 
-`UnmarkedPoissonProcess{R}` is simply a type alias for `PoissonProcess{R,Dirac{Nothing}}`.
+`UnivariatePoissonProcess{R}` is simply a type alias for `PoissonProcess{R,Dirac{Nothing}}`.
 """
-const UnmarkedPoissonProcess{R<:Real} = PoissonProcess{R,Dirac{Nothing}}
+const UnivariatePoissonProcess{R<:Real} = PoissonProcess{R,Dirac{Nothing}}
 
-function Base.show(io::IO, pp::UnmarkedPoissonProcess)
-    if ndims(pp) == 1
-        return print(io, "Univariate Unmarked PoissonProcess($(pp.λ[1]))")
-    else
-        return print(io, "$(ndims(pp))-dimensional UnmarkedPoissonProcess($(pp.λ))")
-    end
+function Base.show(io::IO, pp::UnivariatePoissonProcess)
+    return print(io, "UnivariatePoissonProcess($(pp.λ))")
 end
+
+"""
+    MultivariatePoissonProcess{R}
+
+Homogeneous multivariate temporal Poisson process with marginal intensities of type `R`.
+
+`MultivariatePoissonProcess{R}` is simply a type alias for `PoissonProcess{R,Categorical{Float64,Vector{Float64}}}`.
+"""
+const MultivariatePoissonProcess{R<:Real} = PoissonProcess{
+    R,Categorical{Float64,Vector{Float64}}
+}
+# The choice to impose the mark distribution Categorical{Float64,Vector{Float64}} was made on purpose
+## It is mainly due to the fact that Distributions.Categorical makes (most of the time) automatic conversions to Float64
+
+function Base.show(io::IO, pp::MultivariatePoissonProcess)
+    return print(io, "MultivariatePoissonProcess($(pp.λ * probs(pp.mark_dist)))")
+end
+
+## Constructors
+function PoissonProcess(λ::Vector{R}; check_args::Bool=true) where {R<:Real}
+    if check_args
+        if any(λ .< zero(λ))
+            throw(
+                DomainError(
+                    "λ = $λ",
+                    "PoissonProcess: the condition λ ≥ 0 is not satisfied for all dimensions.",
+                ),
+            )
+        end
+        if sum(λ) == 0
+            return PoissonProcess(
+                0.0, Categorical(ones(length(λ)) / length(λ)); check_args=check_args
+            )
+        end
+    end
+    return PoissonProcess(sum(λ), Categorical(λ / sum(λ)); check_args=check_args)
+end
+
+function PoissonProcess(λ::R; check_args::Bool=true) where {R<:Real}
+    return PoissonProcess(λ, Dirac(nothing); check_args=check_args)
+end
+PoissonProcess() = PoissonProcess(1.0)
 
 ## Access
+ground_intensity(pp::PoissonProcess) = pp.λ
+mark_distribution(pp::PoissonProcess) = pp.mark_dist
 
-Base.ndims(pp::PoissonProcess) = length(pp.λ)
+"""
+    length(pp::MultivariatePoissonProcess)
 
-## AbstractPointProcess interface
+Return the number of marks (dimensions) in a multivariate Poisson process.
+"""
+Base.length(pp::MultivariatePoissonProcess) = length(probs(mark_distribution(pp)))
 
-mark_distribution(pp::PoissonProcess, t) = pp.mark_dist # For simulate_ogata
-mark_distribution(pp::PoissonProcess, t, h) = pp.mark_dist
-mark_distribution(pp::PoissonProcess, t, h, d) = pp.mark_dist[d]
+"""
+    intensity_vector(pp<:MultivariatePoissonProcess)
 
-ground_intensity(pp::PoissonProcess, t, h) = pp.λ
-ground_intensity(pp::PoissonProcess, t, h, d) = pp.λ[d]
-
-function intensity(pp::PoissonProcess, m, t, h)
-    return pp.λ .* densityof.(mark_distribution(pp, t, h), m)
+Compute the vector of the marginal intensities `λ` for a multivariate Poisson process.
+"""
+function intensity_vector(pp::MultivariatePoissonProcess{R}) where {R}
+    return ground_intensity(pp) .* probs(mark_distribution(pp))
 end
 
-function intensity(pp::PoissonProcess, m, t, h, d)
-    return pp.λ[d] .* densityof.(mark_distribution(pp, t, h, d), m)
+## Intensity functions
+function intensity(pp::PoissonProcess, m)
+    return ground_intensity(pp) * densityof(mark_distribution(pp), m)
 end
 
-function log_intensity(pp::PoissonProcess, m, t, h)
-    return log.(ground_intensity(pp, t, h)) .+ logdensityof.(mark_distribution(pp, t, h), m)
-end
-
-function log_intensity(pp::PoissonProcess, m, t, h, d)
-    return log(ground_intensity(pp, t, h, d)) + logdensityof(mark_distribution(pp, t, h, d), m)
-end
-
-function ground_intensity_bound(pp::PoissonProcess, t::T, h) where {T<:Real}
-    B = ground_intensity(pp, t, h)
-    L = typemax(T)
-    return [(B[d], L) for d in 1:length(B)]
-end
-
-function ground_intensity_bound(pp::PoissonProcess, t::T, h, d) where {T<:Real}
-    B = ground_intensity(pp, t, h, d)
-    L = typemax(T)
-    return (B, L)
-end
-
-function integrated_ground_intensity(pp::PoissonProcess, h::History, a, b)
-    return ground_intensity(pp, a, h) .* (b - a)
-end
-
-function integrated_ground_intensity(pp::PoissonProcess, h::History, a, b, d)
-    return ground_intensity(pp, a, h, d) * (b - a)
+function log_intensity(pp::PoissonProcess, m)
+    return log(ground_intensity(pp)) + logdensityof(mark_distribution(pp), m)
 end
 
 ## Time change
 function time_change(h::History, pp::PoissonProcess)
-    times = [(event_times(h, d) .- min_time(h)) * pp.λ[d] for d in 1:ndims(h)]
-    tmax = (h.tmax - h.tmin) * maximum(pp.λ)
-    marks = [event_marks(h, d) for d in 1:ndims(h)]
-    return History(times, 0, tmax, marks)
+    times = (h.times .- h.tmin) .* ground_intensity(pp)
+    tmax = (h.tmax - h.tmin) * ground_intensity(pp)
+    return History(; times=times, tmin=0, tmax=tmax, marks=h.marks)
+end
+
+## Implementing AbstractPointProcess interface
+
+ground_intensity(pp::PoissonProcess, t, h) = ground_intensity(pp)
+mark_distribution(pp::PoissonProcess, t, h) = mark_distribution(pp)
+mark_distribution(pp::PoissonProcess, t) = mark_distribution(pp) # For simulate_ogata
+intensity(pp::PoissonProcess, m, t, h) = intensity(pp, m)
+log_intensity(pp::PoissonProcess, m, t, h) = log_intensity(pp, m)
+
+function ground_intensity_bound(pp::PoissonProcess, t::T, h) where {T<:Real}
+    B = ground_intensity(pp)
+    L = typemax(T)
+    return (B, L)
+end
+
+function integrated_ground_intensity(pp::PoissonProcess, h, a, b)
+    return ground_intensity(pp) * (b - a)
 end

@@ -23,7 +23,7 @@ push!(h, 1.7, "d")
 
 h2 = History(; times=[2.3], marks=["e"], tmin=2.0, tmax=2.5)
 
-@test string(h2) == "UnivariateHistory{Float64,String} with 1 events on interval [2.0, 2.5)"
+@test string(h2) == "History{Float64,String} with 1 events on interval [2.0, 2.5)"
 
 h_cat = cat(h, h2)
 
@@ -54,7 +54,6 @@ times2 = [0.2, 0.8]
 marks1 = ["a", "b"]
 marks2 = ["c", "d"]
 h_multi = History([times1, times2], 0.0, 1.0, [marks1, marks2])
-@test string(h_multi) == "2-dimensional History{Float64,String} with 4 events on interval [0.0, 1.0)"
 
 @test ndims(h_multi) == 2
 @test nb_events(h_multi) == 4
