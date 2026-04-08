@@ -21,7 +21,7 @@ struct History{T<:Real,M,D}
     N::Int
 
     function History(
-        times::Vector{R1},
+        times::AbstractVector{R1},
         tmin::R2,
         tmax::R3,
         marks::Vector{M}=fill(nothing, length(times)),
@@ -144,8 +144,8 @@ Return the sorted vector of event times in the half-open interval `[tmin, tmax)`
 """
 function event_times(h::History, tmin::Real, tmax::Real, d::Int)
     times = event_times(h, d)
-    i_min = searchsortedfirst(times, tmin)
-    i_max = searchsortedfirst(times, tmax)
+    i_min = Int(searchsortedfirst(times, tmin))
+    i_max = Int(searchsortedfirst(times, tmax))
     return @view times[i_min:(i_max - 1)]
 end
 

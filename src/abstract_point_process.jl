@@ -4,6 +4,8 @@
 Common interface for all temporal point processes.
 """
 abstract type AbstractPointProcess end
+abstract type AbstractUnivariateProcess <: AbstractPointProcess end
+abstract type AbstractMultivariateProcess <: AbstractPointProcess end
 
 @inline DensityInterface.DensityKind(::AbstractPointProcess) = HasDensity()
 

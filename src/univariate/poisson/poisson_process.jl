@@ -12,7 +12,7 @@ Homogeneous temporal Poisson process with arbitrary mark distribution.
 
     PoissonProcess(λ, mark_dist)
 """
-struct PoissonProcess{R<:Real,D} <: AbstractPointProcess
+struct PoissonProcess{R<:Real,D} <: AbstractUnivariateProcess
     λ::R
     mark_dist::D
 
@@ -32,56 +32,12 @@ function Base.show(io::IO, pp::PoissonProcess)
     return print(io, "PoissonProcess($(pp.λ), $(pp.mark_dist))")
 end
 
+
 ## Alias 
-"""
-    UnivariatePoissonProcess{R}
-
-Homogeneous univariate temporal Poisson process with scalar intensity `λ::R`.
-
-`UnivariatePoissonProcess{R}` is simply a type alias for `PoissonProcess{R,Dirac{Nothing}}`.
-"""
-const UnivariatePoissonProcess{R<:Real} = PoissonProcess{R,Dirac{Nothing}}
-
 function Base.show(io::IO, pp::UnivariatePoissonProcess)
     return print(io, "UnivariatePoissonProcess($(pp.λ))")
 end
 
-"""
-    MultivariatePoissonProcess{R}
-
-Homogeneous multivariate temporal Poisson process with marginal intensities of type `R`.
-
-`MultivariatePoissonProcess{R}` is simply a type alias for `PoissonProcess{R,Categorical{Float64,Vector{Float64}}}`.
-"""
-const MultivariatePoissonProcess{R<:Real} = PoissonProcess{
-    R,Categorical{Float64,Vector{Float64}}
-}
-# The choice to impose the mark distribution Categorical{Float64,Vector{Float64}} was made on purpose
-## It is mainly due to the fact that Distributions.Categorical makes (most of the time) automatic conversions to Float64
-
-function Base.show(io::IO, pp::MultivariatePoissonProcess)
-    return print(io, "MultivariatePoissonProcess($(pp.λ * probs(pp.mark_dist)))")
-end
-
-## Constructors
-function PoissonProcess(λ::Vector{R}; check_args::Bool=true) where {R<:Real}
-    if check_args
-        if any(λ .< zero(λ))
-            throw(
-                DomainError(
-                    "λ = $λ",
-                    "PoissonProcess: the condition λ ≥ 0 is not satisfied for all dimensions.",
-                ),
-            )
-        end
-        if sum(λ) == 0
-            return PoissonProcess(
-                0.0, Categorical(ones(length(λ)) / length(λ)); check_args=check_args
-            )
-        end
-    end
-    return PoissonProcess(sum(λ), Categorical(λ / sum(λ)); check_args=check_args)
-end
 
 function PoissonProcess(λ::R; check_args::Bool=true) where {R<:Real}
     return PoissonProcess(λ, Dirac(nothing); check_args=check_args)
@@ -91,22 +47,6 @@ PoissonProcess() = PoissonProcess(1.0)
 ## Access
 ground_intensity(pp::PoissonProcess) = pp.λ
 mark_distribution(pp::PoissonProcess) = pp.mark_dist
-
-"""
-    length(pp::MultivariatePoissonProcess)
-
-Return the number of marks (dimensions) in a multivariate Poisson process.
-"""
-Base.length(pp::MultivariatePoissonProcess) = length(probs(mark_distribution(pp)))
-
-"""
-    intensity_vector(pp<:MultivariatePoissonProcess)
-
-Compute the vector of the marginal intensities `λ` for a multivariate Poisson process.
-"""
-function intensity_vector(pp::MultivariatePoissonProcess{R}) where {R}
-    return ground_intensity(pp) .* probs(mark_distribution(pp))
-end
 
 ## Intensity functions
 function intensity(pp::PoissonProcess, m)
