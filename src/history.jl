@@ -24,8 +24,9 @@ struct History{T<:Real,M,D}
         times::AbstractVector{R1},
         tmin::R2,
         tmax::R3,
-        marks::Vector{M}=fill(nothing, length(times)),
-        dims::Vector{D}=fill(nothing, length(times));
+        marks::AbstractVector{M}=fill(nothing, length(times)),
+        dims::AbstractVector{D}=fill(nothing, length(times)),
+        N::Int=length(unique(dims));
         check_args=true,
     ) where {R1<:Real,R2<:Real,R3<:Real,M,D}
         if check_args
@@ -58,13 +59,21 @@ struct History{T<:Real,M,D}
                     dims = dims[il:ir]
                 end
             end
-            if eltype(dims) != Nothing
-                ds = unique(dims)
-                dims = [findfirst(==(d), ds) for d in dims]
+            if N == 1
+                dims .= nothing
+            else
+                if any(d -> d < 1 || d > N, dims)
+                    throw(
+                        DomainError(
+                            dims,
+                            "Event dimensions must be between 1 and N, where N is the number of dimensions of the history.",
+                        ),
+                    )
+                end
             end
         end
         T = promote_type(R1, R2, R3)
-        return new{T,M,D}(times, tmin, tmax, marks, dims, length(Set(dims)))
+        return new{T,M,D}(times, tmin, tmax, marks, dims, N)
     end
 end
 
@@ -81,7 +90,7 @@ function History(
         vec_dims = vcat(dims...)
     end
     return History(
-        vec_times[perm], tmin, tmax, vec_marks[perm], vec_dims[perm]; check_args=check_args
+        vec_times[perm], tmin, tmax, vec_marks[perm], vec_dims[perm], length(times); check_args=check_args
     )
 end
 
@@ -143,10 +152,10 @@ end
 Return the sorted vector of event times in the half-open interval `[tmin, tmax)` in dimension `d` of `h`.
 """
 function event_times(h::History, tmin::Real, tmax::Real, d::Int)
-    times = event_times(h, d)
-    i_min = Int(searchsortedfirst(times, tmin))
-    i_max = Int(searchsortedfirst(times, tmax))
-    return @view times[i_min:(i_max - 1)]
+    times = event_times(h, d)::AbstractVector
+    i_min = searchsortedfirst(times, tmin)
+    i_max = searchsortedfirst(times, tmax)
+    return @view times[i_min : (i_max - 1)]
 end
 
 """
@@ -181,7 +190,7 @@ Return the sorted vector of marks of events in the half-open interval `[tmin, tm
 """
 function event_marks(h::History, tmin::Real, tmax::Real, d::Int)
     marks = event_marks(h, d)
-    times = event_times(h, d)
+    times = event_times(h, d)::AbstractVector
     i_min = searchsortedfirst(times, tmin)
     i_max = searchsortedfirst(times, tmax)
     return @view marks[i_min:(i_max - 1)]
@@ -257,7 +266,7 @@ end
 Count events in dimension `d` of `h` during the interval `[tmin, tmax)`.
 """
 function nb_events(h::History, tmin::Real, tmax::Real, d::Int)
-    times = event_times(h, d)
+    times = event_times(h, d)::AbstractVector
     i_min = searchsortedfirst(times, tmin)
     i_max = searchsortedfirst(times, tmax)
     return i_max - i_min

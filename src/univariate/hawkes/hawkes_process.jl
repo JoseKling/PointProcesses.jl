@@ -22,7 +22,7 @@ Conditions:
 
 Following the notation from [Lewis2011](@cite).
 """
-struct HawkesProcess{T<:Real} <: AbstractPointProcess
+struct HawkesProcess{T<:Real} <: AbstractUnivariateProcess
     μ::T
     α::T
     ω::T

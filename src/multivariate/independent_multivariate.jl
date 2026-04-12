@@ -1,5 +1,5 @@
-struct IndependentMultivariateProcess
-    processes::Vector{<:AbstractUnivariateProcess}
+struct IndependentMultivariateProcess{P<:AbstractUnivariateProcess} <: AbstractMultivariateProcess
+    processes::Vector{P}
 end
 
 function Base.show(io::IO, pp::IndependentMultivariateProcess)
@@ -14,7 +14,7 @@ function ground_intensity(pp::IndependentMultivariateProcess, t, h, d)
 end
 
 function ground_intensity(pp::IndependentMultivariateProcess, t, h)
-    return [ground_intensity(pp.processes, t, h, d) for d in eachindex(pp.processes)]
+    return [ground_intensity(pp, t, h, d) for d in 1:ndims(pp)]
 end
 
 function mark_distribution(pp::IndependentMultivariateProcess, t, h, d)
@@ -22,7 +22,11 @@ function mark_distribution(pp::IndependentMultivariateProcess, t, h, d)
 end
 
 function mark_distribution(pp::IndependentMultivariateProcess, t, h)
-    return [mark_distribution(pp.processes, t, h, d) for d in eachindex(pp.processes)]
+    return [mark_distribution(pp, t, h, d) for d in 1:ndims(pp)]
+end
+
+function mark_distribution(pp::IndependentMultivariateProcess, t)
+    return [mark_distribution(pp.processes[d], t) for d in 1:ndims(pp)]
 end
 
 function intensity(pp::IndependentMultivariateProcess, m, t, h, d) 
@@ -30,10 +34,10 @@ function intensity(pp::IndependentMultivariateProcess, m, t, h, d)
 end
 
 function intensity(pp::IndependentMultivariateProcess, m, t, h) 
-    return [intensity(pp, m, t, h, d) for d in eachindex(pp.processes)]
+    return [intensity(pp, m, t, h, d) for d in 1:ndims(pp)]
 end
 
-log_intensity(pp::IndependentMultivariateProcess, m, t, h, d) = log(intensity(pp.processes, m, t, h, d))
+log_intensity(pp::IndependentMultivariateProcess, m, t, h, d) = log(intensity(pp, m, t, h, d))
 log_intensity(pp::IndependentMultivariateProcess, m, t, h) = log.(intensity(pp, m, t, h))
 
 function ground_intensity_bound(pp::IndependentMultivariateProcess, t, h, d)
@@ -41,7 +45,7 @@ function ground_intensity_bound(pp::IndependentMultivariateProcess, t, h, d)
 end
 
 function ground_intensity_bound(pp::IndependentMultivariateProcess, t, h)
-    return [ground_intensity_bound(pp, t, h, d) for d in eachindex(pp.processes)]
+    return [ground_intensity_bound(pp, t, h, d) for d in 1:ndims(pp)]
 end
 
 function integrated_ground_intensity(pp::IndependentMultivariateProcess, h, a, b, d)
@@ -49,34 +53,35 @@ function integrated_ground_intensity(pp::IndependentMultivariateProcess, h, a, b
 end
 
 function integrated_ground_intensity(pp::IndependentMultivariateProcess, h, a, b)
-    return [integrated_ground_intensity(pp, h, a, b, d) for d in eachindex(pp.processes)]
+    return [integrated_ground_intensity(pp, h, a, b, d) for d in 1:ndims(pp)]
+end
+
+function DensityInterface.logdensityof(pp::IndependentMultivariateProcess, h::History)
+    return sum(logdensityof(pp.processes[d], History(event_times(h, d), h.tmin, h.tmax, event_marks(h, d))) for d in 1:ndims(pp))
 end
 
 function time_change(h::History{R,M}, pp::IndependentMultivariateProcess) where {R<:Real,M}
-    histories = [time_change(h, pp.processes[d]) for d in eachindex(pp.processes)]
-    tmax = maximum(histories[d].tmax for d in eachindex(pp.processes))
+    histories = [time_change(h, pp.processes[d]) for d in 1:ndims(pp)]
+    tmax = maximum(histories[d].tmax for d in 1:ndims(pp))
     return History(
-        [histories[d].times for d in eachindex(pp.processes)],
+        [histories[d].times for d in 1:ndims(pp)],
         0,
         tmax,
-        [histories[d].marks for d in eachindex(pp.processes)]
+        [histories[d].marks for d in 1:ndims(pp)]
     )
 end
 
-function simulate(pp::IndependentMultivariateProcess, tmin, tmax)
-    histories = [simulate(pp.processes[d], tmin, tmax) for d in eachindex(pp.processes)]
+function simulate(rng::AbstractRNG, pp::IndependentMultivariateProcess, tmin, tmax)
+    histories = [simulate(rng, pp.processes[d], tmin, tmax) for d in 1:ndims(pp)]
     return History(
-        [histories[d].times for d in eachindex(pp.processes)],
+        [histories[d].times for d in 1:ndims(pp)],
         tmin,
         tmax,
-        [histories[d].marks for d in eachindex(pp.processes)]
+        [histories[d].marks for d in 1:ndims(pp)]
     )
 end
 
-function StatsAPI.fit(v::Vector{DataType}, h::History{R,M}; kwargs...) where {R<:Real,M}
-    if any(!(x <: AbstractUnivariateProcess) for x in v)
-        throw(ArgumentError("All elements of v must be subtypes of AbstractUnivariateProcess."))
-    end
-    processes = [fit(v[d], History(event_times(h, d), h.tmin, h.tmax, event_marks(h, d)); kwargs...) for d in eachindex(v)]
+function StatsAPI.fit(proc_types::Vector, h::History{R,M}; kwargs...) where {R<:Real,M}
+    processes = [fit(proc_types[d], History(event_times(h, d), h.tmin, h.tmax, event_marks(h, d)); kwargs...) for d in eachindex(proc_types)]
     return IndependentMultivariateProcess(processes)
 end

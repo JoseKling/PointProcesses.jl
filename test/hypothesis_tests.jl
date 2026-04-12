@@ -1,6 +1,6 @@
 h1 = History([1, 2, 3, 4], 0, 5)
 h_empty = History(Float64[], 0, 2)
-PP = UnivariatePoissonProcess{Float32}
+PP = PoissonProcess{Float32,Dirac{Nothing}}
 pp = PoissonProcess()
 
 @testset "Statistics" begin

@@ -28,21 +28,15 @@ struct PoissonProcess{R<:Real,D} <: AbstractUnivariateProcess
     end
 end
 
-function Base.show(io::IO, pp::PoissonProcess)
-    return print(io, "PoissonProcess($(pp.λ), $(pp.mark_dist))")
-end
-
-
-## Alias 
-function Base.show(io::IO, pp::UnivariatePoissonProcess)
-    return print(io, "UnivariatePoissonProcess($(pp.λ))")
-end
-
-
 function PoissonProcess(λ::R; check_args::Bool=true) where {R<:Real}
     return PoissonProcess(λ, Dirac(nothing); check_args=check_args)
 end
+
 PoissonProcess() = PoissonProcess(1.0)
+
+function Base.show(io::IO, pp::PoissonProcess)
+    return print(io, "PoissonProcess($(pp.λ), $(typeof(pp.mark_dist)))")
+end
 
 ## Access
 ground_intensity(pp::PoissonProcess) = pp.λ

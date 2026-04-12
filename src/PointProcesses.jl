@@ -9,7 +9,7 @@ module PointProcesses
 
 using DensityInterface: DensityInterface, HasDensity, densityof, logdensityof
 using Distributions: Distributions, UnivariateDistribution, MultivariateDistribution
-using Distributions: Categorical, Exponential, Poisson, Uniform, Dirac
+using Distributions: Categorical, Exponential, Poisson, Uniform, Dirac, Gamma
 using Distributions: fit, suffstats, probs
 using Integrals: Integrals, IntegralProblem, solve, QuadGKJL
 using LinearAlgebra: dot
@@ -51,7 +51,6 @@ export simulate_ogata, simulate
 ## Models
 
 export PoissonProcess
-export UnivariatePoissonProcess
 export MultivariatePoissonProcess, MultivariatePoissonProcessPrior
 export InhomogeneousPoissonProcess
 export HawkesProcess
@@ -84,13 +83,8 @@ include("abstract_point_process.jl")
 include("simulation.jl")
 include("bounded_point_process.jl")
 
-## Univariate processes
-
 ### Homogeneous Poisson
 include("univariate/poisson/poisson_process.jl")
-include("univariate/poisson/suffstats.jl")
-include("univariate/poisson/prior.jl")
-include("univariate/poisson/fit.jl")
 include("univariate/poisson/simulation.jl")
 
 ### Inhomogeneous Poisson
@@ -111,6 +105,8 @@ include("multivariate/independent_multivariate.jl")
 
 ### Multivariate Poisson processes
 include("multivariate/multivariate_poisson_process.jl")
+include("univariate/poisson/suffstats.jl")
+include("univariate/poisson/fit.jl")
 
 ## Hypothesis tests
 include("HypothesisTests/point_process_tests.jl")
