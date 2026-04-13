@@ -33,6 +33,9 @@ DocMeta.setdocmeta!(PointProcesses, :DocTestSetup, :(using PointProcesses); recu
     @testset verbose = true "Bounded" begin
         include("bounded_point_process.jl")
     end
+    @testset verbose = true "IndependentMultivariate" begin
+        include("independent_multivariate.jl")
+    end
     @testset verbose = true "Poisson" begin
         @testset verbose = true "Homogeneous" begin
             include("poisson_process.jl")

@@ -109,9 +109,7 @@ function History(; times, tmin, tmax, marks=nothing, dims=nothing, check_args=tr
     else
         marks === nothing &&
             (marks = [fill(nothing, length(times[i])) for i in 1:length(times)])
-        dims === nothing &&
-            (dims = [fill(nothing, length(times[i])) for i in 1:length(times)])
-        return History(times, tmin, tmax, marks, dims; check_args=check_args)
+        return History(times, tmin, tmax, marks; check_args=check_args)
     end
 end
 

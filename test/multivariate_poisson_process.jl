@@ -15,6 +15,7 @@ end
 @testset "Interface" begin
     h = History([[0.1, 0.7], [0.3], [0.5]], 0, 1, [[0.0, 0.0], [0.0], [0.0]])
 
+    @test contains(string(pp1), "MultivariatePoissonProcess")
     @test DensityKind(pp) == HasDensity()
 
     @test ndims(pp1) == 3
@@ -82,15 +83,26 @@ end
     @test l_est > l
 end
 
+@testset "Time change" begin
+    h = History([[1.7], [1.3, 1.4], [1.1, 1.5, 1.9]], 1.0, 2.0)
+    h_transf = time_change(h, pp2)
+
+    @test h_transf.tmin == 0.0
+    @test h_transf.tmax == 3.0
+    @test nb_events(h_transf) == nb_events(h)
+    @test all(event_times(h_transf) .≈ sort([0.7, 0.6, 0.8, 0.3, 1.5, 2.7]))
+    @test event_dims(h_transf) == [3, 2, 1, 2, 3, 3]
+end
+
 @testset "MultivariatePoissonProcessPrior" begin
     α = [1.0, 2.0, 3.0]
     β = 0.5
+
+    h = simulate(pp2, 0.0, 1000.0)
     prior = MultivariatePoissonProcessPrior(α, β)
+    pp_est = fit_map(MultivariatePoissonProcess, prior, h)
 
-    pp = PoissonProcess([1.0, 2.0, 3.0])
-    h = simulate(rng, pp, 0.0, 10.0)
-
-    l = logdensityof(prior, pp)
+    l = logdensityof(prior, pp_est)
 
     @test l isa Real
     @test isfinite(l)

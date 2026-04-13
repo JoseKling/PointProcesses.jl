@@ -69,7 +69,7 @@ function DensityInterface.logdensityof(pp::IndependentMultivariateProcess, h::Hi
 end
 
 function time_change(h::History{R,M}, pp::IndependentMultivariateProcess) where {R<:Real,M}
-    histories = [time_change(h, pp.processes[d]) for d in 1:ndims(pp)]
+    histories = [time_change(History(event_times(h, d), h.tmin, h.tmax), pp.processes[d]) for d in 1:ndims(pp)]
     tmax = maximum(histories[d].tmax for d in 1:ndims(pp))
     return History(
         [histories[d].times for d in 1:ndims(pp)],
