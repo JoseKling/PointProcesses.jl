@@ -4,10 +4,29 @@
 Common interface for all temporal point processes.
 """
 abstract type AbstractPointProcess end
+
+"""
+    AbstractUnivariateProcess
+
+Abstract type for univariate temporal point processes.
+"""
 abstract type AbstractUnivariateProcess <: AbstractPointProcess end
+
+"""
+    AbstractMultivariateProcess
+
+Abstract type for multivariate temporal point processes.
+"""
 abstract type AbstractMultivariateProcess <: AbstractPointProcess end
 
 @inline DensityInterface.DensityKind(::AbstractPointProcess) = HasDensity()
+
+"""
+    Base.ndims(pp)
+
+Return the number of dimensions for a temporal point process `pp`.
+"""
+Base.ndims(::AbstractPointProcess)
 
 Base.ndims(::AbstractUnivariateProcess) = 1
 

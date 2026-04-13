@@ -5,6 +5,7 @@ rng = Random.seed!(63)
     pp2 = PoissonProcess(1.0)
     pp3 = PoissonProcess()
 
+    @test ndims(pp1) == 1
     @test pp1 isa PoissonProcess
     @test pp2 isa PoissonProcess
     @test pp3 isa PoissonProcess

@@ -13,13 +13,16 @@ History
 ### Analysis
 
 ```@docs
+Base.ndims(h::History)
 event_marks
 event_times
+event_dims
 min_time
 max_time
 nb_events
-has_events
 Base.length
+has_events
+Base.isempty
 duration
 min_mark
 max_mark
@@ -39,7 +42,11 @@ split_into_chunks
 
 ```@docs
 AbstractPointProcess
+AbstractUnivariateProcess
+AbstractMultivariateProcess
 BoundedPointProcess
+IndependentMultivariateProcess
+Base.ndims(::AbstractPointProcess)
 ```
 
 ### Intensity
@@ -48,7 +55,6 @@ BoundedPointProcess
 intensity
 ground_intensity
 log_intensity
-intensity_vector
 ```
 
 ### Marks
@@ -78,12 +84,6 @@ fit_map
 
 ```@docs
 PoissonProcess
-```
-
-### Univariate
-
-```@docs
-UnivariatePoissonProcess
 ```
 
 ### Multivariate

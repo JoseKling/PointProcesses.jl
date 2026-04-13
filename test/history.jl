@@ -61,6 +61,9 @@ h_multi = History([times1, times2], 0.0, 1.0, [marks1, marks2])
 @test event_marks(h_multi) == ["a", "c", "b", "d"]
 @test event_dims(h_multi) == [1, 2, 1, 2]
 
+@test_throws DomainError History(rand(3), 0, 1, rand(3), [1,2,3], 2)
+@test event_dims(History([[0.5]], 0, 1)) == [nothing]
+
 # Test dimension-specific methods
 @test event_times(h_multi, 1) == [0.1, 0.5]
 @test event_times(h_multi, 2) == [0.2, 0.8]
@@ -73,6 +76,7 @@ h_multi = History([times1, times2], 0.0, 1.0, [marks1, marks2])
 @test event_times(h_multi, 0.0, 0.3, 1) == [0.1]
 @test event_marks(h_multi, 0.0, 0.3, 2) == ["c"]
 @test nb_events(h_multi, 0.0, 0.3, 1) == 1
+@test event_dims(h_multi, 0.0, 0.3) == [1, 2]
 
 # Test push! with dimension
 push!(h_multi, 0.85, "e", 1)
@@ -81,6 +85,7 @@ push!(h_multi, 0.85, "e", 1)
 
 # Test append! with dimensions
 @test_throws AssertionError append!(h_multi, [0.8, 0.9], ["f", "g"], [2, 1])
+append!(h_multi, Float64[])
 append!(h_multi, [0.95, 0.9], ["f", "g"], [2, 1])
 @test nb_events(h_multi) == 7
 @test event_times(h_multi, 1) == [0.1, 0.5, 0.85, 0.9]

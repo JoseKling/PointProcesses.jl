@@ -1,3 +1,10 @@
+"""
+    MultivariatePoissonProcess
+
+This is a multivariate point process where each dimension is an independent univariate Poisson process.
+
+Alias for `IndependentMultivariateProcess{<:PoissonProcess}`.
+"""
 const MultivariatePoissonProcess = IndependentMultivariateProcess{<:PoissonProcess}
 
 

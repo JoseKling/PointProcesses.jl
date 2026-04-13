@@ -1,3 +1,11 @@
+"""
+    IndependentMultivariateProcess{P}
+
+A multivariate point process where each dimension is an independent univariate point process.
+
+# Fields
+- `processes::Vector{P}`: vector of univariate point processes, one for each dimension.
+"""
 struct IndependentMultivariateProcess{P<:AbstractUnivariateProcess} <: AbstractMultivariateProcess
     processes::Vector{P}
 end
