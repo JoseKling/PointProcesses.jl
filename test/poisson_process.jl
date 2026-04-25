@@ -76,7 +76,7 @@ end
     @test σ_error1 < 0.1
     @test μ_error2 < 0.1
     @test σ_error2 < 0.1
-    
+
     pp_est1 = fit(PoissonProcess{Float32,Normal}, h1)
     l = logdensityof(pp, h1)
     l_est = logdensityof(pp_est1, h1)

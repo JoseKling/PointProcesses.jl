@@ -453,9 +453,7 @@ end
     # Fit exponential intensity with MLE
     # Initial params: [log(a), b]
     pp_est = fit(
-        InhomogeneousPoissonProcess{
-            ExponentialIntensity{Float64},Normal,IntegrationConfig
-        },
+        InhomogeneousPoissonProcess{ExponentialIntensity{Float64},Normal,IntegrationConfig},
         h,
         [log(2.0), 0.05],
     )
@@ -466,9 +464,7 @@ end
 
     # Parameters should be in the right ballpark
     # Allow wide tolerance since this is stochastic data
-    @test 0.5 * intensity_true.a <=
-        pp_est.intensity_function.a <=
-        3.0 * intensity_true.a
+    @test 0.5 * intensity_true.a <= pp_est.intensity_function.a <= 3.0 * intensity_true.a
     @test abs(pp_est.intensity_function.b - intensity_true.b) < 0.1
 end
 
@@ -482,9 +478,7 @@ end
     # Fit sinusoidal intensity with MLE
     # Initial params: [log(a), b_unconstrained, φ] where a = exp(p1), b = tanh(p2)*a
     pp_est = fit(
-        InhomogeneousPoissonProcess{
-            SinusoidalIntensity{Float64},Uniform,IntegrationConfig
-        },
+        InhomogeneousPoissonProcess{SinusoidalIntensity{Float64},Uniform,IntegrationConfig},
         h,
         [log(5.0), 0.5, 0.0];
         ω=2π,
@@ -580,9 +574,7 @@ end
 
         # Test with more covariates
         cov3 = t -> cos(t)
-        intensity_cov3 = LinearCovariateIntensity(
-            2.0, [0.1, 0.2, 0.3], [cov1, cov2, cov3]
-        )
+        intensity_cov3 = LinearCovariateIntensity(2.0, [0.1, 0.2, 0.3], [cov1, cov2, cov3])
         expected_str3 = "LinearCovariateIntensity(2.0, [0.1, 0.2, 0.3], 3 covariates)"
         @test string(intensity_cov3) == expected_str3
     end
@@ -857,9 +849,7 @@ end
 
         # Fit using same breakpoints
         pp_est = fit(
-            InhomogeneousPoissonProcess{
-                PiecewiseConstantIntensity{Float64},Dirac{Nothing}
-            },
+            InhomogeneousPoissonProcess{PiecewiseConstantIntensity{Float64},Dirac{Nothing}},
             h,
             breakpoints_true,
         )
@@ -893,9 +883,7 @@ end
 
         # Fit with different breakpoints than data generation
         pp_est = fit(
-            InhomogeneousPoissonProcess{
-                PiecewiseConstantIntensity{Float64},Dirac{Nothing}
-            },
+            InhomogeneousPoissonProcess{PiecewiseConstantIntensity{Float64},Dirac{Nothing}},
             h,
             custom_breakpoints,
         )
@@ -916,9 +904,7 @@ end
         h = History([4.5, 4.8, 5.2, 5.5, 5.9], 0.0, 10.0)
 
         pp_est = fit(
-            InhomogeneousPoissonProcess{
-                PiecewiseConstantIntensity{Float64},Dirac{Nothing}
-            },
+            InhomogeneousPoissonProcess{PiecewiseConstantIntensity{Float64},Dirac{Nothing}},
             h,
             breakpoints,
         )
@@ -943,9 +929,7 @@ end
         h = simulate(rng, pp_true, 0.0, 10.0)
 
         pp_est = fit(
-            InhomogeneousPoissonProcess{
-                PiecewiseConstantIntensity{Float64},Dirac{Nothing}
-            },
+            InhomogeneousPoissonProcess{PiecewiseConstantIntensity{Float64},Dirac{Nothing}},
             h,
             breakpoints,
         )
@@ -965,9 +949,7 @@ end
         h = History([1.0, 2.0, 6.0, 7.0, 8.0], 0.0, 10.0)
 
         pp_est = fit(
-            InhomogeneousPoissonProcess{
-                PiecewiseConstantIntensity{Float32},Dirac{Nothing}
-            },
+            InhomogeneousPoissonProcess{PiecewiseConstantIntensity{Float32},Dirac{Nothing}},
             h,
             breakpoints_f32,
         )
@@ -1140,8 +1122,7 @@ end
         # Check all coefficients are in reasonable range
         for i in 1:3
             @test abs(
-                pp_est.intensity_function.coefficients[i] -
-                intensity_true.coefficients[i],
+                pp_est.intensity_function.coefficients[i] - intensity_true.coefficients[i]
             ) < 2.0
         end
     end

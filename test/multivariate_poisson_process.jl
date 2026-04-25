@@ -1,6 +1,6 @@
 rng = Random.seed!(63)
 λ = [1.0, 2.0, 3.0]
-mark_dists = [Normal(), Exponential(1.0), Uniform(0,1)]
+mark_dists = [Normal(), Exponential(1.0), Uniform(0, 1)]
 
 pp1 = PoissonProcess(λ, mark_dists)
 pp2 = PoissonProcess(λ)
@@ -26,9 +26,11 @@ end
     @test ground_intensity(pp1, 0, h, 2) == λ[2]
     @test mark_distribution(pp1, 0, h) == mark_dists
     @test mark_distribution(pp1, 0, h, 2) == mark_dists[2]
-    @test intensity(pp1, 0, 0, h) == [intensity(pp1.processes[d], 0, 0, h) for d in 1:ndims(pp1)]
+    @test intensity(pp1, 0, 0, h) ==
+        [intensity(pp1.processes[d], 0, 0, h) for d in 1:ndims(pp1)]
     @test intensity(pp1, 0, 0, h, 1) == intensity(pp1.processes[1], 0, 0, h)
-    @test log_intensity(pp1, 0, 0, h) ≈ [log_intensity(pp1.processes[d], 0, 0, h) for d in 1:ndims(pp1)]
+    @test log_intensity(pp1, 0, 0, h) ≈
+        [log_intensity(pp1.processes[d], 0, 0, h) for d in 1:ndims(pp1)]
     @test log_intensity(pp1, 0, 0, h, 1) ≈ log_intensity(pp1.processes[1], 0, 0, h)
     @test ground_intensity_bound(pp1, 0.0, h) == [(1.0, Inf), (2.0, Inf), (3.0, Inf)]
     @test ground_intensity_bound(pp1, 0.0, h, 1) == (1.0, Inf)
@@ -68,8 +70,8 @@ end
     h1 = simulate(rng, pp1, 0.0, 1000.0)
     h2 = History(fill(rand(100) .* 1000, 3), 0, 1000, fill(rand(100), 3))
 
-    pp_est1 = fit(fill(PoissonProcess{Float64, Normal}, 3), h1)
-    pp_est2 = fit(fill(PoissonProcess{Float64, Normal}, 3), h2)
+    pp_est1 = fit(fill(PoissonProcess{Float64,Normal}, 3), h1)
+    pp_est2 = fit(fill(PoissonProcess{Float64,Normal}, 3), h2)
     λ_est1 = [pp_est1.processes[d].λ for d in 1:ndims(pp_est1)]
     λ_est2 = [pp_est2.processes[d].λ for d in 1:ndims(pp_est2)]
 

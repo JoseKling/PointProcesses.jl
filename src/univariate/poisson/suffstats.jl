@@ -9,7 +9,7 @@ end
 ## Compute sufficient stats
 
 function Distributions.suffstats(
-    ::Union{Type{<:PoissonProcess}, Type{<:MultivariatePoissonProcess}},
+    ::Union{Type{<:PoissonProcess},Type{<:MultivariatePoissonProcess}},
     histories::AbstractVector{<:History},
     weights::AbstractVector{W},
 ) where {W}
@@ -24,7 +24,9 @@ function Distributions.suffstats(
     total_weights = reduce(
         vcat, (fill(w, nb_events(h)) for (w, h) in zip(weights, histories))
     )
-    return PoissonProcessStats(total_nb_events, total_duration, total_marks, total_dims, total_weights)
+    return PoissonProcessStats(
+        total_nb_events, total_duration, total_marks, total_dims, total_weights
+    )
 end
 
 function Distributions.suffstats(

@@ -16,18 +16,24 @@ end
 
     @test ndims(imp) == 2
 
-    @test ground_intensity(imp, 0, h) == [ground_intensity(pp1, 0, h), ground_intensity(pp2, 0, h)]
+    @test ground_intensity(imp, 0, h) ==
+        [ground_intensity(pp1, 0, h), ground_intensity(pp2, 0, h)]
     @test ground_intensity(imp, 0, h, 1) == 1.0
     @test mark_distribution(imp, 0, h) == [pp1.mark_dist, pp2.mark_dist]
     @test mark_distribution(imp, 0, h, 2) == pp2.mark_dist
     @test intensity(imp, 0, 0, h) == [intensity(pp1, 0, 0, h), intensity(pp2, 0, 0, h)]
     @test intensity(imp, 0, 0, h, 1) == intensity(pp1, 0, 0, h)
-    @test log_intensity(imp, 0, 0, h) ≈ [log_intensity(pp1, 0, 0, h), log_intensity(pp2, 0, 0, h)]
+    @test log_intensity(imp, 0, 0, h) ≈
+        [log_intensity(pp1, 0, 0, h), log_intensity(pp2, 0, 0, h)]
     @test log_intensity(imp, 0, 0, h, 1) ≈ log_intensity(pp1, 0, 0, h)
-    @test ground_intensity_bound(imp, 0.0, h) == [ground_intensity_bound(pp1, 0.0, h), ground_intensity_bound(pp2, 0.0, h)]
+    @test ground_intensity_bound(imp, 0.0, h) ==
+        [ground_intensity_bound(pp1, 0.0, h), ground_intensity_bound(pp2, 0.0, h)]
     @test ground_intensity_bound(imp, 0.0, h, 1) == ground_intensity_bound(pp1, 0.0, h)
-    @test integrated_ground_intensity(imp, h, 0, 1) == [integrated_ground_intensity(pp1, h, 0, 1), integrated_ground_intensity(pp2, h, 0, 1)]
-    @test integrated_ground_intensity(imp, h, 0, 1, 1) == integrated_ground_intensity(pp1, h, 0, 1,)
+    @test integrated_ground_intensity(imp, h, 0, 1) == [
+        integrated_ground_intensity(pp1, h, 0, 1), integrated_ground_intensity(pp2, h, 0, 1)
+    ]
+    @test integrated_ground_intensity(imp, h, 0, 1, 1) ==
+        integrated_ground_intensity(pp1, h, 0, 1)
 end
 
 @testset "Simulation" begin
