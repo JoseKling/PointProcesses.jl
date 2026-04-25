@@ -9,7 +9,7 @@ module PointProcesses
 
 using DensityInterface: DensityInterface, HasDensity, densityof, logdensityof
 using Distributions: Distributions, UnivariateDistribution, MultivariateDistribution
-using Distributions: Categorical, Exponential, Poisson, Uniform, Dirac
+using Distributions: Categorical, Exponential, Poisson, Uniform, Dirac, Gamma
 using Distributions: fit, suffstats, probs
 using Integrals: Integrals, IntegralProblem, solve, QuadGKJL
 using LinearAlgebra: dot
@@ -33,16 +33,17 @@ export HypothesisTest, pvalue # HypothesisTests
 ## History
 
 export History
-export event_times, event_marks, min_time, max_time, min_mark, max_mark
-export nb_events, has_events, duration
+export event_times, event_marks, event_dims
+export min_time, max_time, min_mark, max_mark
+export nb_events, has_events, duration, ndims
 export time_change, split_into_chunks
 
 ## Point processes
 
-export AbstractPointProcess
+export AbstractPointProcess, AbstractUnivariateProcess, AbstractMultivariateProcess
 export BoundedPointProcess
 export ground_intensity, mark_distribution
-export intensity, log_intensity, intensity_vector
+export intensity, log_intensity
 export ground_intensity_bound
 export integrated_ground_intensity
 export simulate_ogata, simulate
@@ -50,10 +51,10 @@ export simulate_ogata, simulate
 ## Models
 
 export PoissonProcess
-export UnivariatePoissonProcess
 export MultivariatePoissonProcess, MultivariatePoissonProcessPrior
 export InhomogeneousPoissonProcess
 export HawkesProcess
+export IndependentMultivariateProcess
 
 ## Intensity functions for inhomogeneous processes
 
@@ -76,28 +77,38 @@ export PointProcessTest, BootstrapTest, MonteCarloTest
 
 # Includes
 
+## General
 include("history.jl")
 include("abstract_point_process.jl")
 include("simulation.jl")
 include("bounded_point_process.jl")
 
-include("poisson/poisson_process.jl")
-include("poisson/suffstats.jl")
-include("poisson/prior.jl")
-include("poisson/fit.jl")
-include("poisson/simulation.jl")
+### Homogeneous Poisson
+include("univariate/poisson/poisson_process.jl")
+include("univariate/poisson/simulation.jl")
 
-# IPP
-include("poisson/inhomogeneous/integration_config.jl")
-include("poisson/inhomogeneous/parametric_intensity.jl")
-include("poisson/inhomogeneous/intensity_functions.jl")
-include("poisson/inhomogeneous/intensity_methods.jl")
-include("poisson/inhomogeneous/inhomogeneous_poisson_process.jl")
-include("poisson/inhomogeneous/fit.jl")
+### Inhomogeneous Poisson
+include("univariate/poisson/inhomogeneous/integration_config.jl")
+include("univariate/poisson/inhomogeneous/parametric_intensity.jl")
+include("univariate/poisson/inhomogeneous/intensity_functions.jl")
+include("univariate/poisson/inhomogeneous/intensity_methods.jl")
+include("univariate/poisson/inhomogeneous/inhomogeneous_poisson_process.jl")
+include("univariate/poisson/inhomogeneous/fit.jl")
 
-# Hawkes
-include("hawkes/hawkes_process.jl")
+### Hawkes
+include("univariate/hawkes/hawkes_process.jl")
 
+## Multivariate processes
+
+### Independent multivariate processes
+include("multivariate/independent_multivariate.jl")
+
+### Multivariate Poisson processes
+include("multivariate/multivariate_poisson_process.jl")
+include("univariate/poisson/suffstats.jl")
+include("univariate/poisson/fit.jl")
+
+## Hypothesis tests
 include("HypothesisTests/point_process_tests.jl")
 include("HypothesisTests/statistic.jl")
 include("HypothesisTests/Statistics/KSDistance.jl")

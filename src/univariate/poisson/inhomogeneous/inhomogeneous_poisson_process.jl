@@ -33,7 +33,7 @@ pp = InhomogeneousPoissonProcess(
 )
 ```
 """
-struct InhomogeneousPoissonProcess{F,M,C} <: AbstractPointProcess
+struct InhomogeneousPoissonProcess{F,M,C} <: AbstractUnivariateProcess
     intensity_function::F
     mark_dist::M
     integration_config::C

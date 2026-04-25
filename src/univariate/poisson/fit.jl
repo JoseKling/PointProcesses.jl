@@ -27,24 +27,24 @@ end
 ## Bayesian fit (only for MultivariatePoissonProcess)
 
 function fit_map(
-    ::Type{MultivariatePoissonProcess{R}},
+    ::Type{<:MultivariatePoissonProcess},
     prior::MultivariatePoissonProcessPrior,
     ss::PoissonProcessStats;
     kwargs...,
-) where {R<:Real}
+)
     (; α, β) = prior
-    posterior_nb_events = [sum(==(i), ss.marks) for i in 1:length(α)] .+ α
+    posterior_nb_events = [sum(==(d), ss.dims) for d in 1:length(α)] .+ α
     posterior_duration = ss.duration + β
-    λ = convert(Vector{R}, posterior_nb_events ./ posterior_duration)
-    return PoissonProcess(sum(λ), Categorical(λ ./ sum(λ)))
+    λ = convert(Vector{Float64}, posterior_nb_events ./ posterior_duration)
+    return PoissonProcess(λ; check_args=false)
 end
 
 function fit_map(
-    pptype::Type{MultivariatePoissonProcess{R}},
+    pptype::Type{<:MultivariatePoissonProcess},
     prior::MultivariatePoissonProcessPrior,
     args...;
     kwargs...,
-) where {R<:Real}
+)
     ss = suffstats(pptype, args..., kwargs...)
     return fit_map(pptype, prior, ss)
 end
