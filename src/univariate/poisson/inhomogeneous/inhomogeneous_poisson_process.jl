@@ -133,11 +133,7 @@ function time_change(h::History, pp::InhomogeneousPoissonProcess)
         new_tmax = max(new_tmax, last(new_times) * (one(T) + eps(T)))
     end
     return History(;
-        times=new_times,
-        tmin=zero(T),
-        tmax=new_tmax,
-        marks=h.marks,
-        check_args=false,
+        times=new_times, tmin=zero(T), tmax=new_tmax, marks=h.marks, check_args=false
     )
 end
 
