@@ -50,7 +50,6 @@ rng = Random.seed!(12345)
     end
 
     @testset "Custom intensity function" begin
-        # λ(t) = 1 + sin(t)^2   (no analytical integral, uses numerical)
         custom_func = t -> 1.0 + sin(t)^2
         pp = InhomogeneousPoissonProcess(custom_func)
         h = History([0.5, 1.0, 2.0], 0.0, 3.0)
@@ -58,7 +57,6 @@ rng = Random.seed!(12345)
         h_transf = time_change(h, pp)
         @test h_transf.tmin ≈ 0.0
         @test issorted(h_transf.times)
-        # Λ(t) for 1 + sin²(t) = t + (t - sin(t)cos(t))/2 = 1.5*t - 0.5*sin(t)*cos(t)
         expected_times = [1.5 * t - 0.5 * sin(t) * cos(t) for t in h.times]
         expected_tmax = 1.5 * 3.0 - 0.5 * sin(3.0) * cos(3.0)
         @test h_transf.times ≈ expected_times rtol = 1e-6
