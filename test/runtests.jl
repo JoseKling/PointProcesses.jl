@@ -20,8 +20,8 @@ DocMeta.setdocmeta!(PointProcesses, :DocTestSetup, :(using PointProcesses); recu
         Aqua.test_all(PointProcesses; ambiguities=false, deps_compat=(; check_extras=false))
     end
     @testset verbose = false "Code Linting" begin
-        # test on 1.11 at a minimum and not on pre-release 
-        if VERSION >= v"1.11" && isempty(VERSION.prerelease)
+        # Skip JET on Julia pre-releases (where JET often hasn't caught up yet).
+        if isempty(VERSION.prerelease)
             JET.test_package(PointProcesses; target_modules=(PointProcesses,))
         end
     end

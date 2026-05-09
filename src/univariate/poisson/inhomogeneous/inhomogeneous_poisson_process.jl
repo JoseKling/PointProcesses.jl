@@ -126,15 +126,15 @@ function time_change(h::History, pp::InhomogeneousPoissonProcess)
     T = typeof(new_tmax)
     new_times = T[integrated_intensity(f, h.tmin, t, config) for t in h.times]
     # `new_tmax` and each `new_times[i]` come from independent quadrature calls,
-    # so solver / floating-point error can let a transformed time slightly exceed
-    # `new_tmax`. Widen `new_tmax` to the observed maximum and skip History's
-    # bounds check so events are never silently dropped.
+    # so solver / floating-point error can both swap adjacent transformed
+    # events and let one of them slightly exceed `new_tmax`. Widen `new_tmax`
+    # to the observed maximum (with an `eps` cushion) so no event is dropped
+    # at the boundary; small order drift is then handled by the History
+    # constructor's automatic `sortperm` pass under `check_args=true`.
     if !isempty(new_times)
-        new_tmax = max(new_tmax, last(new_times) * (one(T) + eps(T)))
+        new_tmax = max(new_tmax, maximum(new_times) * (one(T) + eps(T)))
     end
-    return History(;
-        times=new_times, tmin=zero(T), tmax=new_tmax, marks=h.marks, check_args=false
-    )
+    return History(; times=new_times, tmin=zero(T), tmax=new_tmax, marks=h.marks)
 end
 
 ## Simulation
