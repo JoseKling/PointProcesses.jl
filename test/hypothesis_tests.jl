@@ -68,3 +68,40 @@ end
 
     @test all(sort(test1.sim_stats) .== sort(test2.sim_stats)) # Test reproducibility
 end
+
+@testset "Inhomogeneous Poisson goodness-of-fit" begin
+    # KSDistance with InhomogeneousPoissonProcess relies on time_change.
+    # These tests pin down that the integration-based time_change feeds correctly
+    # through statistic / MonteCarloTest.
+
+    rng = Random.seed!(31415)
+    intensity_true = PolynomialIntensity([2.0, 0.3])
+    pp_true = InhomogeneousPoissonProcess(intensity_true)
+    h = simulate(rng, pp_true, 0.0, 50.0)
+
+    @testset "Statistic computation" begin
+        s_unif = statistic(KSDistance{Uniform}, pp_true, h)
+        s_exp = statistic(KSDistance{Exponential}, pp_true, h)
+        @test 0.0 <= s_unif <= 1.0
+        @test 0.0 <= s_exp <= 1.0
+    end
+
+    @testset "MonteCarloTest with correct model" begin
+        # Under the true model, the KS test should not reject at conventional levels.
+        mc = MonteCarloTest(
+            KSDistance{Exponential}, pp_true, h; n_sims=200, rng=Random.seed!(7)
+        )
+        @test mc.n_sims == 200
+        @test pvalue(mc) > 0.05
+    end
+
+    @testset "MonteCarloTest with misspecified model" begin
+        # A wildly wrong rate should make the time-rescaled times poorly Exp(1)
+        # under that model, so the test should reject.
+        pp_wrong = InhomogeneousPoissonProcess(PolynomialIntensity([20.0]))  # constant 20.0
+        mc = MonteCarloTest(
+            KSDistance{Exponential}, pp_wrong, h; n_sims=200, rng=Random.seed!(7)
+        )
+        @test pvalue(mc) < 0.05
+    end
+end

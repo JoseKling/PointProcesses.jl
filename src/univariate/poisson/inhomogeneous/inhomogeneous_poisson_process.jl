@@ -107,6 +107,27 @@ function integrated_ground_intensity(
     )
 end
 
+## Time change
+
+"""
+    time_change(h::History, pp::InhomogeneousPoissonProcess)
+
+Apply the time rescaling theorem to history `h` using the compensator
+``Λ(t) = ∫_{tmin}^{t} λ(s) ds`` of the inhomogeneous Poisson process `pp`.
+
+The transformed event times form a unit-rate (homogeneous) Poisson process on
+``[0, Λ(tmax)]``, which makes the standard goodness-of-fit tests (e.g. KS against
+`Uniform` or `Exponential`) applicable.
+"""
+function time_change(h::History, pp::InhomogeneousPoissonProcess)
+    f = pp.intensity_function
+    config = pp.integration_config
+    new_tmax = integrated_intensity(f, h.tmin, h.tmax, config)
+    T = typeof(new_tmax)
+    new_times = T[integrated_intensity(f, h.tmin, t, config) for t in h.times]
+    return History(; times=new_times, tmin=zero(T), tmax=new_tmax, marks=h.marks)
+end
+
 ## Simulation
 function simulate(rng::AbstractRNG, pp::InhomogeneousPoissonProcess, tmin::Real, tmax::Real)
     return simulate_ogata(rng, pp, tmin, tmax)
