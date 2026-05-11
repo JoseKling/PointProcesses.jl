@@ -266,6 +266,29 @@ scatter!(
 )
 ````
 
+## Goodness-of-Fit via Time Rescaling
+By the time-rescaling theorem, if a fitted intensity ``\hat{λ}(t)`` is correct, then the
+events transformed by the compensator ``Λ(t) = ∫_{t_{\min}}^{t} \hat{λ}(s) ds`` form a
+unit-rate Poisson process. We can use `MonteCarloTest` with `KSDistance{Exponential}` to
+check whether the transformed inter-event times look Exp(1):
+
+````@example Inhomogeneous
+pp_poly_full = InhomogeneousPoissonProcess(pp_poly)
+pp_gauss_full = InhomogeneousPoissonProcess(pp_gauss)
+
+mc_piecewise = MonteCarloTest(KSDistance{Exponential}, pp_piecewise, h; n_sims=500, rng=rng)
+mc_poly = MonteCarloTest(KSDistance{Exponential}, pp_poly_full, h; n_sims=500, rng=rng)
+mc_gauss = MonteCarloTest(KSDistance{Exponential}, pp_gauss_full, h; n_sims=500, rng=rng)
+
+println("\nGoodness-of-fit p-values (Monte Carlo KS test):") # hide
+println("  Piecewise Constant: ", round(pvalue(mc_piecewise); digits=3)) # hide
+println("  Polynomial:         ", round(pvalue(mc_poly); digits=3)) # hide
+println("  Gaussian (Custom):  ", round(pvalue(mc_gauss); digits=3)) # hide
+````
+
+A small p-value provides evidence against the null hypothesis that the model captures the
+observed firing pattern, while a large p-value indicates the model is consistent with the data.
+
 ## Model Comparison
 Let's compare all models by computing their negative log-likelihoods:
 
