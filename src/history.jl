@@ -66,8 +66,7 @@ struct History{T<:Real,M,D}
                 if !issorted(times)
                     throw(
                         DomainError(
-                            times,
-                            "Event times must be sorted in non-decreasing order.",
+                            times, "Event times must be sorted in non-decreasing order."
                         ),
                     )
                 end
