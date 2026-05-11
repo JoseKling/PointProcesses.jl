@@ -122,18 +122,21 @@ The transformed event times form a unit-rate (homogeneous) Poisson process on
 function time_change(h::History, pp::InhomogeneousPoissonProcess)
     f = pp.intensity_function
     config = pp.integration_config
-    new_tmax = integrated_intensity(f, h.tmin, h.tmax, config)
-    T = typeof(new_tmax)
-    new_times = T[integrated_intensity(f, h.tmin, t, config) for t in h.times]
-    # `new_tmax` and each `new_times[i]` come from independent quadrature calls,
-    # so solver / floating-point error can both swap adjacent transformed
-    # events and let one of them slightly exceed `new_tmax`. Widen `new_tmax`
-    # to the observed maximum (with an `eps` cushion) so no event is dropped
-    # at the boundary; small order drift is then handled by the History
-    # constructor's automatic `sortperm` pass under `check_args=true`.
-    if !isempty(new_times)
-        new_tmax = max(new_tmax, maximum(new_times) * (one(T) + eps(T)))
-    end
+    #=
+    The defensive `max.(0, deltas)` guards against the rare case where
+    adaptive quadrature returns a tiny negative result on a non-negative
+    integrand.
+    =#
+    edges = vcat(h.tmin, h.times, h.tmax)
+    deltas = [
+        integrated_intensity(f, edges[i], edges[i + 1], config) for
+        i in 1:(length(edges) - 1)
+    ]
+    T = eltype(deltas)
+    deltas .= max.(zero(T), deltas)
+    cs = cumsum(deltas)
+    new_times = cs[1:(end - 1)]
+    new_tmax = cs[end]
     return History(; times=new_times, tmin=zero(T), tmax=new_tmax, marks=h.marks)
 end
 
