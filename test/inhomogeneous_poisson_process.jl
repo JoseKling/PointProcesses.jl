@@ -159,8 +159,7 @@ end
 
         tmin = 1.0
         h = History([1.5, 2.0, 3.5, 4.7, 5.9], tmin, 6.0)
-        Λ(t) =
-            (t - tmin) + 0.25 * (t^2 - tmin^2) + (0.1 / 3) * (t^3 - tmin^3)
+        Λ(t) = (t - tmin) + 0.25 * (t^2 - tmin^2) + (0.1 / 3) * (t^3 - tmin^3)
 
         h_transf = time_change(h, pp)
         @test h_transf.tmin ≈ 0.0
@@ -259,7 +258,7 @@ end
 
         rng_local = Random.seed!(2718)
         h = simulate(rng_local, pp, 0.0, 100.0)
-        @test nb_events(h) > 50 
+        @test nb_events(h) > 50
 
         h_transf = time_change(h, pp)
         @test h_transf.tmin ≈ 0.0
