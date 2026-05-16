@@ -122,18 +122,28 @@ The transformed event times form a unit-rate (homogeneous) Poisson process on
 function time_change(h::History, pp::InhomogeneousPoissonProcess)
     f = pp.intensity_function
     config = pp.integration_config
-    #=
-    The defensive `max.(0, deltas)` guards against the rare case where
-    adaptive quadrature returns a tiny negative result on a non-negative
-    integrand.
-    =#
     edges = vcat(h.tmin, h.times, h.tmax)
     deltas = [
         integrated_intensity(f, edges[i], edges[i + 1], config) for
         i in 1:(length(edges) - 1)
     ]
     T = eltype(deltas)
-    deltas .= max.(zero(T), deltas)
+    i_neg = findfirst(<(zero(T)), deltas)
+    if i_neg !== nothing
+        throw(
+            DomainError(
+                deltas[i_neg],
+                "time_change: integrated intensity over " *
+                "[$(edges[i_neg]), $(edges[i_neg + 1])] is negative. " *
+                "This usually reflects floating-point jitter from adaptive " *
+                "quadrature on an interval where the true integral is near zero, " *
+                "or an `intensity_function` that returns negative values. " *
+                "Tightening the tolerance in `integration_config` may help if " *
+                "the true integral is non-negligible; otherwise verify that " *
+                "`intensity_function` is non-negative on the support of `h`.",
+            ),
+        )
+    end
     cs = cumsum(deltas)
     new_times = cs[1:(end - 1)]
     new_tmax = cs[end]
