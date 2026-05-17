@@ -15,9 +15,9 @@ where μ(t) is the baseline intensity, which accounts for spontaneous events, ``
 which controls how past events influence future events.
 
 One of the most common choices for this kernel is the exponential function: ``\phi(s) = \alpha\exp{-\beta s}``. In this model, α is the strength of self-exciting, and β controls the rate of excitation decay.
-Given these, parameters, the intensity function is: ``λ(t|\mathcal H_t) = μ + \sum_{t_i < t} \alpha \exp{-\beta (t - t_i)}``. We assume that μ is constant for simplicity. But, we could generalzie this to be inhomogeneous.
+Given these parameters, the intensity function is: ``λ(t|\mathcal H_t) = μ + \sum_{t_i < t} \alpha \exp{-\beta (t - t_i)}``. We assume that μ is constant for simplicity. But, we could generalize this to be inhomogeneous.
 
-An important statistic of the Hawkes proces, is the branching ratio which is a measure of the expected number of "daughter" events, a "parent" event will create. For the exponential kernel, this is given by the following equation:
+An important statistic of the Hawkes process is the branching ratio which is a measure of the expected number of "daughter" events, a "parent" event will create. For the exponential kernel, this is given by the following equation:
 ``n = \frac{\alpha}{\beta}``. In the event that n < 1, the process is subcritical, meaning that events will eventually die out. If n = 1, the process is critical, and if n > 1, the process is supercritical, meaning that events can lead to an infinite cascade of events.
 
 Let's now apply this theory, and develop more through the process, by fitting a Hawkes process to some data.
@@ -36,7 +36,8 @@ First let's open our data. This data records litter box entries taken from three
 
 ````@example Hawkes
 root = pkgdir(PointProcesses)
-data = CSV.read(joinpath(root, "docs", "examples", "data", "cats.csv"), DataFrame)
+data = CSV.read(joinpath(root, "docs", "examples", "data", "cats.csv"), DataFrame);
+nothing #hide
 ````
 
 This dataset has three cats in it, so let's first separate out each cat, using their weight to infer their identity
@@ -46,7 +47,8 @@ cat_weights = [parse(Float64, split(i)[1]) for i in data.Value]
 clusters = kmeans(reshape(cat_weights, 1, :), 3; maxiter=100, display=:none)
 
 data.CatWeight = cat_weights
-data.CatID = clusters.assignments
+data.CatID = clusters.assignments;
+nothing #hide
 ````
 
 Now that we have set this up we need to get the timestamps in a useable order for plotting. We can use the Dates package for this.
@@ -70,7 +72,9 @@ Since this dataset only has resolution up to the nearest minute, we need to chec
 
 ````@example Hawkes
 if any(diff(sort(data.t)) .== 0)
-    println("Data contains tied event times. Please add small jitter to event times to make them unique.")
+    println(
+        "Data contains tied event times. Please add small jitter to event times to make them unique.",
+    )
 else
     println("Data contains no tied event times. Proceed with fitting. Yay!")
 end
@@ -79,8 +83,23 @@ end
 Great! We can now move forward. First, let's visualize the data using a simple event plot.
 
 ````@example Hawkes
-function eventplot(event_times::Vector{Float64}; title="Event Plot", xlabel="Time (minutes)", ylabel="Events")
-    scatter(event_times, ones(length(event_times)); markershape=:vline, markersize=10, label="", title=title, xlabel=xlabel, ylabel=ylabel, yticks=false)
+function eventplot(
+    event_times::Vector{Float64};
+    title="Event Plot",
+    xlabel="Time (minutes)",
+    ylabel="Events",
+)
+    scatter(
+        event_times,
+        ones(length(event_times));
+        markershape=:vline,
+        markersize=10,
+        label="",
+        title=title,
+        xlabel=xlabel,
+        ylabel=ylabel,
+        yticks=false,
+    )
 end
 
 cat1_times = data.t[data.CatID .== 1]
@@ -100,10 +119,20 @@ in PointProcesses.jl to fit a piecewise constant intensity function to the data.
 While this will not give us any information about self-exciting behavior, it will help us understand the daily patterns of litter box usage.
 
 ````@example Hawkes
-tod = minute.(data.TimestampDT) .+ 60 .* hour.(data.TimestampDT) # time-of-day in minutes since midnight
+tod_raw = Float64.(minute.(data.TimestampDT) .+ 60 .* hour.(data.TimestampDT)) # time-of-day in minutes since midnight
 day = Date.(data.TimestampDT)
 n_days = length(unique(day))
-h_day = History(sort(Float64.(tod)), 0.0, 1440.0) # build a "history" on [0, 1440] minutes
+````
+
+Collapsing many days into a single [0, 1440) window produces events at the
+same minute-of-day across different days. Add a tiny deterministic jitter
+(≪ the 15-minute bin width below) so the events are strictly ordered for
+`History`. The piecewise-constant fit aggregates into bins, so the jitter is
+invisible to the resulting intensity.
+
+````@example Hawkes
+tod = sort(tod_raw .+ (1:length(tod_raw)) .* 1e-6)
+h_day = History(tod, 0.0, 1440.0) # build a "history" on [0, 1440] minutes
 nbins = 96  # 96 bins = 15-minute bins
 pp_day = fit(
     InhomogeneousPoissonProcess{PiecewiseConstantIntensity{Float64},Dirac{Nothing}},
@@ -130,11 +159,8 @@ The goal of this analysis is to understand the self-exciting nature of the litte
 does that increase the likelihood of another cat using it soon after? To do this, we can use the implementation in PointProcesses.jl
 
 ````@example Hawkes
-full_history = History(data.t, 0.0, maximum(data.t) + 1.0)
-hawkes_model = fit(
-    HawkesProcess,
-    full_history,
-)
+full_history = History(sort(data.t), 0.0, maximum(data.t) + 1.0)
+hawkes_model = fit(HawkesProcess, full_history)
 
 println("Fitted Hawkes Process Parameters:") # hide
 println("Base intensity (μ): ", hawkes_model.μ) # hide
@@ -153,17 +179,21 @@ Finally, we can visualize the fitted intensity function over time.
 ````@example Hawkes
 ts = sort(data.t)
 
-λ_hawkes(t::Real) =
+function λ_hawkes(t::Real)
     hawkes_model.μ +
     sum((hawkes_model.α * exp(-hawkes_model.ω * (t - ti)) for ti in ts if ti < t); init=0.0)
+end
 
 u = range(0.0, maximum(ts) + 1.0; length=2000)
 
-plot(u, λ_hawkes.(u);
-     xlabel="Time (minutes)",
-     ylabel="Fitted Hawkes intensity (events/min)",
-     title="Fitted Hawkes Process Intensity Function",
-     legend=false)
+plot(
+    u,
+    λ_hawkes.(u);
+    xlabel="Time (minutes)",
+    ylabel="Fitted Hawkes intensity (events/min)",
+    title="Fitted Hawkes Process Intensity Function",
+    legend=false,
+)
 ````
 
 From the plot, we can observe how the intensity function varies over time, capturing the self-exciting nature of the litter box entries.
@@ -176,11 +206,15 @@ test = MonteCarloTest(KSDistance{Exponential}, hawkes_model, full_history; n_sim
 
 p = pvalue(test) # hide
 println("Monte Carlo Test p-value for Hawkes Process fit: ", p) # hide
-println("Assuming a significance level of 0.05, we " * (p < 0.05 ? "reject" : "fail to reject") * "",) # hide
+println(
+    "Assuming a significance level of 0.05, we " *
+    (p < 0.05 ? "reject" : "fail to reject") *
+    "",
+) # hide
 println("the null hypothesis that the Hawkes process is a good fit to the data.") # hide
 ````
 
-From this analysis, it seems that we can can say that litter-box usage is indeed a self-exciting process, as the fitted Hawkes process provides a good fit to the data.
+From this analysis, it seems that we can say that litter-box usage is indeed a self-exciting process, as the fitted Hawkes process provides a good fit to the data.
 It's worth considering that we have ignored the identities of the cats in this analysis. A more thorough analysis could involve fitting a multivariate Hawkes process,
 where each cat is represented as a separate dimension. This would allow us to capture the interactions between the cats more accurately. This will be the subject of a
 future tutorial.
