@@ -37,7 +37,7 @@
 
     @test duration(h_exp) == exp(2.5) - exp(0.0)
 
-    append!(h2, [2.45, 2.4], ["g", "f"])
+    append!(h2, [2.4, 2.45], ["f", "g"])
 
     @test h2.times == [2.3, 2.4, 2.45]
     @test h2.marks == ["e", "f", "g"]
@@ -45,9 +45,11 @@
     @test isa(History(rand(3), 0, BigFloat(1)), History{BigFloat,Nothing})
     @test_throws DomainError History(rand(3), 1, 0)
     @test_throws DimensionMismatch History(rand(3), 0, 1, ["a", "b"])
-    @test_logs (:warn, "Events outside of provided interval were discarded.") History(
-        [0.1, 1.1], 0, 1
-    )
+    # Strict validation: events outside [tmin, tmax) must throw, not silently
+    # discard. Same for unsorted times and same-time-same-dim repeats.
+    @test_throws DomainError History([0.1, 1.1], 0, 1)
+    @test_throws DomainError History([0.2, 0.1, 0.3], 0.0, 1.0)
+    @test_throws DomainError History([0.1, 0.1], 0.0, 1.0)
 end
 
 @testset "Multivariate History" begin
@@ -88,8 +90,11 @@ end
     # Test append! with dimensions
     @test_throws AssertionError append!(h_multi, [0.8, 0.9], ["f", "g"], [2, 1])
     append!(h_multi, Float64[])
-    append!(h_multi, [0.95, 0.9], ["f", "g"], [2, 1])
+    append!(h_multi, [0.9, 0.95], ["g", "f"], [1, 2])
     @test nb_events(h_multi) == 7
     @test event_times(h_multi, 1) == [0.1, 0.5, 0.85, 0.9]
     @test event_marks(h_multi, 1) == ["a", "b", "e", "g"]
+    # append! now validates strictly: unsorted input must throw instead of
+    # being silently re-sorted (and silently mutating the caller's vectors).
+    @test_throws AssertionError append!(h_multi, [0.99, 0.97], ["x", "y"], [1, 2])
 end

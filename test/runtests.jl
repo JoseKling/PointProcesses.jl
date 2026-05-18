@@ -3,8 +3,8 @@ using DensityInterface
 using Documenter
 using Distributions
 using ForwardDiff
-using JET
 using LinearAlgebra
+using Pkg
 using PointProcesses
 using Random
 using Statistics
@@ -20,8 +20,15 @@ DocMeta.setdocmeta!(PointProcesses, :DocTestSetup, :(using PointProcesses); recu
         Aqua.test_all(PointProcesses; ambiguities=false, deps_compat=(; check_extras=false))
     end
     @testset verbose = false "Code Linting" begin
-        # test on 1.11 at a minimum and not on pre-release 
-        if VERSION >= v"1.11" && isempty(VERSION.prerelease)
+        # Skip JET on Julia pre-releases (where JET typically hasn't caught up
+        # yet and there is no compatible JET version to resolve against). JET is
+        # not listed in test/Project.toml's [deps] for the same reaso, having
+        # it there would make `Pkg.test` fail at the resolution step on
+        # prereleases, before this guard ever runs. Install on demand only when
+        # we're on a stable Julia.
+        if isempty(VERSION.prerelease)
+            Pkg.add("JET")
+            @eval using JET
             JET.test_package(PointProcesses; target_modules=(PointProcesses,))
         end
     end

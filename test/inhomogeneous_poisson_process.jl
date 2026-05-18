@@ -9,6 +9,301 @@ using Test
 
 rng = Random.seed!(12345)
 
+@testset "Time change" begin
+    @testset "Polynomial intensity" begin
+        # λ(t) = 1 + 0.5*t  =>  Λ(t) - Λ(0) = t + 0.25*t²
+        intensity_linear = PolynomialIntensity([1.0, 0.5])
+        pp = InhomogeneousPoissonProcess(intensity_linear, Normal())
+        h = History([1.0, 2.0, 4.0], 0.0, 5.0, [0.1, 0.2, 0.3])
+
+        h_transf = time_change(h, pp)
+        expected_times = [t + 0.25 * t^2 for t in h.times]
+        expected_tmax = 5.0 + 0.25 * 25.0
+
+        @test h_transf.tmin ≈ 0.0
+        @test h_transf.tmax ≈ expected_tmax rtol = 1e-6
+        @test h_transf.times ≈ expected_times rtol = 1e-6
+        @test h_transf.marks == h.marks
+    end
+
+    @testset "Polynomial intensity with non-zero tmin" begin
+        # λ(t) = 2.0  =>  Λ(t) - Λ(tmin) = 2*(t - tmin)
+        intensity_const = PolynomialIntensity([2.0])
+        pp = InhomogeneousPoissonProcess(intensity_const)
+        h = History([3.0, 5.0, 7.0], 2.0, 10.0)
+
+        h_transf = time_change(h, pp)
+        @test h_transf.tmin ≈ 0.0
+        @test h_transf.tmax ≈ 2.0 * (10.0 - 2.0) rtol = 1e-6
+        @test h_transf.times ≈ [2.0 * (t - 2.0) for t in h.times] rtol = 1e-6
+    end
+
+    @testset "Empty history" begin
+        intensity_linear = PolynomialIntensity([1.0, 0.5])
+        pp = InhomogeneousPoissonProcess(intensity_linear)
+        h_empty = History(Float64[], 0.0, 5.0)
+
+        h_transf = time_change(h_empty, pp)
+        @test isempty(h_transf.times)
+        @test h_transf.tmin ≈ 0.0
+        @test h_transf.tmax ≈ 5.0 + 0.25 * 25.0 rtol = 1e-6
+    end
+
+    @testset "Custom intensity function" begin
+        custom_func = t -> 1.0 + sin(t)^2
+        pp = InhomogeneousPoissonProcess(custom_func)
+        h = History([0.5, 1.0, 2.0], 0.0, 3.0)
+
+        h_transf = time_change(h, pp)
+        @test h_transf.tmin ≈ 0.0
+        @test issorted(h_transf.times)
+        expected_times = [1.5 * t - 0.5 * sin(t) * cos(t) for t in h.times]
+        expected_tmax = 1.5 * 3.0 - 0.5 * sin(3.0) * cos(3.0)
+        @test h_transf.times ≈ expected_times rtol = 1e-6
+        @test h_transf.tmax ≈ expected_tmax rtol = 1e-6
+    end
+
+    @testset "Goodness-of-fit consistency" begin
+        # Simulating from a process and rescaling should yield approximately
+        # a unit-rate Poisson process: KS test against Uniform should not reject.
+        intensity_true = PolynomialIntensity([2.0, 0.3])
+        pp_true = InhomogeneousPoissonProcess(intensity_true, Dirac(nothing))
+        h = simulate(rng, pp_true, 0.0, 50.0)
+
+        h_transf = time_change(h, pp_true)
+        @test h_transf.tmin ≈ 0.0
+        @test issorted(h_transf.times)
+        @test all(h_transf.tmin .<= h_transf.times .<= h_transf.tmax)
+    end
+end
+
+@testset "Time change - non-trivial integrals" begin
+    # These tests exercise time_change against closed-form compensators for
+    # intensities where adaptive quadrature has to do real work (sinusoidal,
+    # exponential, mixed-frequency, multi-scale). Each test checks the
+    # transformed times against analytic Λ(t) values, not just structural
+    # invariants.
+
+    @testset "Sinusoidal — Λ has closed form" begin
+        # λ(t) = a + b*sin(ω*t + φ)
+        # Λ(t) - Λ(0) = a*t - (b/ω)*(cos(ω*t + φ) - cos(φ))
+        a, b, ω, φ = 5.0, 2.0, 2π, π / 6
+        intensity = SinusoidalIntensity(a, b, ω, φ)
+        pp = InhomogeneousPoissonProcess(intensity)
+
+        h = History([0.13, 0.47, 0.92, 1.5, 2.1, 2.8, 3.55], 0.0, 4.0)
+        Λ(t) = a * t - (b / ω) * (cos(ω * t + φ) - cos(φ))
+
+        h_transf = time_change(h, pp)
+        @test h_transf.tmin ≈ 0.0
+        @test h_transf.tmax ≈ Λ(4.0) rtol = 1e-6
+        @test h_transf.times ≈ [Λ(t) for t in h.times] rtol = 1e-6
+        @test issorted(h_transf.times)
+    end
+
+    @testset "Sinusoidal — large amplitude near zero crossings" begin
+        # b is close to a, so λ dips near zero between event times. Quadrature
+        # has to be accurate even where the integrand is small.
+        a, b, ω, φ = 3.0, 2.95, 2π, 0.0
+        intensity = SinusoidalIntensity(a, b, ω, φ)
+        pp = InhomogeneousPoissonProcess(intensity)
+
+        # event times bracketing zero-crossings of λ
+        h = History([0.2, 0.6, 0.8, 1.2, 1.7], 0.0, 2.0)
+        Λ(t) = a * t - (b / ω) * (cos(ω * t + φ) - cos(φ))
+
+        h_transf = time_change(h, pp)
+        @test h_transf.times ≈ [Λ(t) for t in h.times] rtol = 1e-5
+        @test h_transf.tmax ≈ Λ(2.0) rtol = 1e-5
+        @test issorted(h_transf.times)
+    end
+
+    @testset "Exponential — increasing intensity" begin
+        # λ(t) = a*exp(b*t), Λ(t) - Λ(0) = (a/b)*(exp(b*t) - 1)
+        a, b = 2.0, 0.4
+        intensity = ExponentialIntensity(a, b)
+        pp = InhomogeneousPoissonProcess(intensity)
+
+        h = History([0.5, 1.2, 2.0, 2.9, 3.8], 0.0, 5.0)
+        Λ(t) = (a / b) * (exp(b * t) - 1)
+
+        h_transf = time_change(h, pp)
+        @test h_transf.tmin ≈ 0.0
+        @test h_transf.tmax ≈ Λ(5.0) rtol = 1e-6
+        @test h_transf.times ≈ [Λ(t) for t in h.times] rtol = 1e-6
+        @test issorted(h_transf.times)
+    end
+
+    @testset "Exponential — decreasing intensity (tail is small)" begin
+        # λ(t) decays — late deltas can be very small without being zero.
+        a, b = 5.0, -0.3
+        intensity = ExponentialIntensity(a, b)
+        pp = InhomogeneousPoissonProcess(intensity)
+
+        h = History([0.1, 0.4, 1.0, 2.5, 5.0, 8.0], 0.0, 10.0)
+        Λ(t) = (a / b) * (exp(b * t) - 1)
+
+        h_transf = time_change(h, pp)
+        @test h_transf.tmax ≈ Λ(10.0) rtol = 1e-6
+        @test h_transf.times ≈ [Λ(t) for t in h.times] rtol = 1e-6
+        # decay means inter-event deltas in transformed coordinates shrink
+        diffs = diff(h_transf.times)
+        @test all(diffs .> 0)
+    end
+
+    @testset "Quadratic polynomial — non-zero tmin" begin
+        # λ(t) = 1 + 0.5*t + 0.1*t²
+        # Λ(t) - Λ(tmin) = (t - tmin) + 0.25*(t² - tmin²) + (0.1/3)*(t³ - tmin³)
+        intensity = PolynomialIntensity([1.0, 0.5, 0.1])
+        pp = InhomogeneousPoissonProcess(intensity)
+
+        tmin = 1.0
+        h = History([1.5, 2.0, 3.5, 4.7, 5.9], tmin, 6.0)
+        Λ(t) = (t - tmin) + 0.25 * (t^2 - tmin^2) + (0.1 / 3) * (t^3 - tmin^3)
+
+        h_transf = time_change(h, pp)
+        @test h_transf.tmin ≈ 0.0
+        @test h_transf.tmax ≈ Λ(6.0) rtol = 1e-6
+        @test h_transf.times ≈ [Λ(t) for t in h.times] rtol = 1e-6
+    end
+
+    @testset "Custom mixed-frequency intensity" begin
+        # λ(t) = 2 + cos(t)^2 + 0.1*t
+        # cos(t)^2 = (1 + cos(2t))/2
+        # Λ(t) - Λ(0) = 2t + t/2 + sin(2t)/4 + 0.05*t²
+        intensity = t -> 2.0 + cos(t)^2 + 0.1 * t
+        pp = InhomogeneousPoissonProcess(intensity)
+
+        h = History([0.3, 1.1, 2.4, 4.2, 6.0, 7.5], 0.0, 8.0)
+        Λ(t) = 2 * t + t / 2 + sin(2 * t) / 4 + 0.05 * t^2
+
+        h_transf = time_change(h, pp)
+        @test h_transf.tmax ≈ Λ(8.0) rtol = 1e-6
+        @test h_transf.times ≈ [Λ(t) for t in h.times] rtol = 1e-6
+    end
+
+    @testset "Multi-scale intensity (slow drift + sharp oscillation)" begin
+        # λ(t) = 1 + 0.05*t + 0.5*sin(20*t)^2
+        #      = 1 + 0.05*t + 0.25 - 0.25*cos(40*t)
+        # Λ(t) = 1.25*t + 0.025*t² - sin(40*t)/160
+        intensity = t -> 1.0 + 0.05 * t + 0.5 * sin(20 * t)^2
+        pp = InhomogeneousPoissonProcess(intensity)
+
+        h = History(collect(0.1:0.3:4.9), 0.0, 5.0)
+        Λ(t) = 1.25 * t + 0.025 * t^2 - sin(40 * t) / 160
+
+        h_transf = time_change(h, pp)
+        @test h_transf.tmax ≈ Λ(5.0) rtol = 1e-4
+        @test h_transf.times ≈ [Λ(t) for t in h.times] rtol = 1e-4
+        @test issorted(h_transf.times)
+    end
+
+    @testset "PiecewiseConstantIntensity — exact compensator" begin
+        breakpoints = [0.0, 1.0, 2.5, 4.0, 6.0]
+        rates = [1.5, 0.8, 3.2, 2.1]
+        intensity = PiecewiseConstantIntensity(breakpoints, rates)
+        pp = InhomogeneousPoissonProcess(intensity)
+
+        function Λ(t)
+            acc = 0.0
+            for i in 1:(length(breakpoints) - 1)
+                lo, hi = breakpoints[i], breakpoints[i + 1]
+                if t <= lo
+                    return acc
+                end
+                acc += rates[i] * (min(t, hi) - lo)
+            end
+            return acc
+        end
+
+        h = History([0.5, 1.5, 2.7, 3.0, 4.8, 5.5], 0.0, 6.0)
+        h_transf = time_change(h, pp)
+
+        @test h_transf.tmax ≈ Λ(6.0) rtol = 1e-6
+        @test h_transf.times ≈ [Λ(t) for t in h.times] rtol = 1e-6
+        @test issorted(h_transf.times)
+    end
+
+    @testset "Tightly clustered events" begin
+        # Events very close together stress the per-interval quadrature: each
+        # delta is tiny but must remain strictly positive.
+        intensity = PolynomialIntensity([2.0, 0.3])
+        pp = InhomogeneousPoissonProcess(intensity)
+
+        base = 1.0
+        h = History([base, base + 1e-4, base + 2e-4, base + 3e-4], 0.0, 2.0)
+        Λ(t) = 2.0 * t + 0.15 * t^2
+
+        h_transf = time_change(h, pp)
+        @test h_transf.times ≈ [Λ(t) for t in h.times] rtol = 1e-6
+        @test all(diff(h_transf.times) .> 0)
+    end
+
+    @testset "Single event" begin
+        intensity = ExponentialIntensity(1.5, 0.2)
+        pp = InhomogeneousPoissonProcess(intensity)
+
+        h = History([1.7], 0.0, 3.0)
+        Λ(t) = (1.5 / 0.2) * (exp(0.2 * t) - 1)
+
+        h_transf = time_change(h, pp)
+        @test length(h_transf.times) == 1
+        @test h_transf.times[1] ≈ Λ(1.7) rtol = 1e-6
+        @test h_transf.tmax ≈ Λ(3.0) rtol = 1e-6
+    end
+
+    @testset "Long history with many events preserves monotonicity" begin
+        intensity = SinusoidalIntensity(8.0, 3.0, π, 0.0)
+        pp = InhomogeneousPoissonProcess(intensity)
+
+        rng_local = Random.seed!(2718)
+        h = simulate(rng_local, pp, 0.0, 100.0)
+        @test nb_events(h) > 50
+
+        h_transf = time_change(h, pp)
+        @test h_transf.tmin ≈ 0.0
+        @test issorted(h_transf.times)
+        @test all(diff(h_transf.times) .> 0)
+        @test h_transf.times[end] < h_transf.tmax
+    end
+
+    @testset "Simulate-then-time-change yields unit-rate-like spacing" begin
+        # Under a correctly specified inhomogeneous PP, time-rescaled
+        # inter-event times should be approximately Exp(1), so their mean
+        # should be ≈ 1.
+        intensity = PolynomialIntensity([1.0, 0.4])
+        pp = InhomogeneousPoissonProcess(intensity)
+
+        rng_local = Random.seed!(31415)
+        h = simulate(rng_local, pp, 0.0, 200.0)
+        h_transf = time_change(h, pp)
+
+        gaps = diff(vcat(h_transf.tmin, h_transf.times, h_transf.tmax))
+        @test isapprox(mean(gaps), 1.0; atol=0.15)
+    end
+
+    @testset "Negative integrated intensity throws DomainError" begin
+        # If the user supplies an intensity that returns negative values,
+        # time_change should surface a DomainError rather than silently
+        # producing non-monotone output.
+        bad_intensity = t -> -1.0 + 0.0 * t
+        pp_bad = InhomogeneousPoissonProcess(bad_intensity)
+
+        h = History([0.5, 1.5, 2.5], 0.0, 3.0)
+        @test_throws DomainError time_change(h, pp_bad)
+    end
+
+    @testset "Marks preserved across time change" begin
+        intensity = PolynomialIntensity([1.0, 0.5])
+        pp = InhomogeneousPoissonProcess(intensity, Normal())
+
+        h = History([0.5, 1.5, 2.5, 3.5], 0.0, 4.0, [0.1, -0.3, 0.7, 1.2])
+        h_transf = time_change(h, pp)
+        @test h_transf.marks == h.marks
+        @test length(h_transf.marks) == length(h_transf.times)
+    end
+end
+
 @testset "PolynomialIntensity" begin
     # Linear intensity: λ(t) = 1 + 0.5*t
     intensity_linear = PolynomialIntensity([1.0, 0.5])
