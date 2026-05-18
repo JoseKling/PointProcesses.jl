@@ -953,7 +953,8 @@ end
         intensity_empty = PiecewiseConstantIntensity([0.0], Float64[])
 
         # Same-type call returns zero of the promoted type
-        @test PointProcesses.integrated_intensity(intensity_empty, -1.0, 1.0, config) === 0.0
+        @test PointProcesses.integrated_intensity(intensity_empty, -1.0, 1.0, config) ===
+            0.0
         @test PointProcesses.integrated_intensity(intensity_empty, 0.5, 0.5, config) === 0.0
 
         # Mixed-type call: Float64 rates + Float32 endpoints → Float64
