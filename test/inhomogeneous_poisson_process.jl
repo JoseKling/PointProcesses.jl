@@ -945,6 +945,29 @@ end
         @test integral_cross ≈ 12.0 rtol = 1e-6
     end
 
+    @testset "PiecewiseConstantIntensity - empty rates (degenerate)" begin
+        # Single-breakpoint intensity has zero rate-intervals. This is the only
+        # input that reaches the `return zero(U)` branch of integrated_intensity:
+        # with any non-empty rates the post-clamp indices land in [1, length(rates)]
+        # and the inner `start_idx <= length(f.rates)` is always true.
+        intensity_empty = PiecewiseConstantIntensity([0.0], Float64[])
+
+        # Same-type call returns zero of the promoted type
+        @test PointProcesses.integrated_intensity(intensity_empty, -1.0, 1.0, config) === 0.0
+        @test PointProcesses.integrated_intensity(intensity_empty, 0.5, 0.5, config) === 0.0
+
+        # Mixed-type call: Float64 rates + Float32 endpoints → Float64
+        @test PointProcesses.integrated_intensity(
+            intensity_empty, -1.0f0, 1.0f0, config
+        ) === 0.0
+
+        # Float32 rates path
+        intensity_empty32 = PiecewiseConstantIntensity(Float32[0], Float32[])
+        @test PointProcesses.integrated_intensity(
+            intensity_empty32, -1.0f0, 1.0f0, config
+        ) === 0.0f0
+    end
+
     @testset "LinearCovariateIntensity numerical integration" begin
         # λ(t) = exp(1.0 + 0.5*t + 0.2*sin(t))
         cov1 = t -> t
