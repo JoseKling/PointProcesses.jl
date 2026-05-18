@@ -186,9 +186,7 @@ function ground_intensity(hp::HawkesProcess, h::History, t)
     return hp.μ + (hp.α * activation / exp(hp.ω * t))
 end
 
-function integrated_ground_intensity(
-    hp::HawkesProcess{T}, h::History, tmin, tmax
-) where {T}
+function integrated_ground_intensity(hp::HawkesProcess{T}, h::History, tmin, tmax) where {T}
     U = promote_type(T, typeof(tmin), typeof(tmax))
     times = event_times(h, h.tmin, tmax)
     integral = zero(U)

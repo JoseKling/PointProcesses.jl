@@ -1501,14 +1501,20 @@ end
         f_s32 = SinusoidalIntensity(3.0f0, 1.0f0, Float32(2π), 0.0f0)
         f_pw32 = PiecewiseConstantIntensity(Float32[0, 1, 2], Float32[1, 2])
 
-        @test typeof(PointProcesses.integrated_intensity(f_p32, 0.0f0, 2.0f0, config)) === Float32
-        @test typeof(PointProcesses.integrated_intensity(f_e32, 0.0f0, 2.0f0, config)) === Float32
-        @test typeof(PointProcesses.integrated_intensity(f_s32, 0.0f0, 2.0f0, config)) === Float32
-        @test typeof(PointProcesses.integrated_intensity(f_pw32, 0.0f0, 2.0f0, config)) === Float32
+        @test typeof(PointProcesses.integrated_intensity(f_p32, 0.0f0, 2.0f0, config)) ===
+            Float32
+        @test typeof(PointProcesses.integrated_intensity(f_e32, 0.0f0, 2.0f0, config)) ===
+            Float32
+        @test typeof(PointProcesses.integrated_intensity(f_s32, 0.0f0, 2.0f0, config)) ===
+            Float32
+        @test typeof(PointProcesses.integrated_intensity(f_pw32, 0.0f0, 2.0f0, config)) ===
+            Float32
 
         # Mixed types: Float32 params + Float64 endpoints → Float64
-        @test typeof(PointProcesses.integrated_intensity(f_p32, 0.0, 2.0, config)) === Float64
-        @test typeof(PointProcesses.integrated_intensity(f_e32, 0.0, 2.0, config)) === Float64
+        @test typeof(PointProcesses.integrated_intensity(f_p32, 0.0, 2.0, config)) ===
+            Float64
+        @test typeof(PointProcesses.integrated_intensity(f_e32, 0.0, 2.0, config)) ===
+            Float64
     end
 
     @testset "intensity_bound: tuple components share type" begin
