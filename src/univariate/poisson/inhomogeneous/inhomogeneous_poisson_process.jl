@@ -122,18 +122,31 @@ The transformed event times form a unit-rate (homogeneous) Poisson process on
 function time_change(h::History, pp::InhomogeneousPoissonProcess)
     f = pp.intensity_function
     config = pp.integration_config
-    new_tmax = integrated_intensity(f, h.tmin, h.tmax, config)
-    T = typeof(new_tmax)
-    new_times = T[integrated_intensity(f, h.tmin, t, config) for t in h.times]
-    # `new_tmax` and each `new_times[i]` come from independent quadrature calls,
-    # so solver / floating-point error can both swap adjacent transformed
-    # events and let one of them slightly exceed `new_tmax`. Widen `new_tmax`
-    # to the observed maximum (with an `eps` cushion) so no event is dropped
-    # at the boundary; small order drift is then handled by the History
-    # constructor's automatic `sortperm` pass under `check_args=true`.
-    if !isempty(new_times)
-        new_tmax = max(new_tmax, maximum(new_times) * (one(T) + eps(T)))
+    edges = vcat(h.tmin, h.times, h.tmax)
+    deltas = [
+        integrated_intensity(f, edges[i], edges[i + 1], config) for
+        i in 1:(length(edges) - 1)
+    ]
+    T = eltype(deltas)
+    i_neg = findfirst(<(zero(T)), deltas)
+    if i_neg !== nothing
+        throw(
+            DomainError(
+                deltas[i_neg],
+                "time_change: integrated intensity over " *
+                "[$(edges[i_neg]), $(edges[i_neg + 1])] is negative. " *
+                "This usually reflects floating-point jitter from adaptive " *
+                "quadrature on an interval where the true integral is near zero, " *
+                "or an `intensity_function` that returns negative values. " *
+                "Tightening the tolerance in `integration_config` may help if " *
+                "the true integral is non-negligible; otherwise verify that " *
+                "`intensity_function` is non-negative on the support of `h`.",
+            ),
+        )
     end
+    cs = cumsum(deltas)
+    new_times = cs[1:(end - 1)]
+    new_tmax = cs[end]
     return History(; times=new_times, tmin=zero(T), tmax=new_tmax, marks=h.marks)
 end
 
