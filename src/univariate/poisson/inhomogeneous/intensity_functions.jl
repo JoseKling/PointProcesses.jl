@@ -51,8 +51,9 @@ struct PolynomialIntensity{R<:Real,L} <: ParametricIntensity
 end
 
 function (f::PolynomialIntensity)(t)
-    η = f.coefficients[1]
-    t_power = one(t)
+    U = promote_type(eltype(f.coefficients), typeof(t))
+    η = convert(U, f.coefficients[1])
+    t_power = one(U)
     for i in 2:length(f.coefficients)
         t_power *= t
         η += f.coefficients[i] * t_power
@@ -217,11 +218,12 @@ struct PiecewiseConstantIntensity{R<:Real}
 end
 
 function (f::PiecewiseConstantIntensity)(t)
+    U = promote_type(eltype(f.rates), typeof(t))
     idx = searchsortedlast(f.breakpoints, t)
     if idx == 0 || idx == length(f.breakpoints)
-        return zero(eltype(f.rates))
+        return zero(U)
     end
-    return f.rates[idx]
+    return convert(U, f.rates[idx])
 end
 
 function Base.show(io::IO, f::PiecewiseConstantIntensity)

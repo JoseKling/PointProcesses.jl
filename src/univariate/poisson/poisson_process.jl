@@ -66,9 +66,10 @@ mark_distribution(pp::PoissonProcess, t) = mark_distribution(pp) # For simulate_
 intensity(pp::PoissonProcess, m, t, h) = intensity(pp, m)
 log_intensity(pp::PoissonProcess, m, t, h) = log_intensity(pp, m)
 
-function ground_intensity_bound(pp::PoissonProcess, t::T, h) where {T<:Real}
-    B = ground_intensity(pp)
-    L = typemax(T)
+function ground_intensity_bound(pp::PoissonProcess{R}, t::T, h) where {R,T<:Real}
+    U = promote_type(R, T)
+    B = U(ground_intensity(pp))
+    L = typemax(U)
     return (B, L)
 end
 

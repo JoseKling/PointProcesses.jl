@@ -55,3 +55,13 @@ params_est = (model_est.μ, model_est.α, model_est.ω)
 @test logdensityof(hp, h) ≈
     sum(log.(hp.μ .+ (hp.α .* [0, exp(-hp.ω), exp(-hp.ω * 2) + exp(-hp.ω * 3)]))) -
       integral
+
+# Type promotion in integrated_ground_intensity (accumulator was Int before)
+hp32 = HawkesProcess(0.5f0, 0.1f0, 1.0f0)
+h32 = History(Float32[1, 2], 0.0f0, 5.0f0)
+@test typeof(integrated_ground_intensity(hp32, h32, 0.0f0, 5.0f0)) === Float32
+# Empty history exercises the no-loop path where Int(0) used to leak
+h32_empty = History(Float32[], 0.0f0, 5.0f0)
+@test typeof(integrated_ground_intensity(hp32, h32_empty, 0.0f0, 5.0f0)) === Float32
+# Mixed: Float32 params + Float64 endpoints → Float64
+@test typeof(integrated_ground_intensity(hp32, h32, 0.0, 5.0)) === Float64

@@ -82,3 +82,16 @@ end
     l_est = logdensityof(pp_est1, h1)
     @test l_est > l
 end
+
+@testset "Type promotion in ground_intensity_bound" begin
+    pp32 = PoissonProcess(1.0f0)
+    h32 = History(Float32[], 0.0f0, 1.0f0)
+    tup = ground_intensity_bound(pp32, 0.0f0, h32)
+    @test typeof(tup[1]) === typeof(tup[2]) === Float32   # Float32 preserved
+    @test tup[2] === typemax(Float32)
+
+    # Mixed: Float32 λ + Float64 t → both Float64
+    h64 = History(Float64[], 0.0, 1.0)
+    tup = ground_intensity_bound(pp32, 0.0, h64)
+    @test typeof(tup[1]) === typeof(tup[2]) === Float64
+end

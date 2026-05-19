@@ -945,6 +945,30 @@ end
         @test integral_cross ≈ 12.0 rtol = 1e-6
     end
 
+    @testset "PiecewiseConstantIntensity - empty rates (degenerate)" begin
+        # Single-breakpoint intensity has zero rate-intervals. This is the only
+        # input that reaches the `return zero(U)` branch of integrated_intensity:
+        # with any non-empty rates the post-clamp indices land in [1, length(rates)]
+        # and the inner `start_idx <= length(f.rates)` is always true.
+        intensity_empty = PiecewiseConstantIntensity([0.0], Float64[])
+
+        # Same-type call returns zero of the promoted type
+        @test PointProcesses.integrated_intensity(intensity_empty, -1.0, 1.0, config) ===
+            0.0
+        @test PointProcesses.integrated_intensity(intensity_empty, 0.5, 0.5, config) === 0.0
+
+        # Mixed-type call: Float64 rates + Float32 endpoints → Float64
+        @test PointProcesses.integrated_intensity(
+            intensity_empty, -1.0f0, 1.0f0, config
+        ) === 0.0
+
+        # Float32 rates path
+        intensity_empty32 = PiecewiseConstantIntensity(Float32[0], Float32[])
+        @test PointProcesses.integrated_intensity(
+            intensity_empty32, -1.0f0, 1.0f0, config
+        ) === 0.0f0
+    end
+
     @testset "LinearCovariateIntensity numerical integration" begin
         # λ(t) = exp(1.0 + 0.5*t + 0.2*sin(t))
         cov1 = t -> t
@@ -1441,5 +1465,142 @@ end
         @test pp_est isa InhomogeneousPoissonProcess
         @test pp_est.intensity_function isa PolynomialIntensity
         @test pp_est.mark_dist.value === nothing
+    end
+end
+
+@testset "Type promotion in intensity methods" begin
+    config = IntegrationConfig()
+    h32 = History(Float32[0.5, 1.5, 2.5], 0.0f0, 3.0f0)
+
+    @testset "Callable: PolynomialIntensity" begin
+        f64 = PolynomialIntensity([1.0, 0.5])
+        f32 = PolynomialIntensity(Float32[1.0, 0.5])
+        f_int_const = PolynomialIntensity([2])     # length-1, Int coeffs
+        f_f64_const = PolynomialIntensity([2.0])   # length-1, Float64 coeffs
+
+        @test typeof(f64(2.0)) === Float64
+        @test typeof(f32(2.0f0)) === Float32                # Float32 preserved
+        @test typeof(f64(2.0f0)) === Float64                # mixed → promote
+        @test typeof(f32(2.0)) === Float64                  # mixed → promote
+        @test typeof(f_int_const(1.5)) === Float64          # length-1 used to drop typeof(t)
+        @test typeof(f_f64_const(1.0f0)) === Float64
+    end
+
+    @testset "Callable: PiecewiseConstantIntensity" begin
+        f32 = PiecewiseConstantIntensity(Float32[0, 1, 2], Float32[1, 2])
+
+        @test typeof(f32(0.5f0)) === Float32                # Float32 preserved
+        @test typeof(f32(0.5)) === Float64                  # mixed → promote (was Float32 bug)
+        @test typeof(f32(-1.0)) === Float64                 # out-of-domain promoted
+        @test typeof(f32(-1.0f0)) === Float32
+        @test f32(-1.0f0) === 0.0f0                         # value preserved
+    end
+
+    @testset "integrated_intensity: uniform return type" begin
+        f_p32 = PolynomialIntensity(Float32[1.0, 0.5])
+        f_e32 = ExponentialIntensity(1.0f0, 0.1f0)
+        f_s32 = SinusoidalIntensity(3.0f0, 1.0f0, Float32(2π), 0.0f0)
+        f_pw32 = PiecewiseConstantIntensity(Float32[0, 1, 2], Float32[1, 2])
+
+        @test typeof(PointProcesses.integrated_intensity(f_p32, 0.0f0, 2.0f0, config)) ===
+            Float32
+        @test typeof(PointProcesses.integrated_intensity(f_e32, 0.0f0, 2.0f0, config)) ===
+            Float32
+        @test typeof(PointProcesses.integrated_intensity(f_s32, 0.0f0, 2.0f0, config)) ===
+            Float32
+        @test typeof(PointProcesses.integrated_intensity(f_pw32, 0.0f0, 2.0f0, config)) ===
+            Float32
+
+        # Mixed types: Float32 params + Float64 endpoints → Float64
+        @test typeof(PointProcesses.integrated_intensity(f_p32, 0.0, 2.0, config)) ===
+            Float64
+        @test typeof(PointProcesses.integrated_intensity(f_e32, 0.0, 2.0, config)) ===
+            Float64
+    end
+
+    @testset "intensity_bound: tuple components share type" begin
+        f_p32 = PolynomialIntensity(Float32[1.0, 0.5])
+        f_e32 = ExponentialIntensity(1.0f0, 0.1f0)
+        f_s32 = SinusoidalIntensity(3.0f0, 1.0f0, Float32(2π), 0.0f0)
+        f_pw32 = PiecewiseConstantIntensity(Float32[0, 1, 2], Float32[1, 2])
+
+        # Same-type Float32 round-trip across all four parametric intensity types
+        for tup in (
+            PointProcesses.intensity_bound(f_p32, 0.0f0; lookahead=1.0f0),
+            PointProcesses.intensity_bound(f_e32, 0.0f0; lookahead=1.0f0),
+            PointProcesses.intensity_bound(f_s32, 0.0f0, h32),
+            PointProcesses.intensity_bound(f_pw32, 0.5f0, h32),
+        )
+            @test typeof(tup[1]) === typeof(tup[2]) === Float32
+        end
+
+        # Mixed-type: Float64 params, Float32 t → both Float64
+        f_p64 = PolynomialIntensity([1.0, 0.5])
+        tup = PointProcesses.intensity_bound(f_p64, 0.0f0; lookahead=1.0f0)
+        @test typeof(tup[1]) === typeof(tup[2]) === Float64
+
+        # Generic fallback for arbitrary callables
+        custom = t -> 1.0f0 + sin(t)
+        tup = PointProcesses.intensity_bound(custom, 0.0f0; lookahead=1.0f0)
+        @test typeof(tup[1]) === typeof(tup[2])
+    end
+
+    @testset "Process-level Float32 round-trip" begin
+        f32 = PolynomialIntensity(Float32[1.0, 0.5])
+        pp32 = InhomogeneousPoissonProcess(f32)
+
+        @test typeof(ground_intensity(pp32, 0.0f0, h32)) === Float32
+        @test typeof(integrated_ground_intensity(pp32, h32, 0.0f0, 2.0f0)) === Float32
+        tup = ground_intensity_bound(pp32, 0.0f0, h32)
+        @test typeof(tup[1]) === typeof(tup[2]) === Float32
+    end
+
+    @testset "ForwardDiff: intensity callables" begin
+        # λ(t) = p₀ + p₁·t  →  ∂λ/∂p₀=1, ∂λ/∂p₁=t
+        g = ForwardDiff.gradient(p -> PolynomialIntensity(p)(2.0), [1.0, 0.5])
+        @test g ≈ [1.0, 2.0]
+
+        # λ(t) = a·exp(b·t)  →  ∂λ/∂a=exp(b·t), ∂λ/∂b=a·t·exp(b·t)
+        g = ForwardDiff.gradient(p -> ExponentialIntensity(p[1], p[2])(2.0), [1.0, 0.1])
+        @test g[1] ≈ exp(0.2)
+        @test g[2] ≈ 1.0 * 2.0 * exp(0.2)
+
+        # λ(t) = a + b·sin(ω·t + φ)  →  ∂λ/∂a = 1
+        g = ForwardDiff.gradient(
+            p -> SinusoidalIntensity(p[1], p[2], p[3], p[4])(0.25), [3.0, 1.0, 2π, 0.0]
+        )
+        @test all(isfinite, g)
+        @test g[1] ≈ 1.0
+    end
+
+    @testset "ForwardDiff: end-to-end through process intensity methods" begin
+        # Gradient flows through both ground_intensity (per-event evaluation)
+        # and integrated_ground_intensity (analytical and numerical paths).
+        # Built as Λ - Σ log λ(tᵢ) — same shape as the unmarked log-likelihood
+        # used by the fitter, but without the mark-distribution call so the
+        # test isolates the intensity plumbing.
+        h = History([0.5, 1.2, 2.7], 0.0, 4.0)
+        nll(pp, h) =
+            integrated_ground_intensity(pp, h, h.tmin, h.tmax) -
+            sum(log(ground_intensity(pp, t, h)) for t in h.times)
+
+        g_poly = ForwardDiff.gradient(
+            p -> nll(InhomogeneousPoissonProcess(PolynomialIntensity(p)), h), [1.0, 0.3]
+        )
+        @test all(isfinite, g_poly)
+
+        g_exp = ForwardDiff.gradient(
+            p -> nll(InhomogeneousPoissonProcess(ExponentialIntensity(p[1], p[2])), h),
+            [1.0, 0.1],
+        )
+        @test all(isfinite, g_exp)
+
+        g_sin = ForwardDiff.gradient(
+            p -> nll(
+                InhomogeneousPoissonProcess(SinusoidalIntensity(p[1], p[2], 2π, 0.0)), h
+            ),
+            [3.0, 1.0],
+        )
+        @test all(isfinite, g_sin)
     end
 end
