@@ -8,7 +8,7 @@ h = simulate(rng, bpp)
 @test max_time(bpp) == 1000.0
 @test ground_intensity(bpp, 0, h) ≈ intensities
 @test mark_distribution(bpp, 100.0, h, 1) == Normal()
-@test mark_distribution(bpp, 0.0) == fill(Normal(), length(intensities))
+@test mark_distribution(bpp, 0.0, h) == fill(Normal(), length(intensities))
 @test intensity(bpp, 0.0, 0.0, h, 1) ≈ pdf(Normal(), 0.0) * intensities[1]
 @test log_intensity(bpp, 1.0, 1.0, h, 2) ≈ log(pdf(Normal(), 1.0)) + log(intensities[2])
 

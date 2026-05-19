@@ -16,7 +16,7 @@ function PoissonProcess(
 end
 
 function PoissonProcess(λ::AbstractVector{R}; check_args::Bool=true) where {R<:Real}
-    return PoissonProcess(λ, [Dirac(nothing) for _ in eachindex(λ)]; check_args=check_args)
+    return PoissonProcess(λ, [NoMarks() for _ in eachindex(λ)]; check_args=check_args)
 end
 
 function PoissonProcess(

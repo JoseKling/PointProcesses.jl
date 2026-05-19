@@ -81,7 +81,7 @@ function StatsAPI.fit(
 end
 
 function StatsAPI.fit(
-    ::Type{<:InhomogeneousPoissonProcess{F,Dirac{Nothing}}},
+    ::Type{<:InhomogeneousPoissonProcess{F,NoMarks}},
     h::History,
     init_params;
     integration_config=IntegrationConfig(),
@@ -89,7 +89,7 @@ function StatsAPI.fit(
 ) where {F<:ParametricIntensity}
     # For unmarked processes, skip fitting the mark distribution
     intensity = fit(F, h, init_params; integration_config=integration_config, kwargs...)
-    return InhomogeneousPoissonProcess(intensity, Dirac(nothing))
+    return InhomogeneousPoissonProcess(intensity, NoMarks())
 end
 
 function StatsAPI.fit(
@@ -127,7 +127,7 @@ function StatsAPI.fit(
 end
 
 function StatsAPI.fit(
-    ::Type{<:InhomogeneousPoissonProcess{PiecewiseConstantIntensity{R},Dirac{Nothing}}},
+    ::Type{<:InhomogeneousPoissonProcess{PiecewiseConstantIntensity{R},NoMarks}},
     h::History,
     breakpoints::Vector;
     kwargs...,
@@ -149,7 +149,7 @@ function StatsAPI.fit(
     end
 
     intensity = PiecewiseConstantIntensity(breakpoints, rates)
-    return InhomogeneousPoissonProcess(intensity, Dirac(nothing))
+    return InhomogeneousPoissonProcess(intensity, NoMarks())
 end
 
 function StatsAPI.fit(

@@ -12,7 +12,7 @@ Homogeneous temporal Poisson process with arbitrary mark distribution.
 
     PoissonProcess(λ, mark_dist)
 """
-struct PoissonProcess{R<:Real,D} <: AbstractUnivariateProcess
+struct PoissonProcess{R<:Real,D<:PointProcessMarkDistribution} <: AbstractUnivariateProcess
     λ::R
     mark_dist::D
 
@@ -29,7 +29,7 @@ struct PoissonProcess{R<:Real,D} <: AbstractUnivariateProcess
 end
 
 function PoissonProcess(λ::R; check_args::Bool=true) where {R<:Real}
-    return PoissonProcess(λ, Dirac(nothing); check_args=check_args)
+    return PoissonProcess(λ, NoMarks(); check_args=check_args)
 end
 
 PoissonProcess() = PoissonProcess(1.0)
@@ -39,39 +39,24 @@ function Base.show(io::IO, pp::PoissonProcess)
 end
 
 ## Access
-ground_intensity(pp::PoissonProcess) = pp.λ
-mark_distribution(pp::PoissonProcess) = pp.mark_dist
+ground_intensity(pp::PoissonProcess, t, h) = pp.λ
 
-## Intensity functions
-function intensity(pp::PoissonProcess, m)
-    return ground_intensity(pp) * densityof(mark_distribution(pp), m)
-end
-
-function log_intensity(pp::PoissonProcess, m)
-    return log(ground_intensity(pp)) + logdensityof(mark_distribution(pp), m)
-end
+intensity(pp::PoissonProcess, m, t, h) = pp.λ * densityof(pp.mark_dist, t, h, m)
 
 ## Time change
 function time_change(h::History, pp::PoissonProcess)
-    times = (h.times .- h.tmin) .* ground_intensity(pp)
-    tmax = (h.tmax - h.tmin) * ground_intensity(pp)
+    times = (h.times .- h.tmin) .* pp.λ
+    tmax = (h.tmax - h.tmin) * pp.λ
     return History(; times=times, tmin=0, tmax=tmax, marks=h.marks)
 end
 
 ## Implementing AbstractPointProcess interface
-
-ground_intensity(pp::PoissonProcess, t, h) = ground_intensity(pp)
-mark_distribution(pp::PoissonProcess, t, h) = mark_distribution(pp)
-mark_distribution(pp::PoissonProcess, t) = mark_distribution(pp) # For simulate_ogata
-intensity(pp::PoissonProcess, m, t, h) = intensity(pp, m)
-log_intensity(pp::PoissonProcess, m, t, h) = log_intensity(pp, m)
-
 function ground_intensity_bound(pp::PoissonProcess, t::T, h) where {T<:Real}
-    B = ground_intensity(pp)
+    B = pp.λ
     L = typemax(T)
     return (B, L)
 end
 
 function integrated_ground_intensity(pp::PoissonProcess, h, a, b)
-    return ground_intensity(pp) * (b - a)
+    return pp.λ * (b - a)
 end

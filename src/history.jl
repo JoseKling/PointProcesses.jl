@@ -125,6 +125,11 @@ function Base.show(io::IO, h::History{T,M}) where {T,M}
     )
 end
 
+function History(tmin::R1, tmax::R2, N::Int=1) where {R1<:Real, R2<:Real}
+    R = promote_type(R1, R2)
+    History(R[], tmin, tmax, [], [], N)
+end
+
 """
     event_times(h)
 
@@ -318,7 +323,7 @@ Add event `(t, m)` inside the interval `[h.tmin, h.tmax)` at the end of history 
 function Base.push!(h::History, t::Real, m=nothing, d=nothing; check_args=true)
     if check_args
         @assert h.tmin <= t < h.tmax
-        @assert (length(h) == 0) || (h.times[end] <= t)
+        @assert (length(h) == 0) || (h.times[end] < t)
         @assert (d === nothing && h.N == 1) || 1 <= d <= h.N
     end
     push!(h.times, t)

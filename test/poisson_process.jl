@@ -13,8 +13,8 @@ rng = Random.seed!(63)
     @test pp2.λ == 1.0
     @test pp3.λ == 1.0
     @test pp1.mark_dist == Normal()
-    @test pp2.mark_dist == Dirac(nothing)
-    @test pp3.mark_dist == Dirac(nothing)
+    @test pp2.mark_dist == NoMarks()
+    @test pp3.mark_dist == NoMarks()
     @test_throws DomainError PoissonProcess(-1.0)
 end
 
@@ -27,7 +27,7 @@ pp = PoissonProcess(1.0, Normal())
     h = History([0.1, 0.5], 0, 1, [0.0, 0.0])
 
     @test ground_intensity(pp, 0, h) == 1.0
-    @test mark_distribution(pp) == Normal()
+    @test mark_distribution(pp, 0.0, h) == Normal()
     @test intensity(pp, 0.5, 0, h) == 1.0 * pdf(Normal(), 0.5)
     @test log_intensity(pp, 0.5, 0, h) == log(1.0) + logpdf(Normal(), 0.5)
     @test integrated_ground_intensity(pp, h, 0.0, 1.0) == 1.0

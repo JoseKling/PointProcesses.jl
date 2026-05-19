@@ -1,12 +1,11 @@
 h1 = History([1, 2, 3, 4], 0, 5)
 h_empty = History(Float64[], 0, 2)
-PP = PoissonProcess{Float32,Dirac{Nothing}}
+PP = PoissonProcess{Float32,NoMarks}
 pp = PoissonProcess()
 
 @testset "Statistics" begin
     @test statistic(KSDistance{Uniform}, pp, h1) ≈ 0.2
     @test statistic(KSDistance{Exponential}, pp, h1) ≈ 1 - exp(-1)
-
     @test statistic(KSDistance{Uniform}, pp, h_empty) ≈ 1
     @test statistic(KSDistance{Exponential}, pp, h_empty) ≈ 1
 end

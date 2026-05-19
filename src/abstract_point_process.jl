@@ -55,7 +55,7 @@ For multivariate processes, it returns a vector of mark distributions for each d
 
 mark_distribution(pp, h, t, d) computes the mark distribution for a multivariate process `pp` at dimension `d`.
 """
-function mark_distribution end
+mark_distribution(pp::AbstractPointProcess, t, h) = mark_distribution(pp.mark_dist, t, h)
 
 """
     intensity(pp, m, t, h)
