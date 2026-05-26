@@ -8,7 +8,8 @@ module PointProcesses
 # Imports
 
 using DensityInterface: DensityInterface, HasDensity, densityof, logdensityof
-using Distributions: Distributions, Distribution, UnivariateDistribution, MultivariateDistribution
+using Distributions:
+    Distributions, Distribution, UnivariateDistribution, MultivariateDistribution
 using Distributions: Categorical, Exponential, Poisson, Uniform, Dirac, Gamma
 using Distributions: fit, suffstats, probs
 using Integrals: Integrals, IntegralProblem, solve, QuadGKJL

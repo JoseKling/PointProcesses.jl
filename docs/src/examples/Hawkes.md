@@ -119,10 +119,20 @@ in PointProcesses.jl to fit a piecewise constant intensity function to the data.
 While this will not give us any information about self-exciting behavior, it will help us understand the daily patterns of litter box usage.
 
 ````@example Hawkes
-tod = minute.(data.TimestampDT) .+ 60 .* hour.(data.TimestampDT) # time-of-day in minutes since midnight
+tod_raw = Float64.(minute.(data.TimestampDT) .+ 60 .* hour.(data.TimestampDT)) # time-of-day in minutes since midnight
 day = Date.(data.TimestampDT)
 n_days = length(unique(day))
-h_day = History(sort(Float64.(tod)), 0.0, 1440.0) # build a "history" on [0, 1440] minutes
+````
+
+Collapsing many days into a single [0, 1440) window produces events at the
+same minute-of-day across different days. Add a tiny deterministic jitter
+(≪ the 15-minute bin width below) so the events are strictly ordered for
+`History`. The piecewise-constant fit aggregates into bins, so the jitter is
+invisible to the resulting intensity.
+
+````@example Hawkes
+tod = sort(tod_raw .+ (1:length(tod_raw)) .* 1e-6)
+h_day = History(tod, 0.0, 1440.0) # build a "history" on [0, 1440] minutes
 nbins = 96  # 96 bins = 15-minute bins
 pp_day = fit(
     InhomogeneousPoissonProcess{PiecewiseConstantIntensity{Float64},NoMarks},
@@ -149,7 +159,7 @@ The goal of this analysis is to understand the self-exciting nature of the litte
 does that increase the likelihood of another cat using it soon after? To do this, we can use the implementation in PointProcesses.jl
 
 ````@example Hawkes
-full_history = History(data.t, 0.0, maximum(data.t) + 1.0)
+full_history = History(sort(data.t), 0.0, maximum(data.t) + 1.0)
 hawkes_model = fit(HawkesProcess, full_history)
 
 println("Fitted Hawkes Process Parameters:") # hide

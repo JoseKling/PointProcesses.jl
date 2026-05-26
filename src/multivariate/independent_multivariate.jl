@@ -6,7 +6,8 @@ A multivariate point process where each dimension is an independent univariate p
 # Fields
 - `processes::Vector{P}`: vector of univariate point processes, one for each dimension.
 """
-struct IndependentMultivariateProcess{P<:AbstractUnivariateProcess} <: AbstractMultivariateProcess
+struct IndependentMultivariateProcess{P<:AbstractUnivariateProcess} <:
+       AbstractMultivariateProcess
     processes::Vector{P}
 end
 
@@ -76,10 +77,7 @@ function DensityInterface.logdensityof(pp::IndependentMultivariateProcess, h::Hi
 end
 
 function time_change(h::History{R,M}, pp::IndependentMultivariateProcess) where {R<:Real,M}
-    histories = [
-        time_change(History(h, d), pp.processes[d]) for
-        d in 1:ndims(pp)
-    ]
+    histories = [time_change(History(h, d), pp.processes[d]) for d in 1:ndims(pp)]
     tmax = maximum(histories[d].tmax for d in 1:ndims(pp))
     return History(
         [histories[d].times for d in 1:ndims(pp)],
@@ -101,11 +99,7 @@ end
 
 function StatsAPI.fit(proc_types::Vector, h::History{R,M}; kwargs...) where {R<:Real,M}
     processes = [
-        fit(
-            proc_types[d],
-            History(h, d);
-            kwargs...,
-        ) for d in eachindex(proc_types)
+        fit(proc_types[d], History(h, d); kwargs...) for d in eachindex(proc_types)
     ]
     return IndependentMultivariateProcess(processes)
 end

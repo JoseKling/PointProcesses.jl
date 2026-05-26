@@ -67,3 +67,42 @@ end
 
     @test all(sort(test1.sim_stats) .== sort(test2.sim_stats)) # Test reproducibility
 end
+
+@testset "Inhomogeneous Poisson goodness-of-fit" begin
+    # KSDistance with InhomogeneousPoissonProcess relies on time_change.
+    # These tests pin down that the integration-based time_change feeds correctly
+    # through statistic / MonteCarloTest.
+
+    rng = Random.seed!(31415)
+    intensity_true = PolynomialIntensity([2.0, 0.3])
+    pp_true = InhomogeneousPoissonProcess(intensity_true)
+    h = simulate(rng, pp_true, 0.0, 50.0)
+
+    @testset "Statistic computation" begin
+        s_unif = statistic(KSDistance{Uniform}, pp_true, h)
+        s_exp = statistic(KSDistance{Exponential}, pp_true, h)
+        @test 0.0 <= s_unif <= 1.0
+        @test 0.0 <= s_exp <= 1.0
+    end
+
+    @testset "MonteCarloTest correct vs. misspecified" begin
+        # correct model should fit the data substantially better than a wildly
+        # misspecified one.
+        mc_true = MonteCarloTest(
+            KSDistance{Exponential}, pp_true, h; n_sims=200, rng=Random.seed!(7)
+        )
+        @test mc_true.n_sims == 200
+
+        pp_wrong = InhomogeneousPoissonProcess(PolynomialIntensity([20.0]))  # constant 20.0
+        mc_wrong = MonteCarloTest(
+            KSDistance{Exponential}, pp_wrong, h; n_sims=200, rng=Random.seed!(7)
+        )
+
+        # The misspecified model's KS statistic should be substantially
+        # larger than the correct one's — this is the most direct measure
+        # of relative fit quality and is robust to specific p-value seeds.
+        @test mc_wrong.stat > 2 * mc_true.stat
+        # Correct model's p-value should also exceed the misspecified one's.
+        @test pvalue(mc_true) > pvalue(mc_wrong)
+    end
+end

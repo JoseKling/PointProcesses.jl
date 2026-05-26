@@ -41,8 +41,6 @@ end
 ## Access
 ground_intensity(pp::PoissonProcess, t, h) = pp.λ
 
-intensity(pp::PoissonProcess, m, t, h) = pp.λ * densityof(pp.mark_dist, t, h, m)
-
 ## Time change
 function time_change(h::History, pp::PoissonProcess)
     times = (h.times .- h.tmin) .* pp.λ
@@ -51,9 +49,10 @@ function time_change(h::History, pp::PoissonProcess)
 end
 
 ## Implementing AbstractPointProcess interface
-function ground_intensity_bound(pp::PoissonProcess, t::T, h) where {T<:Real}
-    B = pp.λ
-    L = typemax(T)
+function ground_intensity_bound(pp::PoissonProcess{R}, t::T, h) where {R,T<:Real}
+    U = promote_type(R, T)
+    B = U(pp.λ)
+    L = typemax(U)
     return (B, L)
 end
 

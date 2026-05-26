@@ -11,6 +11,23 @@ Linear event histories with temporal locations of type `T` and marks of type `M`
 - `marks::Vector{M}`: associated vector of event marks
 - `dims::Vector{D}`: associated vector of event dimensions
 - `N::Int`: number of dimensions
+
+# Construction
+
+The constructor validates its inputs and throws on any violation rather than
+silently coercing them. With `check_args=true` (the default), it requires:
+
+- `tmin < tmax`
+- `length(times) == length(marks) == length(dims)`
+- `issorted(times)`
+- every event time lies in the half-open interval `[tmin, tmax)`
+- no two events share a time *within the same dimension* (equal times across
+  different dimensions are allowed, representing simultaneous events on
+  different components of a multivariate process)
+- if `dims` is provided, every value lies in `1:N`
+
+Pass `check_args=false` to skip validation when the caller can guarantee the
+invariants hold (e.g. for performance in inner simulation loops).
 """
 struct History{T<:Real,M,D}
     times::Vector{T}
@@ -46,17 +63,39 @@ struct History{T<:Real,M,D}
                 )
             end
             if !isempty(times)
-                perm = sortperm(times)
-                times .= times[perm]
-                marks .= marks[perm]
-                dims .= dims[perm]
+                if !issorted(times)
+                    throw(
+                        DomainError(
+                            times, "Event times must be sorted in non-decreasing order."
+                        ),
+                    )
+                end
                 if times[1] < tmin || times[end] >= tmax
-                    @warn "Events outside of provided interval were discarded."
-                    il = searchsortedfirst(times, tmin)
-                    ir = searchsortedfirst(times, tmax) - 1
-                    times = times[il:ir]
-                    marks = marks[il:ir]
-                    dims = dims[il:ir]
+                    throw(
+                        DomainError(
+                            (times[1], times[end], tmin, tmax),
+                            "All event times must lie in the half-open interval [tmin, tmax).",
+                        ),
+                    )
+                end
+                # Repeated event times are allowed only across different
+                # dimensions (a simultaneous event in two components of a
+                # multivariate process). Within a single dimension, two events
+                # at the same time are pathological for a simple point process.
+                for i in 2:length(times)
+                    times[i] == times[i - 1] || continue
+                    j = i - 1
+                    while j >= 1 && times[j] == times[i]
+                        if dims[j] == dims[i]
+                            throw(
+                                DomainError(
+                                    (times[i], dims[i]),
+                                    "Repeated event time within a single dimension.",
+                                ),
+                            )
+                        end
+                        j -= 1
+                    end
                 end
             end
             if N == 1
@@ -78,8 +117,11 @@ struct History{T<:Real,M,D}
 end
 
 function History(
-    times::AbstractVector{<:AbstractVector{R1}}, tmin::R2, tmax::R3,
-    marks::AbstractVector{<:AbstractVector}; check_args=true
+    times::AbstractVector{<:AbstractVector{R1}},
+    tmin::R2,
+    tmax::R3,
+    marks::AbstractVector{<:AbstractVector};
+    check_args=true,
 ) where {R1<:Real,R2<:Real,R3<:Real}
     vec_times = vcat(times...)
     vec_marks = vcat(marks...)
@@ -120,13 +162,7 @@ function History(; times, tmin, tmax, marks=nothing, dims=nothing, check_args=tr
     end
 end
 
-function Base.show(io::IO, h::History{T,M}) where {T,M}
-    return print(
-        io, "History{$T,$M} with $(nb_events(h)) events on interval [$(h.tmin), $(h.tmax))"
-    )
-end
-
-function History(tmin::R1, tmax::R2, N::Int=1) where {R1<:Real, R2<:Real}
+function History(tmin::R1, tmax::R2, N::Int=1) where {R1<:Real,R2<:Real}
     R = promote_type(R1, R2)
     History(R[], tmin, tmax, [], [], N)
 end
@@ -135,6 +171,12 @@ function History(h::History, d::Int)
     times = event_times(h, d)
     marks = event_times(h, d)
     return History(times, min_time(h), max_time(h), marks)
+end
+
+function Base.show(io::IO, h::History{T,M}) where {T,M}
+    return print(
+        io, "History{$T,$M} with $(nb_events(h)) events on interval [$(h.tmin), $(h.tmax))"
+    )
 end
 
 """
@@ -326,6 +368,12 @@ duration(h::History) = max_time(h) - min_time(h)
     push!(h, t, m)
 
 Add event `(t, m)` inside the interval `[h.tmin, h.tmax)` at the end of history `h`.
+
+With `check_args=true` (the default), the event must satisfy
+`h.tmin <= t < h.tmax`, occur at or after the last existing event time, and
+(if `h` is multivariate) lie in dimension `d ∈ 1:h.N`. Violations throw an
+`AssertionError`. Pass `check_args=false` to skip these checks in trusted
+inner loops.
 """
 function Base.push!(h::History, t::Real, m=nothing, d=nothing; check_args=true)
     if check_args
@@ -343,6 +391,13 @@ end
     append!(h, ts, ms)
 
 Append events `(ts, ms)` inside the interval `[h.tmin, h.tmax)` at the end of history `h`.
+
+With `check_args=true` (the default), `ts` must be sorted, lie in
+`[h.tmin, h.tmax)`, start at or after the last existing event in `h`, and
+have matching lengths with `ms` and `ds`. If `h` is multivariate, every
+dimension in `ds` must be in `1:h.N`. Violations throw an `AssertionError`.
+The caller's `ts`/`ms`/`ds` vectors are *not* mutated. Pass `check_args=false`
+to skip these checks in trusted inner loops.
 """
 function Base.append!(
     h::History,
@@ -355,13 +410,10 @@ function Base.append!(
         return nothing
     end
     if check_args
-        perm = sortperm(ts)
-        ts .= ts[perm]
-        ms .= ms[perm]
-        ds .= ds[perm]
+        @assert length(ts) == length(ms) == length(ds)
+        @assert issorted(ts)
         @assert h.tmin <= ts[1] && ts[end] < h.tmax
         @assert isempty(h) || (h.times[end] <= ts[1])
-        @assert length(ts) == length(ms) == length(ds)
         @assert (eltype(ds) == Nothing && h.N == 1) || all(1 .<= ds .<= h.N)
     end
     append!(h.times, ts)

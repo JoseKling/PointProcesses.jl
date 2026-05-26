@@ -60,7 +60,7 @@ function PointProcesses.ground_intensity(pp::TwoStateModel, t, h::History)
         return pp.λ
     else
         t_n = h.times[searchsortedfirst(h.times, t) - 1] # Last event time before `t`
-        in_high_phase =  t < t_n + pp.τ
+        in_high_phase = t < t_n + pp.τ
     end
     return pp.λ + (in_high_phase * pp.Δ)
 end
@@ -73,7 +73,7 @@ function PointProcesses.integrated_ground_intensity(pp::TwoStateModel, h, a, b)
     integral = pp.λ * (b - a)
     interval_events = event_times(h, a, b)
     if length(interval_events) > 0
-        for i in 1:length(interval_events) - 1
+        for i in 1:(length(interval_events) - 1)
             integral += pp.Δ * max(interval_events[i + 1] - interval_events[i], pp.τ)
         end
         integral += pp.Δ * max(b - interval_events[end], pp.τ)
@@ -104,32 +104,33 @@ println("simulate(pp, 0.0, 10.0) = $(simulate(pp, 0.0, 10.0))")
 
 sim_plot = plot(
     event_times(h),
-    fill(1.0, nb_events(h))
-    ; line=:stem,
+    fill(1.0, nb_events(h));
+    line=:stem,
     grid=false,
     label=false,
     xlabel="Time",
     ylabel="Events",
     yaxis=false,
-    xlim=(min_time(h), max_time(h))
+    xlim=(min_time(h), max_time(h)),
 )
 
 xs = LinRange(min_time(h), max_time(h), 1000)
 intensity_plot = plot(
     xs,
     [ground_intensity(pp, x, h) for x in xs],
-    ; xaxis=false,
+    ;
+    xaxis=false,
     xgrid=false,
     label=false,
     ylabel="Ground Intensity",
-    xlim=(min_time(h), max_time(h))
+    xlim=(min_time(h), max_time(h)),
 )
 
 plot(
     intensity_plot,
-    sim_plot,
+    sim_plot;
     title=["Two State Model Simulation" ""],
-    layout=grid(2, 1, heights=[0.7, 0.3])
+    layout=grid(2, 1; heights=[0.7, 0.3]),
 )
 
 # Lastly, we can define the `fit` method for estimating the parameters from an observed
@@ -138,9 +139,7 @@ plot(
 # process parameters.
 
 function StatsAPI.fit(
-    ::Type{TwoStateModel{R1,NoMarks}},
-    h::History,
-    init_params::Vector{R2},
+    ::Type{TwoStateModel{R1,NoMarks}}, h::History, init_params::Vector{R2}
 ) where {R1<:Real,R2<:Real}
     objective(params) = -logdensityof(TwoStateModel(params..., NoMarks()), h)
 
@@ -168,11 +167,7 @@ true_params = random_params()
 h_unknown = simulate(TwoStateModel(true_params..., NoMarks()), 0.0, 100.0)
 
 init_params = random_params()
-pp_estimated = fit(
-    TwoStateModel{Float64,NoMarks},
-    h_unknown,
-    init_params,
-)
+pp_estimated = fit(TwoStateModel{Float64,NoMarks}, h_unknown, init_params)
 estimated_params = [pp_estimated.λ, pp_estimated.Δ, pp_estimated.τ] # hide
 
 println("True and estimated parameters:") # hide
@@ -221,8 +216,12 @@ end
 
 pp = TwoStateModel(1.0, 2.0, 3.0, LinearTimeNormal(2.0, 4.0))
 
-println("TwoStateModel(1.0, 2.0, 3.0, LinearTimeNormal(2.0, 4.0)) = $(TwoStateModel(1.0, 2.0, 3.0, LinearTimeNormal(2.0, 4.0)))")
-println("PoissonProcess(2.0, LinearTimeNormal(2.0, 4.0)) = $(PoissonProcess(2.0, LinearTimeNormal(2.0, 4.0)))")
+println(
+    "TwoStateModel(1.0, 2.0, 3.0, LinearTimeNormal(2.0, 4.0)) = $(TwoStateModel(1.0, 2.0, 3.0, LinearTimeNormal(2.0, 4.0)))",
+)
+println(
+    "PoissonProcess(2.0, LinearTimeNormal(2.0, 4.0)) = $(PoissonProcess(2.0, LinearTimeNormal(2.0, 4.0)))",
+)
 println("log_intensity(pp, m, t, h) = $(log_intensity(pp, 0.0, 0.0, h))")
 println("logdensityof(pp, h) = $(logdensityof(pp, h))")
 println("simulate(pp, 0.0, 10.0) = $(simulate(pp, 0.0, 10.0))")
@@ -237,7 +236,7 @@ println("simulate(pp, 0.0, 10.0) = $(simulate(pp, 0.0, 10.0))")
 # dimension.  
 
 imp = IndependentMultivariateProcess([
-    TwoStateModel(1.2, 2.0, 0.3,  Normal()),
+    TwoStateModel(1.2, 2.0, 0.3, Normal()),
     TwoStateModel(0.8, 2.0, 0.4, NoMarks()),
     PoissonProcess(2.0), # Any type of process can be added
 ])
@@ -255,21 +254,33 @@ print("intensity(imp, 0.0, nothing, sim, 3) → $(intensity(imp, 0.0, nothing, s
 
 events_plot = scatter()
 for d in 1:ndims(sim)
-    scatter!(events_plot, event_times(sim, d), fill(d, nb_events(sim, d)), label=nothing, markersize=3)
+    scatter!(
+        events_plot,
+        event_times(sim, d),
+        fill(d, nb_events(sim, d));
+        label=nothing,
+        markersize=3,
+    )
 end
-plot!(events_plot, yaxis=false, xlabel="Time", xlim=(min_time(sim), max_time(sim)), ylim=(0.0, 3.2))
+plot!(
+    events_plot;
+    yaxis=false,
+    xlabel="Time",
+    xlim=(min_time(sim), max_time(sim)),
+    ylim=(0.0, 3.2),
+)
 
 xs = LinRange(min_time(sim), max_time(sim), 1000)
 intensities_plot = plot()
 for d in 1:ndims(sim)
-    plot!(intensities_plot, xs, getindex.(λ.(xs), d), label="Dimension $d")
+    plot!(intensities_plot, xs, getindex.(λ.(xs), d); label="Dimension $d")
 end
-plot!(intensities_plot, xs, sum.(λ.(xs)), label="Total ground intensity")
-plot!(intensities_plot, xaxis=false, xlim=(min_time(sim), max_time(sim)), legend=:topleft)
+plot!(intensities_plot, xs, sum.(λ.(xs)); label="Total ground intensity")
+plot!(intensities_plot; xaxis=false, xlim=(min_time(sim), max_time(sim)), legend=:topleft)
 
 plot(
     intensities_plot,
-    events_plot,
+    events_plot;
     title="Event times and ground intensities",
-    layout=grid(2, 1, heights=[0.7, 0.3]),
+    layout=grid(2, 1; heights=[0.7, 0.3]),
 )
