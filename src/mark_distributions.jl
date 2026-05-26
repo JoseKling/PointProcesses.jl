@@ -1,5 +1,6 @@
 
 # Type definition
+"Abstract type for defining mark distributions not in `Distributions.jl`"
 abstract type AbstractMarkDistribution end
 
 const PointProcessMarkDistribution = Union{Distribution, AbstractMarkDistribution}
@@ -26,10 +27,14 @@ sample_mark(rng::AbstractRNG, md::PointProcessMarkDistribution, t, h::History) =
 
 sample_mark(md::PointProcessMarkDistribution, t, h::History) = sample_mark(default_rng(), md, t, h)
 
+"The type of the marks returned by the mark distribution"
 Base.eltype(md::AbstractMarkDistribution) = eltype(mark_distribution(md, 0.0, History(0.0, 1.0)))
 
+"The likelihood of a mark `m` occurring in an event at time `t` after history `h`"
 DensityInterface.densityof(md::PointProcessMarkDistribution, t, h::History, m) =
     densityof(mark_distribution(md, t, h), m)
+
+StatsAPI.fit
 
 # Support for `Distributions.jl`
 mark_distribution(d::Distribution, t, h::History) = d
@@ -37,6 +42,7 @@ mark_distribution(d::Distribution, t, h::History) = d
 StatsAPI.fit(D::Type{<:Distribution}, h::History) = fit(D, h.marks)
 
 # Struct for non-marked processes
+"Mark distribution for non-marked processes. Always return the mark `nothing`."
 struct NoMarks <: AbstractMarkDistribution end
 
 mark_distribution(::NoMarks, t, h::History) = Dirac(nothing)
@@ -49,6 +55,6 @@ StatsAPI.fit(::Type{NoMarks}, h) = NoMarks()
 
 StatsAPI.fit(::Type{NoMarks}, marks, weights) = NoMarks()
 
-DensityInterface.densityof(::NoMarks, t, h, ::Nothing) = 1.0
+DensityInterface.densityof(::NoMarks, t, ::History, ::Nothing) = 1.0
 
-DensityInterface.densityof(::NoMarks, t, h, m) = 0.0
+DensityInterface.densityof(::NoMarks, t, ::History, m) = 0.0

@@ -38,6 +38,10 @@ export min_time, max_time, min_mark, max_mark
 export nb_events, has_events, duration, ndims
 export time_change, split_into_chunks
 
+## Mark Distributions
+export AbstractMarkDistribution, PointProcessMarkDistribution, NoMarks
+export sample_mark
+
 ## Point processes
 
 export PointProcessMarkDistribution, AbstractMarkDistribution, NoMarks

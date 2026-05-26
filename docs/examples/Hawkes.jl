@@ -100,7 +100,7 @@ n_days = length(unique(day))
 h_day = History(sort(Float64.(tod)), 0.0, 1440.0) # build a "history" on [0, 1440] minutes
 nbins = 96  # 96 bins = 15-minute bins
 pp_day = fit(
-    InhomogeneousPoissonProcess{PiecewiseConstantIntensity{Float64},Dirac{Nothing}},
+    InhomogeneousPoissonProcess{PiecewiseConstantIntensity{Float64},NoMarks},
     h_day,
     nbins,
 )

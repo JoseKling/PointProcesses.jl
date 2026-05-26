@@ -78,8 +78,9 @@ struct History{T<:Real,M,D}
 end
 
 function History(
-    times::Vector{Vector{R1}}, tmin::R2, tmax::R3, marks::Vector{Vector{M}}; check_args=true
-) where {R1<:Real,R2<:Real,R3<:Real,M}
+    times::AbstractVector{<:AbstractVector{R1}}, tmin::R2, tmax::R3,
+    marks::AbstractVector{<:AbstractVector}; check_args=true
+) where {R1<:Real,R2<:Real,R3<:Real}
     vec_times = vcat(times...)
     vec_marks = vcat(marks...)
     perm = sortperm(vec_times)
@@ -101,7 +102,7 @@ function History(
 end
 
 function History(
-    times::Vector{Vector{R1}}, tmin::R2, tmax::R3; check_args=true
+    times::AbstractVector{<:AbstractVector{R1}}, tmin::R2, tmax::R3; check_args=true
 ) where {R1<:Real,R2<:Real,R3<:Real}
     nots = [fill(nothing, length(times[i])) for i in 1:length(times)]
     return History(times, tmin, tmax, nots; check_args=check_args)
@@ -128,6 +129,12 @@ end
 function History(tmin::R1, tmax::R2, N::Int=1) where {R1<:Real, R2<:Real}
     R = promote_type(R1, R2)
     History(R[], tmin, tmax, [], [], N)
+end
+
+function History(h::History, d::Int)
+    times = event_times(h, d)
+    marks = event_times(h, d)
+    return History(times, min_time(h), max_time(h), marks)
 end
 
 """

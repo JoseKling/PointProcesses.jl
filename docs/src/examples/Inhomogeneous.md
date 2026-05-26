@@ -92,7 +92,7 @@ The simplest approach is to bin the data and estimate a constant rate in each bi
 
 ````@example Inhomogeneous
 pp_piecewise = fit(
-    InhomogeneousPoissonProcess{PiecewiseConstantIntensity{Float64},Dirac{Nothing}},
+    InhomogeneousPoissonProcess{PiecewiseConstantIntensity{Float64},NoMarks},
     h,
     20,  # number of bins
 )
