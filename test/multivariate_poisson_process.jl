@@ -37,10 +37,10 @@ end
     @test integrated_ground_intensity(pp1, h, 0, 1) == [1.0, 2.0, 3.0]
     @test integrated_ground_intensity(pp1, h, 0, 1, 1) == 1.0
 
-    h1 = simulate(rng, pp, 0.0, 1000.0)
+    h1 = simulate(rng, pp2, 0.0, 1000.0)
 
     f1(λ) = logdensityof(PoissonProcess(λ), h1)
-    gf = ForwardDiff.gradient(f1, 3 * ones(10))
+    gf = ForwardDiff.gradient(f1, 10 * ones(10))
 
     @test all(gf .< 0)
 end
@@ -67,18 +67,18 @@ end
 end
 
 @testset "Fitting" begin
-    h1 = simulate(rng, pp1, 0.0, 1000.0)
-    h2 = History(fill(rand(100) .* 1000, 3), 0, 1000, fill(rand(100), 3))
+    h1 = simulate(rng, pp2, 0.0, 1000.0)
+    h2 = History(fill(rand(100) .* 1000, 3), 0.0, 1000.0)
 
-    pp_est1 = fit(fill(PoissonProcess{Float64,Normal}, 3), h1)
-    pp_est2 = fit(fill(PoissonProcess{Float64,Normal}, 3), h2)
+    pp_est1 = fit(fill(PoissonProcess{Float64,NoMarks}, 3), h1)
+    pp_est2 = fit(fill(PoissonProcess{Float64,NoMarks}, 3), h2)
     λ_est1 = [pp_est1.processes[d].λ for d in 1:ndims(pp_est1)]
     λ_est2 = [pp_est2.processes[d].λ for d in 1:ndims(pp_est2)]
 
     λ_error1 = mean(abs, λ_est1 - λ)
     λ_error2 = mean(abs, λ_est2 - λ)
 
-    l = logdensityof(pp, h1)
+    l = logdensityof(pp2, h1)
     l_est = logdensityof(pp_est1, h1)
 
     @test λ_error1 < λ_error2

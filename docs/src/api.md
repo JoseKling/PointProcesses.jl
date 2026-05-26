@@ -38,6 +38,12 @@ time_change
 split_into_chunks
 ```
 
+
+### Interface
+
+```@docs
+```
+
 ## Point processes
 
 ```@docs
@@ -47,6 +53,14 @@ AbstractMultivariateProcess
 BoundedPointProcess
 IndependentMultivariateProcess
 Base.ndims(::AbstractPointProcess)
+eltype
+```
+
+### Mark Distributions
+
+```@docs
+AbstractMarkDistribution
+NoMarks
 ```
 
 ### Intensity
@@ -55,12 +69,8 @@ Base.ndims(::AbstractPointProcess)
 intensity
 ground_intensity
 log_intensity
-```
-
-### Marks
-
-```@docs
 mark_distribution
+densityof
 ```
 
 ### Simulation
@@ -68,6 +78,7 @@ mark_distribution
 ```@docs
 simulate_ogata
 simulate
+sample_mark
 ```
 
 ### Inference

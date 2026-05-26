@@ -157,7 +157,7 @@ p_waiting
 # Let's fit the actual model now using PointProcesses.jl and run some formal statistical tests.
 
 # ### Fitting a Homogeneous Poisson Process
-pp_model = fit(PoissonProcess{Float64,Dirac{Nothing}}, h)
+pp_model = fit(PoissonProcess{Float64,NoMarks}, h)
 
 println("Estimated rate λ̂ = ", pp_model.λ) # hide
 

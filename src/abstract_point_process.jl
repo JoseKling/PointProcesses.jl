@@ -55,7 +55,7 @@ For multivariate processes, it returns a vector of mark distributions for each d
 
 mark_distribution(pp, h, t, d) computes the mark distribution for a multivariate process `pp` at dimension `d`.
 """
-function mark_distribution end
+mark_distribution(pp::AbstractPointProcess, t, h) = mark_distribution(pp.mark_dist, t, h)
 
 """
     intensity(pp, m, t, h)
@@ -67,7 +67,9 @@ intensity(pp, h, t, d) computes the intensity for a multivariate process `pp` at
 
 The conditional intensity function `λ(t,m|h)` quantifies the instantaneous risk of an event with mark `m` occurring at time `t` after history `h`.
 """
-function intensity end
+function intensity(pp::AbstractPointProcess, m, t, h)
+    return ground_intensity(pp, t, h) * densityof(pp.mark_dist, t, h, m)
+end
 
 """
     log_intensity(pp, m, t, h)
@@ -78,7 +80,7 @@ For multivariate processes, it returns a vector of log intensities for each dime
 log_intensity(pp, h, t, d) computes the log intensity for a multivariate process `pp` at dimension `d`.
 """
 function log_intensity(pp::AbstractPointProcess, m, t, h)
-    return log(ground_intensity(pp, t, h)) + logdensityof(mark_distribution(pp, t, h), m)
+    return log(intensity(pp, m, t, h))
 end
 
 ## Simulation
@@ -147,3 +149,8 @@ Fit a point process of type `PP` to one or several histories using maximum a pos
 Not implemented by default.
 """
 function fit_map end
+
+function time_change(h::History, pp::AbstractPointProcess)
+    Λ(t) = integrated_ground_intensity(pp, h, min_time(h), t)
+    return time_change(h, Λ)
+end

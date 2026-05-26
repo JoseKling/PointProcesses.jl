@@ -22,7 +22,7 @@ To infer the type of the marks, the implementation assumes that there is method 
 function simulate_ogata(
     rng::AbstractRNG, pp::AbstractPointProcess, tmin::T, tmax::T
 ) where {T<:Real}
-    M = typeof(rand(mark_distribution(pp, tmin)))
+    M = eltype(pp.mark_dist)
     h = History(; times=T[], marks=M[], tmin=tmin, tmax=tmax)
     t = tmin
     while t < tmax
@@ -34,8 +34,8 @@ function simulate_ogata(
             U_max = ground_intensity(pp, t + τ, h) / B
             U = rand(rng, typeof(U_max))
             if U < U_max
-                m = rand(rng, mark_distribution(pp, t + τ, h))
                 if t + τ < tmax
+                    m = sample_mark(pp.mark_dist, t + τ, h)
                     push!(h, t + τ, m; check_args=false)
                 end
             end

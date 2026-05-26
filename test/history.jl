@@ -1,4 +1,14 @@
 @testset "Univariate History" begin
+    h_empty1 = History(0.0, 1.0)
+    h_empty2 = History(0.0, 1.0, 2)
+
+    @test h_empty1 isa History{Float64}
+    @test h_empty2 isa History{Float64}
+    @test ndims(h_empty1) == 1
+    @test ndims(h_empty2) == 2
+    @test isempty(h_empty1)
+    @test isempty(h_empty2)
+
     h = History([0.2, 0.8, 1.1], 0.0, 2.0, ["a", "b", "c"]);
 
     @test duration(h) == 2.0

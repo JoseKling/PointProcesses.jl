@@ -50,9 +50,7 @@ end
 function InhomogeneousPoissonProcess(
     f::F; integration_config::C=IntegrationConfig()
 ) where {F,C}
-    return InhomogeneousPoissonProcess{F,Dirac{Nothing},C}(
-        f, Dirac(nothing), integration_config
-    )
+    return InhomogeneousPoissonProcess{F,NoMarks,C}(f, NoMarks(), integration_config)
 end
 
 function Base.show(io::IO, pp::InhomogeneousPoissonProcess)
@@ -61,21 +59,12 @@ function Base.show(io::IO, pp::InhomogeneousPoissonProcess)
     )
 end
 
-## Access methods
-
-"""
-Mark distribution is time-independent for this implementation.
-"""
-mark_distribution(pp::InhomogeneousPoissonProcess) = pp.mark_dist
-
 ## AbstractPointProcess interface
 
 ground_intensity(pp::InhomogeneousPoissonProcess, t, h) = pp.intensity_function(t)
-mark_distribution(pp::InhomogeneousPoissonProcess, t, h) = pp.mark_dist
-mark_distribution(pp::InhomogeneousPoissonProcess, t) = pp.mark_dist
 
 function intensity(pp::InhomogeneousPoissonProcess, m, t, h)
-    return ground_intensity(pp, t, h) * densityof(mark_distribution(pp, t, h), m)
+    return ground_intensity(pp, t, h) * densityof(pp.mark_dist, t, h, m)
 end
 
 """

@@ -106,9 +106,7 @@ tod = sort(tod_raw .+ (1:length(tod_raw)) .* 1e-6)
 h_day = History(tod, 0.0, 1440.0) # build a "history" on [0, 1440] minutes
 nbins = 96  # 96 bins = 15-minute bins
 pp_day = fit(
-    InhomogeneousPoissonProcess{PiecewiseConstantIntensity{Float64},Dirac{Nothing}},
-    h_day,
-    nbins,
+    InhomogeneousPoissonProcess{PiecewiseConstantIntensity{Float64},NoMarks}, h_day, nbins
 )
 
 λ_avg(u) = pp_day.intensity_function(u) / n_days
