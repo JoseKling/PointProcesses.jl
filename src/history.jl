@@ -444,11 +444,6 @@ function Base.cat(h1::History, h2::History)
     )
 end
 
-"""
-    time_change(h, Λ)
-
-Apply the time rescaling `t -> Λ(t)` to history `h`.
-"""
 function time_change(h::History, Λ)
     new_times = Λ.(event_times(h))
     new_marks = copy(event_marks(h))

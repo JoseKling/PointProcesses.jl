@@ -41,8 +41,6 @@ end
 
 HawkesProcess(μ, α, ω) = HawkesProcess(μ, α, ω, NoMarks())
 
-Base.ndims(hp::MultivariateHawkesProcess) = length(hp.μ)
-
 function ground_intensity(hp::HawkesProcess, h::History, t)
     activation = sum(exp.(hp.ω .* (@view h.times[1:(searchsortedfirst(h.times, t) - 1)])))
     return hp.μ + (hp.α * activation / exp(hp.ω * t))

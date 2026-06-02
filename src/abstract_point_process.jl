@@ -5,20 +5,6 @@ Common interface for all temporal point processes.
 """
 abstract type AbstractPointProcess end
 
-"""
-    AbstractUnivariateProcess
-
-Abstract type for univariate temporal point processes.
-"""
-abstract type AbstractUnivariateProcess <: AbstractPointProcess end
-
-"""
-    AbstractMultivariateProcess
-
-Abstract type for multivariate temporal point processes.
-"""
-abstract type AbstractMultivariateProcess <: AbstractPointProcess end
-
 @inline DensityInterface.DensityKind(::AbstractPointProcess) = HasDensity()
 
 """
@@ -28,10 +14,7 @@ Return the number of dimensions for a temporal point process `pp`.
 """
 Base.ndims(::AbstractPointProcess)
 
-Base.ndims(::AbstractUnivariateProcess) = 1
-
 ## Intensity functions
-
 """
     ground_intensity(pp, h, t)
 
@@ -55,7 +38,7 @@ For multivariate processes, it returns a vector of mark distributions for each d
 
 mark_distribution(pp, h, t, d) computes the mark distribution for a multivariate process `pp` at dimension `d`.
 """
-mark_distribution(pp::AbstractPointProcess, t, h) = mark_distribution(pp.mark_dist, t, h)
+function mark_distribution end
 
 """
     intensity(pp, m, t, h)
@@ -67,9 +50,7 @@ intensity(pp, h, t, d) computes the intensity for a multivariate process `pp` at
 
 The conditional intensity function `λ(t,m|h)` quantifies the instantaneous risk of an event with mark `m` occurring at time `t` after history `h`.
 """
-function intensity(pp::AbstractPointProcess, m, t, h)
-    return ground_intensity(pp, t, h) * densityof(pp.mark_dist, t, h, m)
-end
+function intensity end
 
 """
     log_intensity(pp, m, t, h)
@@ -79,9 +60,7 @@ For multivariate processes, it returns a vector of log intensities for each dime
 
 log_intensity(pp, h, t, d) computes the log intensity for a multivariate process `pp` at dimension `d`.
 """
-function log_intensity(pp::AbstractPointProcess, m, t, h)
-    return log(intensity(pp, m, t, h))
-end
+function log_intensity end
 
 ## Simulation
 
@@ -122,13 +101,7 @@ Compute the log probability density function for a temporal point process `pp` a
 ```
 The default method uses a loop over events combined with `integrated_ground_intensity`, but it should be reimplemented for specific processes if faster computation is possible.
 """
-function DensityInterface.logdensityof(pp::AbstractPointProcess, h::History)
-    l = -integrated_ground_intensity(pp, h, min_time(h), max_time(h))
-    for (t, m) in zip(event_times(h), event_marks(h))
-        l += log_intensity(pp, m, t, h)
-    end
-    return l
-end
+DensityInterface.logdensityof
 
 """
     fit(::Type{PP}, h)
@@ -150,7 +123,9 @@ Not implemented by default.
 """
 function fit_map end
 
-function time_change(h::History, pp::AbstractPointProcess)
-    Λ(t) = integrated_ground_intensity(pp, h, min_time(h), t)
-    return time_change(h, Λ)
-end
+"""
+    time_change
+
+Apply the time rescaling `t -> Λ(t)` to history `h`.
+"""
+function time_change end

@@ -18,54 +18,28 @@ end
 Base.ndims(pp::IndependentMultivariateProcess) = length(pp.processes)
 
 ## AbstractPointProcess interface
-function ground_intensity(pp::IndependentMultivariateProcess, t, h, d)
+function ground_intensity(pp::IndependentMultivariateProcess, t, h::History, d)
     return ground_intensity(pp.processes[d], t, History(h, d))
 end
 
-function ground_intensity(pp::IndependentMultivariateProcess, t, h)
-    return [ground_intensity(pp, t, h, d) for d in 1:ndims(pp)]
+function intensity(pp::IndependentMultivariateProcess, m, t, h::History, d)
+    return intensity(pp.processes[d], m, t, History(h, d))
 end
 
-function mark_distribution(pp::IndependentMultivariateProcess, t, h, d)
+function mark_distribution(pp::IndependentMultivariateProcess, t, h::History, d)
     return mark_distribution(pp.processes[d], t, History(h, d))
-end
-
-function mark_distribution(pp::IndependentMultivariateProcess, t, h)
-    return [mark_distribution(pp, t, h, d) for d in 1:ndims(pp)]
 end
 
 function mark_distribution(pp::IndependentMultivariateProcess, t)
     return [mark_distribution(pp.processes[d], t) for d in 1:ndims(pp)]
 end
 
-function intensity(pp::IndependentMultivariateProcess, m, t, h, d)
-    return intensity(pp.processes[d], m, t, History(h, d))
-end
-
-function intensity(pp::IndependentMultivariateProcess, m, t, h)
-    return [intensity(pp, m, t, h, d) for d in 1:ndims(pp)]
-end
-
-function log_intensity(pp::IndependentMultivariateProcess, m, t, h, d)
-    log(intensity(pp, m, t, h, d))
-end
-
-log_intensity(pp::IndependentMultivariateProcess, m, t, h) = log.(intensity(pp, m, t, h))
-
-function ground_intensity_bound(pp::IndependentMultivariateProcess, t, h, d)
+function ground_intensity_bound(pp::IndependentMultivariateProcess, t, h::History, d)
     return ground_intensity_bound(pp.processes[d], t, History(h, d))
-end
-
-function ground_intensity_bound(pp::IndependentMultivariateProcess, t, h)
-    return [ground_intensity_bound(pp, t, h, d) for d in 1:ndims(pp)]
 end
 
 function integrated_ground_intensity(pp::IndependentMultivariateProcess, h, a, b, d)
     return integrated_ground_intensity(pp.processes[d], History(h, d), a, b)
-end
-
-function integrated_ground_intensity(pp::IndependentMultivariateProcess, h, a, b)
-    return [integrated_ground_intensity(pp, h, a, b, d) for d in 1:ndims(pp)]
 end
 
 function DensityInterface.logdensityof(pp::IndependentMultivariateProcess, h::History)

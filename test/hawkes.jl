@@ -58,7 +58,8 @@ params_est = (model_est.μ, model_est.α, model_est.ω)
 @test isa(fit(HawkesProcess{Float64,Normal}, h_sim2), HawkesProcess{Float64,Normal{Float64}})
 
 # logdensityof
-@test logdensityof(hp, h) ≈
+h_nomarks = History(h.times, h.tmin, h.tmax)
+@test logdensityof(hp, h_nomarks) ≈
     sum(log.(hp.μ .+ (hp.α .* [0, exp(-hp.ω), exp(-hp.ω * 2) + exp(-hp.ω * 3)]))) -
       integral
 
