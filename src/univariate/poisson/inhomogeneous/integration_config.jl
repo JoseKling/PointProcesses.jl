@@ -37,7 +37,7 @@ struct IntegrationConfig
     function IntegrationConfig(;
         solver=QuadGKJL(), abstol::Float64=1e-8, reltol::Float64=1e-8, maxiters::Int=1000
     )
-        new(solver, abstol, reltol, maxiters)
+        return new(solver, abstol, reltol, maxiters)
     end
 end
 
