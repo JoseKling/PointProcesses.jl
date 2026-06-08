@@ -35,6 +35,8 @@ using Plots
 using StatsAPI
 using Optim
 
+import PointProcesses: NoMarks, AbstractMarkDistribution, AbstractUnivariateProcess
+
 struct TwoStateModel{R<:Real,D<:PointProcessMarkDistribution} <: AbstractUnivariateProcess
     λ::R
     Δ::R
@@ -47,7 +49,7 @@ end
 # `PointProcessMarkDistribution` encompasses `NoMarks` and any distribution in package
 # `Distributions.jl`. In the next chapter we will discuss custom distributions as well.
 
-# > Even if you plan on only using a non-marked process, you should keep the `mark_dist` field. In you really want you can define an inner constructor like `TwoStateModel(λ, Δ, τ) → new(λ, Δ, τ, Nomarks())`.
+# > Even if you plan on only using a non-marked process, you should keep the `mark_dist` field. If you really want you can define an inner constructor like `TwoStateModel(λ, Δ, τ) → new(λ, Δ, τ, Nomarks())`.
 
 # Right now you cannot do much more than accessing the fields. The only methods you have
 # defined are `ndims`, `DensityKind` and `mark_distribution`. Not too interesting.  
@@ -243,10 +245,10 @@ imp = IndependentMultivariateProcess([
 
 sim = simulate(imp, 0.0, 10.0)
 
-print("ground_intensity(imp, 0.0, sim) → $(ground_intensity(imp, 0.0, sim))")
-print("ground_intensity(imp, 0.0, sim, 1) → $(ground_intensity(imp, 0.0, sim, 1))")
-print("intensity(imp, 0.0, 0.0, sim) → $(intensity(imp, 0.0, 0.0, sim))")
-print("intensity(imp, 0.0, nothing, sim, 3) → $(intensity(imp, 0.0, nothing, sim, 3))")
+println("ground_intensity(imp, 0.0, sim) → $(ground_intensity(imp, 0.0, sim))")
+println("ground_intensity(imp, 0.0, sim, 1) → $(ground_intensity(imp, 0.0, sim, 1))")
+println("intensity(imp, 0.0, 0.0, sim) → $(intensity(imp, 0.0, 0.0, sim))")
+println("intensity(imp, 0.0, nothing, sim, 3) → $(intensity(imp, nothing, 0.0, sim, 3))")
 
 # Lets end this tutorial with a nice plot of this process. 
 

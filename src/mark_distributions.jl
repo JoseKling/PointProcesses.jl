@@ -1,4 +1,3 @@
-
 # Type definition
 "Abstract type for defining mark distributions not in `Distributions.jl`"
 abstract type AbstractMarkDistribution end
@@ -42,8 +41,6 @@ end
 function DensityInterface.densityof(md::PointProcessMarkDistribution, t, h::History, m)
     densityof(mark_distribution(md, t, h), m)
 end
-
-StatsAPI.fit
 
 # Support for `Distributions.jl`
 mark_distribution(d::Distribution, t, h::History) = d

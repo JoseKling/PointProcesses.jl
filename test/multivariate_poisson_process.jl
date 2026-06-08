@@ -47,7 +47,7 @@ end
 
 @testset "Simulation" begin
     pp0 = PoissonProcess([0.0, 1.0, 0.0])
-    bpp = BoundedPointProcess(pp1, 0, 1000)
+    bpp = BoundedPointProcess(pp1, 0.0, 1000.0)
     h1 = simulate(rng, pp1, 0.0, 1000.0)
     h2 = simulate(rng, pp0, 0.0, 1000.0)
     h3 = simulate(rng, bpp)

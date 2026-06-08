@@ -45,7 +45,6 @@ export sample_mark
 
 ## Point processes
 
-export PointProcessMarkDistribution, AbstractMarkDistribution, NoMarks
 export AbstractPointProcess, AbstractUnivariateProcess, AbstractMultivariateProcess
 export BoundedPointProcess
 export ground_intensity, mark_distribution

@@ -20,7 +20,7 @@ Simulate a temporal point process `pp` on interval `[tmin, tmax)` using Ogata's 
 To infer the type of the marks, the implementation assumes that there is method of `mark_distribution` without the argument `h` such that it corresponds to the distribution of marks in case the history is empty.
 """
 function simulate_ogata(
-    rng::AbstractRNG, pp::AbstractPointProcess, tmin::T, tmax::T
+    rng::AbstractRNG, pp::AbstractUnivariateProcess, tmin::T, tmax::T
 ) where {T<:Real}
     M = eltype(pp.mark_dist)
     h = History(; times=T[], marks=M[], tmin=tmin, tmax=tmax)
