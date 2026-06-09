@@ -90,8 +90,12 @@ end
     @test_throws DomainError History(rand(3), 0, 1, rand(3), [1, 2, 3], 2)
     @test event_dims(History([[0.5]], 0, 1)) == [nothing]
 
-    @test_throws DomainError History([1.0, 1.0, 2.0, 3.0, 4.0], 0.0, 5.0, fill(nothing, 5), [1, 1, 1, 2, 1], 2)
-    @test_throws DomainError History([1.0, 1.0, 1.0, 2.0, 3.0], 0.0, 5.0, fill(nothing, 5), [1, 2, 1, 2, 1], 2)
+    @test_throws DomainError History(
+        [1.0, 1.0, 2.0, 3.0, 4.0], 0.0, 5.0, fill(nothing, 5), [1, 1, 1, 2, 1], 2
+    )
+    @test_throws DomainError History(
+        [1.0, 1.0, 1.0, 2.0, 3.0], 0.0, 5.0, fill(nothing, 5), [1, 2, 1, 2, 1], 2
+    )
 
     # Test dimension-specific methods
     @test event_times(h_multi, 1) == [0.1, 0.5]

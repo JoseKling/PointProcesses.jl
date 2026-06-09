@@ -1,6 +1,6 @@
 h1 = History([1.0, 2.0, 3.0, 4.0], 0.0, 5.0)
 h_empty = History(Float64[], 0.0, 2.0)
-PP = PoissonProcess{Float64,NoMarks}
+PP = PoissonProcess{Float32,NoMarks}
 pp = PoissonProcess()
 
 @testset "Statistics" begin
