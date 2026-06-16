@@ -10,7 +10,7 @@
     @test isempty(h_empty1)
     @test isempty(h_empty2)
 
-    h = History([0.2, 0.8, 1.1], 0.0, 2.0, ["a", "b", "c"]);
+    h = History([0.2, 0.8, 1.1], 0.0, 2.0, ["a", "b", "c"])
 
     @test h isa History{Float64,String}
 

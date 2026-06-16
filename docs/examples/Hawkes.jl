@@ -42,7 +42,7 @@ dt = DateTime("12/22 3:09 pm", fmt)
 
 function parse_timestamp_min(s::AbstractString; year=2024)
     dt = DateTime(s, dateformat"m/d I:M p")
-    DateTime(year, month(dt), day(dt), hour(dt), minute(dt))
+    return DateTime(year, month(dt), day(dt), hour(dt), minute(dt))
 end
 
 data.TimestampDT = parse_timestamp_min.(String.(data.Timestamp))
@@ -66,7 +66,7 @@ function eventplot(
     xlabel="Time (minutes)",
     ylabel="Events",
 )
-    scatter(
+    return scatter(
         event_times,
         ones(length(event_times));
         markershape=:vline,
@@ -143,8 +143,9 @@ println("Branching ratio (n = α/ω): ", hawkes_model.α / hawkes_model.ω) #hid
 ts = sort(data.t)
 
 function λ_hawkes(t::Real)
-    hawkes_model.μ +
-    sum((hawkes_model.α * exp(-hawkes_model.ω * (t - ti)) for ti in ts if ti < t); init=0.0)
+    return hawkes_model.μ + sum(
+        (hawkes_model.α * exp(-hawkes_model.ω * (t - ti)) for ti in ts if ti < t); init=0.0
+    )
 end
 
 u = range(0.0, maximum(ts) + 1.0; length=2000)

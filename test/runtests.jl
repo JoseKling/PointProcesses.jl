@@ -3,6 +3,7 @@ using DensityInterface
 using Documenter
 using Distributions
 using ForwardDiff
+using JuliaFormatter
 using LinearAlgebra
 using Pkg
 using PointProcesses
@@ -16,13 +17,18 @@ Random.seed!(63)
 DocMeta.setdocmeta!(PointProcesses, :DocTestSetup, :(using PointProcesses); recursive=true)
 
 @testset verbose = true "PointProcesses.jl" begin
+    @testset verbose = false "Code Formatting" begin
+        if VERSION >= v"1.10"
+            @test JuliaFormatter.format(PointProcesses; verbose=false, overwrite=false)
+        end
+    end
     @testset verbose = false "Code quality (Aqua.jl)" begin
         Aqua.test_all(PointProcesses; ambiguities=false, deps_compat=(; check_extras=false))
     end
     @testset verbose = false "Code Linting" begin
         # Skip JET on Julia pre-releases (where JET typically hasn't caught up
         # yet and there is no compatible JET version to resolve against). JET is
-        # not listed in test/Project.toml's [deps] for the same reaso, having
+        # not listed in test/Project.toml's [deps] for the same reason, having
         # it there would make `Pkg.test` fail at the resolution step on
         # prereleases, before this guard ever runs. Install on demand only when
         # we're on a stable Julia.

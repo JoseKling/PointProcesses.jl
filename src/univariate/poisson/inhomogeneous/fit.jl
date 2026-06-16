@@ -66,11 +66,13 @@ function StatsAPI.fit(
 )
 
     # Define objective function
-    objective(params) = negative_loglikelihood_ipp(
-        h,
-        from_params(F, params; intensity_kwargs...);
-        integration_config=integration_config,
-    )
+    function objective(params)
+        return negative_loglikelihood_ipp(
+            h,
+            from_params(F, params; intensity_kwargs...);
+            integration_config=integration_config,
+        )
+    end
 
     result = optimize(objective, init_params, optimizer; autodiff=autodiff)
 

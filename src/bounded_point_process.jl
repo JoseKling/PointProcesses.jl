@@ -34,8 +34,8 @@ mark_distribution(bpp::BoundedPointProcess, args...) = mark_distribution(bpp.pp,
 intensity(bpp::BoundedPointProcess, args...) = intensity(bpp.pp, args...)
 log_intensity(bpp::BoundedPointProcess, args...) = log_intensity(bpp.pp, args...)
 function ground_intensity_bound(bpp::BoundedPointProcess, args...)
-    ground_intensity_bound(bpp.pp, args...)
+    return ground_intensity_bound(bpp.pp, args...)
 end
 function integrated_ground_intensity(bpp::BoundedPointProcess, args...)
-    integrated_ground_intensity(bpp.pp, args...)
+    return integrated_ground_intensity(bpp.pp, args...)
 end

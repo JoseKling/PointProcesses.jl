@@ -164,7 +164,7 @@ end
 
 function History(tmin::R1, tmax::R2, N::Int=1) where {R1<:Real,R2<:Real}
     R = promote_type(R1, R2)
-    History(R[], tmin, tmax, [], [], N)
+    return History(R[], tmin, tmax, [], [], N)
 end
 
 function History(h::History, d::Int)
@@ -192,7 +192,7 @@ event_times(h::History) = h.times
 Return the sorted vector of event times for `h` in dimension `d`.
 """
 function event_times(h::History, d::Union{Int,Nothing})
-    h.N == 1 ? h.times : (@view h.times[h.dims .== d])
+    return h.N == 1 ? h.times : (@view h.times[h.dims .== d])
 end
 
 """
@@ -231,7 +231,7 @@ event_marks(h::History) = h.marks
 Return the vector of event marks in dimension `d` of `h`, sorted according to their event times.
 """
 function event_marks(h::History, d::Union{Int,Nothing})
-    h.N == 1 && d == 1 ? h.marks : (@view h.marks[h.dims .== d])
+    return h.N == 1 && d == 1 ? h.marks : (@view h.marks[h.dims .== d])
 end
 
 """
