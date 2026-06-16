@@ -177,7 +177,7 @@ println("λ: $(true_params[1]) - $(estimated_params[1])") #hide
 println("Δ: $(true_params[2]) - $(estimated_params[2])") #hide
 println("τ : $(true_params[3]) - $(estimated_params[3])") # hide
 
-pp_to_test = TwoStateModel(20.0, 30.0, 1.0/30.0, NoMarks())
+pp_to_test = TwoStateModel(20.0, 30.0, 1.0 / 30.0, NoMarks())
 test_result = MonteCarloTest(KSDistance{Exponential}, pp_to_test, h_unknown)
 
 println("p-value for hypothesis test: $(pvalue(test_result))") # hide
