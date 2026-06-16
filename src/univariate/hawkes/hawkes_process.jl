@@ -34,7 +34,7 @@ struct HawkesProcess{T<:Real} <: AbstractUnivariateProcess
             throw(DomainError((α, ω), "Parameter ω must be strictly smaller than α"))
         T = promote_type(T1, T2, T3)
         (μ_T, α_T, ω_T) = convert.(T, (μ, α, ω))
-        new{T}(μ_T, α_T, ω_T)
+        return new{T}(μ_T, α_T, ω_T)
     end
 end
 

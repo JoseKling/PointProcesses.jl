@@ -1,5 +1,5 @@
 @testset "Univariate History" begin
-    h = History([0.2, 0.8, 1.1], 0.0, 2.0, ["a", "b", "c"]);
+    h = History([0.2, 0.8, 1.1], 0.0, 2.0, ["a", "b", "c"])
 
     @test duration(h) == 2.0
     @test nb_events(h) == 3

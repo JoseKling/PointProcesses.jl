@@ -19,7 +19,7 @@ Calculate the p-value of a goodness-of-fit test on a process.
 function StatsAPI.pvalue(::PointProcessTest) end
 
 function Base.show(io::IO, t::PointProcessTest)
-    print(io, "$(typeof(t)) - pvalue = $(pvalue(t))")
+    return print(io, "$(typeof(t)) - pvalue = $(pvalue(t))")
 end
 
 #=

@@ -252,7 +252,7 @@ models = [
 ]
 
 println("\nModel Comparison (Negative Log-Likelihood):") # hide
-println("-" ^ 50) # hide
+println("-"^50) # hide
 for (name, model) in models # hide
     nll = compute_nll(model, h) # hide
     println("  $name: ", round(nll; digits=2)) # hide 
