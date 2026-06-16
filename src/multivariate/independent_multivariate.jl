@@ -47,7 +47,7 @@ function intensity(pp::IndependentMultivariateProcess, m, t, h)
 end
 
 function log_intensity(pp::IndependentMultivariateProcess, m, t, h, d)
-    log(intensity(pp, m, t, h, d))
+    return log(intensity(pp, m, t, h, d))
 end
 log_intensity(pp::IndependentMultivariateProcess, m, t, h) = log.(intensity(pp, m, t, h))
 
