@@ -59,7 +59,7 @@ dt = DateTime("12/22 3:09 pm", fmt)
 
 function parse_timestamp_min(s::AbstractString; year=2024)
     dt = DateTime(s, dateformat"m/d I:M p")
-    DateTime(year, month(dt), day(dt), hour(dt), minute(dt))
+    return DateTime(year, month(dt), day(dt), hour(dt), minute(dt))
 end
 
 data.TimestampDT = parse_timestamp_min.(String.(data.Timestamp))
@@ -89,7 +89,7 @@ function eventplot(
     xlabel="Time (minutes)",
     ylabel="Events",
 )
-    scatter(
+    return scatter(
         event_times,
         ones(length(event_times));
         markershape=:vline,
@@ -135,9 +135,7 @@ tod = sort(tod_raw .+ (1:length(tod_raw)) .* 1e-6)
 h_day = History(tod, 0.0, 1440.0) # build a "history" on [0, 1440] minutes
 nbins = 96  # 96 bins = 15-minute bins
 pp_day = fit(
-    InhomogeneousPoissonProcess{PiecewiseConstantIntensity{Float64},Dirac{Nothing}},
-    h_day,
-    nbins,
+    InhomogeneousPoissonProcess{PiecewiseConstantIntensity{Float64},NoMarks}, h_day, nbins
 )
 
 λ_avg(u) = pp_day.intensity_function(u) / n_days
@@ -180,8 +178,9 @@ Finally, we can visualize the fitted intensity function over time.
 ts = sort(data.t)
 
 function λ_hawkes(t::Real)
-    hawkes_model.μ +
-    sum((hawkes_model.α * exp(-hawkes_model.ω * (t - ti)) for ti in ts if ti < t); init=0.0)
+    return hawkes_model.μ + sum(
+        (hawkes_model.α * exp(-hawkes_model.ω * (t - ti)) for ti in ts if ti < t); init=0.0
+    )
 end
 
 u = range(0.0, maximum(ts) + 1.0; length=2000)

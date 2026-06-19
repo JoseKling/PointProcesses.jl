@@ -8,7 +8,8 @@ module PointProcesses
 # Imports
 
 using DensityInterface: DensityInterface, HasDensity, densityof, logdensityof
-using Distributions: Distributions, UnivariateDistribution, MultivariateDistribution
+using Distributions:
+    Distributions, Distribution, UnivariateDistribution, MultivariateDistribution
 using Distributions: Categorical, Exponential, Poisson, Uniform, Dirac, Gamma
 using Distributions: fit, suffstats, probs
 using Integrals: Integrals, IntegralProblem, solve, QuadGKJL
@@ -37,6 +38,10 @@ export event_times, event_marks, event_dims
 export min_time, max_time, min_mark, max_mark
 export nb_events, has_events, duration, ndims
 export time_change, split_into_chunks
+
+## Mark Distributions
+export AbstractMarkDistribution, PointProcessMarkDistribution, NoMarks
+export sample_mark
 
 ## Point processes
 
@@ -79,6 +84,7 @@ export PointProcessTest, BootstrapTest, MonteCarloTest
 
 ## General
 include("history.jl")
+include("mark_distributions.jl")
 include("abstract_point_process.jl")
 include("simulation.jl")
 include("bounded_point_process.jl")

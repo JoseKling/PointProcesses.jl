@@ -1,17 +1,16 @@
-h1 = History([1, 2, 3, 4], 0, 5)
-h_empty = History(Float64[], 0, 2)
-PP = PoissonProcess{Float32,Dirac{Nothing}}
+h1 = History([1.0, 2.0, 3.0, 4.0], 0.0, 5.0)
+h_empty = History(Float64[], 0.0, 2.0)
+PP = PoissonProcess{Float32,NoMarks}
 pp = PoissonProcess()
 
 @testset "Statistics" begin
     @test statistic(KSDistance{Uniform}, pp, h1) ≈ 0.2
     @test statistic(KSDistance{Exponential}, pp, h1) ≈ 1 - exp(-1)
-
     @test statistic(KSDistance{Uniform}, pp, h_empty) ≈ 1
     @test statistic(KSDistance{Exponential}, pp, h_empty) ≈ 1
 end
 
-h2 = History(collect(0:999), 0, 1000)
+h2 = History(collect(0.0:999.0), 0.0, 1000.0)
 
 @testset "BootstrapTest" begin
     @test_throws ArgumentError BootstrapTest(KSDistance{Uniform}, PP, h_empty)

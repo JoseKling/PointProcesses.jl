@@ -98,7 +98,7 @@ counts to be roughly Poisson distributed with rate λ * Δt in each bin of width
 
 ````@example Basics
 bin_width = 1.0
-bins = collect(h.tmin:bin_width:h.tmax)           # bin edges
+bins = collect((h.tmin):bin_width:(h.tmax))           # bin edges
 counts = fit(Histogram, h.times, bins).weights;    # counts per bin
 nothing #hide
 ````
@@ -185,7 +185,7 @@ Let's fit the actual model now using PointProcesses.jl and run some formal stati
 ### Fitting a Homogeneous Poisson Process
 
 ````@example Basics
-pp_model = fit(PoissonProcess{Float64,Dirac{Nothing}}, h)
+pp_model = fit(PoissonProcess{Float64,NoMarks}, h)
 
 println("Estimated rate λ̂ = ", pp_model.λ) # hide
 ````

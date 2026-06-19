@@ -1,6 +1,20 @@
 @testset "Univariate History" begin
+    # Constructors
+    h_empty1 = History(0.0, 1.0)
+    h_empty2 = History(0.0, 1.0, 2)
+
+    @test h_empty1 isa History{Float64,Any}
+    @test h_empty2 isa History{Float64,Any}
+    @test ndims(h_empty1) == 1
+    @test ndims(h_empty2) == 2
+    @test isempty(h_empty1)
+    @test isempty(h_empty2)
+
     h = History([0.2, 0.8, 1.1], 0.0, 2.0, ["a", "b", "c"])
 
+    @test h isa History{Float64,String}
+
+    # Access
     @test duration(h) == 2.0
     @test nb_events(h) == 3
     @test nb_events(h, 1.0, 2.0) == 1
@@ -11,20 +25,23 @@
     @test event_times(h) == [0.2, 0.8, 1.1]
     @test event_times(h, 0.2, 0.8) == [0.2]
     @test event_times(h, 0.8, 0.2) == []
+    @test event_times(h, nothing) == h.times
     @test event_marks(h) == ["a", "b", "c"]
     @test event_marks(h, 0.2, 0.8) == ["a"]
     @test event_marks(h, 0.8, 0.2) == []
     @test ndims(h) == 1
     @test event_dims(h) == fill(nothing, 3)
 
+    # Interface
+    @test_throws DomainError push!(h, 100.0, "d")
+    @test_throws DomainError push!(h, 100.0, "d", 2)
+    @test_throws DomainError push!(h, 1.0, "d", 2)
     push!(h, 1.7, "d")
 
     @test has_events(h, 1.5, 2.0)
 
     h2 = History(; times=[2.3], marks=["e"], tmin=2.0, tmax=2.5)
-    h3 = History(; times=[[1], [2, 2.5]], tmin=0, tmax=3)
 
-    @test (event_marks(h3) == fill(nothing, 3)) && (event_dims(h3) == [1, 2, 2])
     @test string(h2) == "History{Float64,String} with 1 events on interval [2.0, 2.5)"
 
     h_cat = cat(h, h2)
@@ -65,8 +82,23 @@ end
     @test event_marks(h_multi) == ["a", "c", "b", "d"]
     @test event_dims(h_multi) == [1, 2, 1, 2]
 
+    h_multi1 = History(h_multi, 1)
+    h_multi2 = History(h_multi, 2)
+
+    @test event_times(h_multi1) == times1
+    @test event_times(h_multi2) == times2
+    @test event_marks(h_multi1) == marks1
+    @test event_marks(h_multi2) == marks2
+
     @test_throws DomainError History(rand(3), 0, 1, rand(3), [1, 2, 3], 2)
     @test event_dims(History([[0.5]], 0, 1)) == [nothing]
+
+    @test_throws DomainError History(
+        [1.0, 1.0, 2.0, 3.0, 4.0], 0.0, 5.0, fill(nothing, 5), [1, 1, 1, 2, 1], 2
+    )
+    @test_throws DomainError History(
+        [1.0, 1.0, 1.0, 2.0, 3.0], 0.0, 5.0, fill(nothing, 5), [1, 2, 1, 2, 1], 2
+    )
 
     # Test dimension-specific methods
     @test event_times(h_multi, 1) == [0.1, 0.5]
@@ -83,6 +115,7 @@ end
     @test event_dims(h_multi, 0.0, 0.3) == [1, 2]
 
     # Test push! with dimension
+    @test_throws DomainError push!(h_multi, 1.0, "d", nothing)
     push!(h_multi, 0.85, "e", 1)
     @test nb_events(h_multi, 1) == 3
     @test event_marks(h_multi, 1) == ["a", "b", "e"]
