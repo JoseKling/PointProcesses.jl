@@ -76,9 +76,9 @@ function PointProcesses.integrated_ground_intensity(pp::TwoStateModel, h, a, b)
     interval_events = event_times(h, a, b)
     if length(interval_events) > 0
         for i in 1:(length(interval_events) - 1)
-            integral += pp.Δ * max(interval_events[i + 1] - interval_events[i], pp.τ)
+            integral += pp.Δ * min(interval_events[i + 1] - interval_events[i], pp.τ)
         end
-        integral += pp.Δ * max(b - interval_events[end], pp.τ)
+        integral += pp.Δ * min(b - interval_events[end], pp.τ)
     end
     return integral
 end
@@ -178,7 +178,8 @@ println("Δ: $(true_params[2]) - $(estimated_params[2])") #hide
 println("τ : $(true_params[3]) - $(estimated_params[3])") # hide
 
 pp_to_test = TwoStateModel(20.0, 30.0, 1.0 / 30.0, NoMarks())
-test_result = MonteCarloTest(KSDistance{Exponential}, pp_to_test, h_unknown)
+# n_sims=100 for the sake of this example. In real applications, this should be higher
+test_result = MonteCarloTest(KSDistance{Exponential}, pp_to_test, h_unknown; n_sims=100)
 
 println("p-value for hypothesis test: $(pvalue(test_result))") # hide
 
@@ -211,6 +212,8 @@ function PointProcesses.mark_distribution(md::LinearTimeNormal, t, h::History)
     time_ratio = (t - min_time(h)) / duration(h)
     return Normal(md.L + (md.H - md.L) * time_ratio, 1)
 end
+
+# > It is important to think of the case where the history `h` is empty. If your custom distribution depends on past events, there should be a specific branch covering the case `isempty(h)`. 
 
 # In our case `mark_distribution` returns a `Distribution`, so `sample_mark`, `eltype` and
 # `densityof` are already take care of. To have all the functionality from the standard

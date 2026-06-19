@@ -33,6 +33,9 @@
     @test event_dims(h) == fill(nothing, 3)
 
     # Interface
+    @test_throws DomainError push!(h, 100.0, "d")
+    @test_throws DomainError push!(h, 100.0, "d", 2)
+    @test_throws DomainError push!(h, 1.0, "d", 2)
     push!(h, 1.7, "d")
 
     @test has_events(h, 1.5, 2.0)
@@ -112,6 +115,7 @@ end
     @test event_dims(h_multi, 0.0, 0.3) == [1, 2]
 
     # Test push! with dimension
+    @test_throws DomainError push!(h_multi, 1.0, "d", nothing)
     push!(h_multi, 0.85, "e", 1)
     @test nb_events(h_multi, 1) == 3
     @test event_marks(h_multi, 1) == ["a", "b", "e"]

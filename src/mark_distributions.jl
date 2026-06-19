@@ -9,6 +9,8 @@ const PointProcessMarkDistribution = Union{Distribution,AbstractMarkDistribution
     mark_distribution(md, t, h)
 
 Compute the distribution of marks at time `t` after history `h`.
+
+Remark: This method must work for empty histories.
 """
 function mark_distribution end
 
@@ -34,7 +36,7 @@ end
 
 "The type of the marks returned by the mark distribution"
 function Base.eltype(md::AbstractMarkDistribution)
-    return eltype(mark_distribution(md, 0.0, History(0.0, 1.0)))
+    return typeof(sample_mark(md, 0.0, History(0.0, 1.0)))
 end
 
 "The likelihood of a mark `m` occurring in an event at time `t` after history `h`"
