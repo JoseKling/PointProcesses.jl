@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>CustomProcesses · PointProcesses.jl</title><meta name="title" content="CustomProcesses · PointProcesses.jl"/><meta property="og:title" content="CustomProcesses · PointProcesses.jl"/><meta property="twitter:title" content="CustomProcesses · PointProcesses.jl"/><meta name="description" content="Documentation for PointProcesses.jl."/><meta property="og:description" content="Documentation for PointProcesses.jl."/><meta property="twitter:description" content="Documentation for PointProcesses.jl."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img class="docs-light-only" src="../../assets/logo.svg" alt="PointProcesses.jl logo"/><img class="docs-dark-only" src="../../assets/logo-dark.svg" alt="PointProcesses.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">PointProcesses.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../Basics/">Basics</a></li><li class="is-active"><a class="tocitem" href>CustomProcesses</a><ul class="internal"><li><a class="tocitem" href="#Basic-interface"><span>Basic interface</span></a></li><li><a class="tocitem" href="#Custom-Mark-Distributions"><span>Custom Mark Distributions</span></a></li><li><a class="tocitem" href="#Multivariate-Processes"><span>Multivariate Processes</span></a></li></ul></li><li><a class="tocitem" href="../Hawkes/">Hawkes</a></li><li><a class="tocitem" href="../Inhomogeneous/">Inhomogeneous</a></li></ul></li><li><a class="tocitem" href="../../api/">API reference</a></li><li><a class="tocitem" href="../../bibliography/">Bibliography</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>CustomProcesses</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>CustomProcesses</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/JoseKling/PointProcesses.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/JoseKling/PointProcesses.jl/blob/main/docs/examples/CustomProcesses.jl" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Defining-Custom-Processes"><a class="docs-heading-anchor" href="#Defining-Custom-Processes">Defining Custom Processes</a><a id="Defining-Custom-Processes-1"></a><a class="docs-heading-anchor-permalink" href="#Defining-Custom-Processes" title="Permalink"></a></h1><p>Although several processes are already implemented and more are to come, we might need to define our own custom processes. Here we will explain the interface for defining new processes, starting with a simple case and building up to more complex cases (which should not be too complicated).</p><h2 id="Basic-interface"><a class="docs-heading-anchor" href="#Basic-interface">Basic interface</a><a id="Basic-interface-1"></a><a class="docs-heading-anchor-permalink" href="#Basic-interface" title="Permalink"></a></h2><p>For this example we will implement the two-state model from (<a href="../../bibliography/#Selva2022">Selva <em>et al.</em>, 2022</a>). This model takes three parameters, λₗ, λₕ and τ. The process starts as a Poisson model with intensity λ = λₗ. Whenever an event occurs, the process immediately switches to a Poisson process with intensity λ = λₕ for τ units of time. If an event occurs during this high intensity phase, the &quot;counter&quot; τ simply resets. You can visualize it below.</p><p><img src="../../assets/selva2022.png" alt="Adapted from Selva (2022)"/></p><p>If the history ℋₜ up to time t contains the events t₁ &lt; t₂ &lt; ... &lt; tₙ, then the equation for the conditional intensity is</p><pre><code class="nohighlight hljs">λ(t | ℋₜ) = λₗ + 𝟙(tₙ &gt; t - τ) (λₕ - λₗ),</code></pre><p>where 𝟙 is the indicator function. Notice that tₙ &lt; t by definition of ℋₜ.</p><p>We will use a different parametrization, namely λ = λₗ and Δ = λₕ - λₗ, so the constraint λₕ &gt; λₗ becomes Δ &gt; 0.</p><p>The first step in our implementation is to define this new struct by subtyping the <code>AbstractUnivariateProcess</code> type (we will get to multivariate processes).</p><pre><code class="language-julia hljs">using PointProcesses
+using Distributions
+using Plots
+using StatsAPI
+using Optim
+
+import PointProcesses: NoMarks, AbstractMarkDistribution, AbstractUnivariateProcess
+
+struct TwoStateModel{R&lt;:Real,D&lt;:PointProcessMarkDistribution} &lt;: AbstractUnivariateProcess
+    λ::R
+    Δ::R
+    τ::R
+    mark_dist::D
+end</code></pre><blockquote><p>Note: Subtype <code>AbstractUnivariateProcess</code>, not just <code>AbstractPointProcess</code>, this way we can use <code>TwoStateModel</code> to build multivariate processes with <code>IndependentMultivariateProcess</code>.</p></blockquote><p><code>PointProcessMarkDistribution</code> encompasses <code>NoMarks</code> and any distribution in package <code>Distributions.jl</code>. In the next chapter we will discuss custom distributions as well.</p><blockquote><p>Even if you plan on only using a non-marked process, you should keep the <code>mark_dist</code> field. If you really want you can define an inner constructor like <code>TwoStateModel(λ, Δ, τ) → new(λ, Δ, τ, Nomarks())</code>.</p></blockquote><p>Right now you cannot do much more than accessing the fields. The only methods you have defined are <code>ndims</code>, <code>DensityKind</code> and <code>mark_distribution</code>. Not too interesting.</p><p>We will begin by implementing the methods <code>ground_intensity</code>, <code>integrated_ground_intensity</code> and <code>ground_intensity_bound</code>. They are sufficient for almost all methods to function properly.</p><pre><code class="language-julia hljs">function PointProcesses.ground_intensity(pp::TwoStateModel, t, h::History)
+    if isempty(h) || t &lt;= h.times[1]
+        return pp.λ
+    else
+        t_n = h.times[searchsortedfirst(h.times, t) - 1] # Last event time before `t`
+        in_high_phase = t &lt; t_n + pp.τ
+    end
+    return pp.λ + (in_high_phase * pp.Δ)
+end
+
+function PointProcesses.ground_intensity_bound(pp::TwoStateModel, t, h::History)
+    return (pp.λ + pp.Δ, Inf) # Also not the most efficient implementation, but works
+end
+
+function PointProcesses.integrated_ground_intensity(pp::TwoStateModel, h, a, b)
+    integral = pp.λ * (b - a)
+    interval_events = event_times(h, a, b)
+    if length(interval_events) &gt; 0
+        for i in 1:(length(interval_events) - 1)
+            integral += pp.Δ * min(interval_events[i + 1] - interval_events[i], pp.τ)
+        end
+        integral += pp.Δ * min(b - interval_events[end], pp.τ)
+    end
+    return integral
+end</code></pre><blockquote><p>Notice that in <code>ground_intensity</code> we searched for the last event that occurred before time <code>t</code>. We need to assume that <code>h</code> might be the full history, and not only the history up to time <code>t</code>.</p></blockquote><p>With this we can now call many other methods: <code>intensity</code>, <code>log_intensity</code>, <code>logdensityof</code>, <code>time_change</code> and <code>simulate</code>. Here are the dependencies:</p><ul><li><code>intensity</code> → <code>ground_intensity</code> + <code>densityof</code> from <code>mark_dist</code></li><li><code>log_intensity</code> → <code>intensity</code></li><li><code>logdensityof</code> → <code>integrated_ground_intensity</code> + <code>logdensityof</code></li><li><code>time_change</code> → <code>integrated_ground_intensity</code></li><li><code>simulate</code> → <code>ground_intensity</code> + <code>ground_intensity_bound</code></li></ul><pre><code class="language-julia hljs">pp = TwoStateModel(1.0, 2.0, 0.5, Normal())
+h = simulate(pp, 0.0, 20.0)
+
+println(&quot;intensity(pp, m, t, h) = $(intensity(pp, 0.0, 0.0, h))&quot;)
+println(&quot;log_intensity(pp, m, t, h) = $(log_intensity(pp, 0.0, 0.0, h))&quot;)
+println(&quot;logdensityof(pp, h) = $(logdensityof(pp, h))&quot;)
+println(&quot;time_change(pp, h) = $(time_change(h, pp))&quot;)
+println(&quot;simulate(pp, 0.0, 10.0) = $(simulate(pp, 0.0, 10.0))&quot;)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">intensity(pp, m, t, h) = 0.3989422804014327
+log_intensity(pp, m, t, h) = -0.9189385332046727
+logdensityof(pp, h) = -54.64319283815411
+time_change(pp, h) = History{Float64,Float64} with 31 events on interval [0.0, 34.79414754399499)
+simulate(pp, 0.0, 10.0) = History{Float64,Float64} with 13 events on interval [0.0, 10.0)</code></pre><p>Let&#39;s plot our simulated process <code>h</code> along with its ground intensity.</p><pre><code class="language-julia hljs">sim_plot = plot(
+    event_times(h),
+    fill(1.0, nb_events(h));
+    line=:stem,
+    grid=false,
+    label=false,
+    xlabel=&quot;Time&quot;,
+    ylabel=&quot;Events&quot;,
+    yaxis=false,
+    xlim=(min_time(h), max_time(h)),
+)
+
+xs = LinRange(min_time(h), max_time(h), 1000)
+intensity_plot = plot(
+    xs,
+    [ground_intensity(pp, x, h) for x in xs],
+    ;
+    xaxis=false,
+    xgrid=false,
+    label=false,
+    ylabel=&quot;Ground Intensity&quot;,
+    xlim=(min_time(h), max_time(h)),
+)
+
+plot(
+    intensity_plot,
+    sim_plot;
+    title=[&quot;Two State Model Simulation&quot; &quot;&quot;],
+    layout=grid(2, 1; heights=[0.7, 0.3]),
+)</code></pre><img src="01c029f3.svg" alt="Example block output"/><p>Lastly, we can define the <code>fit</code> method for estimating the parameters from an observed history. <code>logdensityof</code> is simply the log-likelihood of our process, so for a quick and simple example we keep the mark distribution fixed and only optimize the core process parameters.</p><pre><code class="language-julia hljs">function StatsAPI.fit(
+    ::Type{TwoStateModel{R1,NoMarks}}, h::History, init_params::Vector{R2}
+) where {R1&lt;:Real,R2&lt;:Real}
+    objective(params) = -logdensityof(TwoStateModel(params..., NoMarks()), h)
+
+    lower_bound = [0.0, 0.0, 0.0]
+    upper_bound = [Inf, Inf, Inf]
+    result = optimize(objective, lower_bound, upper_bound, init_params)
+    optimal = Optim.minimizer(result)
+
+    return TwoStateModel(optimal..., NoMarks())
+end</code></pre><blockquote><p>It is tricky to properly estimate the parameters from this process. This implementation is conceptually correct, but it should be improved in real applications.</p></blockquote><p>With the <code>fit</code>, <code>simulate</code> and <code>time_change</code> methods, we can perform goodness-of-fit tests for our model.</p><pre><code class="language-julia hljs">function random_params()
+    λ = 10.0 + rand() * 10
+    Δ = λ * rand()
+    τ = inv(λ + Δ) * (0.5 + rand())
+    return [λ, Δ, τ]
+end
+
+true_params = random_params()
+h_unknown = simulate(TwoStateModel(true_params..., NoMarks()), 0.0, 100.0)
+
+init_params = random_params()
+pp_estimated = fit(TwoStateModel{Float64,NoMarks}, h_unknown, init_params)
+
+
+pp_to_test = TwoStateModel(20.0, 30.0, 1.0 / 30.0, NoMarks())</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Main.TwoStateModel{Float64, NoMarks}(20.0, 30.0, 0.03333333333333333, NoMarks())</code></pre><p>n_sims=100 for the sake of this example. In real applications, this should be higher</p><pre><code class="language-julia hljs">test_result = MonteCarloTest(KSDistance{Exponential}, pp_to_test, h_unknown; n_sims=100)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">p-value for hypothesis test: 0.009900990099009901</code></pre><blockquote><p>The statistics for goodness of fit tests currently implemented are suited only for testing the distribution of event times. They will run for marked processes, but the test results are only related to the event times.</p></blockquote><h2 id="Custom-Mark-Distributions"><a class="docs-heading-anchor" href="#Custom-Mark-Distributions">Custom Mark Distributions</a><a id="Custom-Mark-Distributions-1"></a><a class="docs-heading-anchor-permalink" href="#Custom-Mark-Distributions" title="Permalink"></a></h2><p>Mark distributions can also be customized. Analogously to processes, we need to subtype the <code>AbstractMarkDistribution</code> type. Lets make a mark distribution that changes with times.</p><pre><code class="language-julia hljs">struct LinearTimeNormal{R&lt;:Real} &lt;: AbstractMarkDistribution
+    L::R
+    H::R
+end</code></pre><p>There are five methods that can be used with an <code>AbstractMarkDistribution</code>: <code>mark_distribution</code>, <code>sample_mark</code>, <code>DensityInterface.densityof</code>, <code>Base.eltype</code> and <code>StatsAPI.fit</code>. The number of methods we need to implement will depend on what <code>mark_distribution</code> returns.</p><p><code>mark_distribution</code> is used to return the distribution of the marks at a specific time <code>t</code> after some history <code>h</code>. Say <code>mark_distribution(md::AbstractMarkDistribution, t, h::History)</code> is of type <code>T</code>.</p><ul><li><code>rand(::AbstractRNG, ::T)</code> implemented ⇒ <code>sample_mark(md, t, h)</code> works</li><li><code>eltype(::T)</code> implemented ⇒ <code>eltype(md)</code> works</li><li><code>densityof(::T, m)</code> implemented ⇒ <code>densityof(md, t, h, m)</code> works</li><li><code>fit</code> must always be implemented</li></ul><pre><code class="language-julia hljs">function PointProcesses.mark_distribution(md::LinearTimeNormal, t, h::History)
+    time_ratio = (t - min_time(h)) / duration(h)
+    return Normal(md.L + (md.H - md.L) * time_ratio, 1)
+end</code></pre><blockquote><p>It is important to think of the case where the history <code>h</code> is empty. If your custom distribution depends on past events, there should be a specific branch covering the case <code>isempty(h)</code>.</p></blockquote><p>In our case <code>mark_distribution</code> returns a <code>Distribution</code>, so <code>sample_mark</code>, <code>eltype</code> and <code>densityof</code> are already take care of. To have all the functionality from the standard mark distributions, we would only need to implement <code>fit</code>.</p><pre><code class="language-julia hljs">pp = TwoStateModel(1.0, 2.0, 3.0, LinearTimeNormal(2.0, 4.0))
+
+println(
+    &quot;TwoStateModel(1.0, 2.0, 3.0, LinearTimeNormal(2.0, 4.0)) = $(TwoStateModel(1.0, 2.0, 3.0, LinearTimeNormal(2.0, 4.0)))&quot;,
+)
+println(
+    &quot;PoissonProcess(2.0, LinearTimeNormal(2.0, 4.0)) = $(PoissonProcess(2.0, LinearTimeNormal(2.0, 4.0)))&quot;,
+)
+println(&quot;log_intensity(pp, m, t, h) = $(log_intensity(pp, 0.0, 0.0, h))&quot;)
+println(&quot;logdensityof(pp, h) = $(logdensityof(pp, h))&quot;)
+println(&quot;simulate(pp, 0.0, 10.0) = $(simulate(pp, 0.0, 10.0))&quot;)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">TwoStateModel(1.0, 2.0, 3.0, LinearTimeNormal(2.0, 4.0)) = Main.TwoStateModel{Float64, Main.LinearTimeNormal{Float64}}(1.0, 2.0, 3.0, Main.LinearTimeNormal{Float64}(2.0, 4.0))
+PoissonProcess(2.0, LinearTimeNormal(2.0, 4.0)) = PoissonProcess(2.0, Main.LinearTimeNormal{Float64})
+log_intensity(pp, m, t, h) = -2.9189385332046727
+logdensityof(pp, h) = -243.43137011054455
+simulate(pp, 0.0, 10.0) = History{Float64,Float64} with 26 events on interval [0.0, 10.0)</code></pre><h2 id="Multivariate-Processes"><a class="docs-heading-anchor" href="#Multivariate-Processes">Multivariate Processes</a><a id="Multivariate-Processes-1"></a><a class="docs-heading-anchor-permalink" href="#Multivariate-Processes" title="Permalink"></a></h2><p>Lastly we can define a multivariate process composed of multiple independent univariate processes. If a method is available for all individual processes, it will be also available for the multivariate processes. All methods now return a vector, one for each dimension (each univariate process), and we can add an integer argument <code>d</code> for accessing the value for a specific dimension.</p><pre><code class="language-julia hljs">imp = IndependentMultivariateProcess([
+    TwoStateModel(1.2, 2.0, 0.3, Normal()),
+    TwoStateModel(0.8, 2.0, 0.4, NoMarks()),
+    PoissonProcess(2.0), # Any type of process can be added
+])
+
+sim = simulate(imp, 0.0, 10.0)
+
+println(&quot;ground_intensity(imp, 0.0, sim) → $(ground_intensity(imp, 0.0, sim))&quot;)
+println(&quot;ground_intensity(imp, 0.0, sim, 1) → $(ground_intensity(imp, 0.0, sim, 1))&quot;)
+println(&quot;intensity(imp, 0.0, 0.0, sim) → $(intensity(imp, 0.0, 0.0, sim))&quot;)
+println(&quot;intensity(imp, 0.0, nothing, sim, 3) → $(intensity(imp, nothing, 0.0, sim, 3))&quot;)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">ground_intensity(imp, 0.0, sim) → [1.2, 0.8, 2.0]
+ground_intensity(imp, 0.0, sim, 1) → 1.2
+intensity(imp, 0.0, 0.0, sim) → [0.4787307364817192, 0.0, 0.0]
+intensity(imp, 0.0, nothing, sim, 3) → 2.0</code></pre><p>Lets end this tutorial with a nice plot of this process.</p><pre><code class="language-julia hljs">λ(t) = ground_intensity(imp, t, sim) # Returns a vector with the 3 individual intensities
+
+events_plot = scatter()
+for d in 1:ndims(sim)
+    scatter!(
+        events_plot,
+        event_times(sim, d),
+        fill(d, nb_events(sim, d));
+        label=nothing,
+        markersize=3,
+    )
+end
+plot!(
+    events_plot;
+    yaxis=false,
+    xlabel=&quot;Time&quot;,
+    xlim=(min_time(sim), max_time(sim)),
+    ylim=(0.0, 3.2),
+)
+
+xs = LinRange(min_time(sim), max_time(sim), 1000)
+intensities_plot = plot()
+for d in 1:ndims(sim)
+    plot!(intensities_plot, xs, getindex.(λ.(xs), d); label=&quot;Dimension $d&quot;)
+end
+plot!(intensities_plot, xs, sum.(λ.(xs)); label=&quot;Total ground intensity&quot;)
+plot!(intensities_plot; xaxis=false, xlim=(min_time(sim), max_time(sim)), legend=:topleft)
+
+plot(
+    intensities_plot,
+    events_plot;
+    title=&quot;Event times and ground intensities&quot;,
+    layout=grid(2, 1; heights=[0.7, 0.3]),
+)</code></pre><img src="c4b911c6.svg" alt="Example block output"/></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../Basics/">« Basics</a><a class="docs-footer-nextpage" href="../Hawkes/">Hawkes »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Friday 19 June 2026 15:25">Friday 19 June 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
