@@ -38,4 +38,3 @@ end
 function log_intensity(pp::AbstractMultivariateProcess, m, t, h::History)
     return [log_intensity(pp, m, t, h, d) for d in 1:ndims(pp)]
 end
-

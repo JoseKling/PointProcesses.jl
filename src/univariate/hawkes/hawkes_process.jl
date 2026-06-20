@@ -28,7 +28,9 @@ struct HawkesProcess{T<:Real,D<:PointProcessMarkDistribution} <: AbstractUnivari
     ω::T
     mark_dist::D
 
-    function HawkesProcess(μ::T1, α::T2, ω::T3, mark_dist::D) where {T1,T2,T3<:Real,D<:PointProcessMarkDistribution}
+    function HawkesProcess(
+        μ::T1, α::T2, ω::T3, mark_dist::D
+    ) where {T1,T2,T3<:Real,D<:PointProcessMarkDistribution}
         any((μ, α, ω) .< 0) &&
             throw(DomainError((μ, α, ω), "All parameters must be non-negative."))
         (α > 0 && α >= ω) &&

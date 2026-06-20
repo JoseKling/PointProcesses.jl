@@ -7,7 +7,9 @@ abstract type AbstractUnivariateProcess <: AbstractPointProcess end
 
 Base.ndims(::AbstractUnivariateProcess) = 1
 
-mark_distribution(pp::AbstractUnivariateProcess, t, h) = mark_distribution(pp.mark_dist, t, h)
+function mark_distribution(pp::AbstractUnivariateProcess, t, h)
+    mark_distribution(pp.mark_dist, t, h)
+end
 
 function intensity(pp::AbstractUnivariateProcess, m, t, h)
     return ground_intensity(pp, t, h) * densityof(pp.mark_dist, t, h, m)

@@ -55,7 +55,9 @@ params_est = (model_est.μ, model_est.α, model_est.ω)
 @test isa(model_est, HawkesProcess)
 @test all((params_true .* 0.9) .<= params_est .<= (params_true .* 1.1))
 @test isa(fit(HawkesProcess{BigFloat,NoMarks}, h_big), HawkesProcess{BigFloat})
-@test isa(fit(HawkesProcess{Float64,Normal}, h_sim2), HawkesProcess{Float64,Normal{Float64}})
+@test isa(
+    fit(HawkesProcess{Float64,Normal}, h_sim2), HawkesProcess{Float64,Normal{Float64}}
+)
 
 # logdensityof
 h_nomarks = History(h.times, h.tmin, h.tmax)

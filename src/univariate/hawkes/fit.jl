@@ -100,4 +100,3 @@ function StatsAPI.fit(
     # parameters in normalized space (') relate to original by μ0=μ'*(n/tmax), ω0=ω'*(n/tmax), α0=(ψ'ω')*(n/tmax)
     return HawkesProcess(μ * (n / tmax), ψ * ω * (n / tmax), ω * (n / tmax), mark_dist)
 end
-
