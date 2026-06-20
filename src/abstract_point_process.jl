@@ -123,9 +123,19 @@ Not implemented by default.
 """
 function fit_map end
 
-"""
-    time_change
+function time_change(h::History, pp::AbstractPointProcess)
+    Λ(t) = integrated_ground_intensity(pp, h, min_time(h), t)
+    return time_change(h, Λ)
+end
 
-Apply the time rescaling `t -> Λ(t)` to history `h`.
 """
-function time_change end
+    simulate([rng,] pp, tmin, tmax)
+
+Generate an event record from the point process `pp` on the interval [tmin, tmax).
+
+# Technical Remark
+Simulating events using types other than `Float64` may cause underflow issues, causing an error to be raised because of repeated event times. This is because the `rand` method from `Distributions.jl` always returns `Float64` values.
+"""
+function simulate(rng::AbstractRNG, pp::AbstractPointProcess, tmin, tmax)
+    return simulate_ogata(rng, pp, tmin, tmax)
+end

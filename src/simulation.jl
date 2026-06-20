@@ -15,19 +15,16 @@ end
     simulate_ogata(rng, pp, tmin, tmax)
 
 Simulate a temporal point process `pp` on interval `[tmin, tmax)` using Ogata's algorithm.
-
-# Technical Remark
-To infer the type of the marks, the implementation assumes that there is method of `mark_distribution` without the argument `h` such that it corresponds to the distribution of marks in case the history is empty.
 """
 function simulate_ogata(
-    rng::AbstractRNG, pp::AbstractPointProcess, tmin::T, tmax::T
+    rng::AbstractRNG, pp::AbstractUnivariateProcess, tmin::T, tmax::T
 ) where {T<:Real}
     M = eltype(pp.mark_dist)
     h = History(; times=T[], marks=M[], tmin=tmin, tmax=tmax)
     t = tmin
     while t < tmax
         B, L = ground_intensity_bound(pp, t + eps(t), h)
-        τ = B > 0 ? rand(rng, Exponential(inv(B))) : typemax(inv(B))
+        τ = B > 0 ? T(rand(rng, Exponential(inv(B)))) : typemax(inv(B))
         if τ > L
             t = t + L
         elseif τ <= L
@@ -43,15 +40,6 @@ function simulate_ogata(
         end
     end
     return h
-end
-
-"""
-    simulate([rng,] pp, tmin, tmax)
-
-Alias for `simulate_ogata`.
-"""
-function simulate(rng::AbstractRNG, pp::AbstractPointProcess, tmin, tmax)
-    return simulate_ogata(rng, pp, tmin, tmax)
 end
 
 function simulate(pp::AbstractPointProcess, args...; kwargs...)

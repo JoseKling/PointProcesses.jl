@@ -40,6 +40,8 @@ using Plots
 using StatsAPI
 using Optim
 
+import PointProcesses: NoMarks, AbstractMarkDistribution, AbstractUnivariateProcess
+
 struct TwoStateModel{R<:Real,D<:PointProcessMarkDistribution} <: AbstractUnivariateProcess
     λ::R
     Δ::R
@@ -53,7 +55,7 @@ end
 `PointProcessMarkDistribution` encompasses `NoMarks` and any distribution in package
 `Distributions.jl`. In the next chapter we will discuss custom distributions as well.
 
-> Even if you plan on only using a non-marked process, you should keep the `mark_dist` field. In you really want you can define an inner constructor like `TwoStateModel(λ, Δ, τ) → new(λ, Δ, τ, Nomarks())`.
+> Even if you plan on only using a non-marked process, you should keep the `mark_dist` field. If you really want you can define an inner constructor like `TwoStateModel(λ, Δ, τ) → new(λ, Δ, τ, Nomarks())`.
 
 Right now you cannot do much more than accessing the fields. The only methods you have
 defined are `ndims`, `DensityKind` and `mark_distribution`. Not too interesting.
@@ -67,7 +69,7 @@ function PointProcesses.ground_intensity(pp::TwoStateModel, t, h::History)
         return pp.λ
     else
         t_n = h.times[searchsortedfirst(h.times, t) - 1] # Last event time before `t`
-        in_high_phase =  t < t_n + pp.τ
+        in_high_phase = t < t_n + pp.τ
     end
     return pp.λ + (in_high_phase * pp.Δ)
 end
@@ -80,10 +82,10 @@ function PointProcesses.integrated_ground_intensity(pp::TwoStateModel, h, a, b)
     integral = pp.λ * (b - a)
     interval_events = event_times(h, a, b)
     if length(interval_events) > 0
-        for i in 1:length(interval_events) - 1
-            integral += pp.Δ * max(interval_events[i + 1] - interval_events[i], pp.τ)
+        for i in 1:(length(interval_events) - 1)
+            integral += pp.Δ * min(interval_events[i + 1] - interval_events[i], pp.τ)
         end
-        integral += pp.Δ * max(b - interval_events[end], pp.τ)
+        integral += pp.Δ * min(b - interval_events[end], pp.τ)
     end
     return integral
 end
@@ -115,32 +117,33 @@ Let's plot our simulated process `h` along with its ground intensity.
 ````@example CustomProcesses
 sim_plot = plot(
     event_times(h),
-    fill(1.0, nb_events(h))
-    ; line=:stem,
+    fill(1.0, nb_events(h));
+    line=:stem,
     grid=false,
     label=false,
     xlabel="Time",
     ylabel="Events",
     yaxis=false,
-    xlim=(min_time(h), max_time(h))
+    xlim=(min_time(h), max_time(h)),
 )
 
 xs = LinRange(min_time(h), max_time(h), 1000)
 intensity_plot = plot(
     xs,
     [ground_intensity(pp, x, h) for x in xs],
-    ; xaxis=false,
+    ;
+    xaxis=false,
     xgrid=false,
     label=false,
     ylabel="Ground Intensity",
-    xlim=(min_time(h), max_time(h))
+    xlim=(min_time(h), max_time(h)),
 )
 
 plot(
     intensity_plot,
-    sim_plot,
+    sim_plot;
     title=["Two State Model Simulation" ""],
-    layout=grid(2, 1, heights=[0.7, 0.3])
+    layout=grid(2, 1; heights=[0.7, 0.3]),
 )
 ````
 
@@ -151,9 +154,7 @@ process parameters.
 
 ````@example CustomProcesses
 function StatsAPI.fit(
-    ::Type{TwoStateModel{R1,NoMarks}},
-    h::History,
-    init_params::Vector{R2},
+    ::Type{TwoStateModel{R1,NoMarks}}, h::History, init_params::Vector{R2}
 ) where {R1<:Real,R2<:Real}
     objective(params) = -logdensityof(TwoStateModel(params..., NoMarks()), h)
 
@@ -183,11 +184,7 @@ true_params = random_params()
 h_unknown = simulate(TwoStateModel(true_params..., NoMarks()), 0.0, 100.0)
 
 init_params = random_params()
-pp_estimated = fit(
-    TwoStateModel{Float64,NoMarks},
-    h_unknown,
-    init_params,
-)
+pp_estimated = fit(TwoStateModel{Float64,NoMarks}, h_unknown, init_params)
 estimated_params = [pp_estimated.λ, pp_estimated.Δ, pp_estimated.τ] # hide
 
 println("True and estimated parameters:") # hide
@@ -195,8 +192,13 @@ println("λ: $(true_params[1]) - $(estimated_params[1])") #hide
 println("Δ: $(true_params[2]) - $(estimated_params[2])") #hide
 println("τ : $(true_params[3]) - $(estimated_params[3])") # hide
 
-pp_to_test = TwoStateModel(20.0, 30.0, 1.0/30.0, NoMarks())
-test_result = MonteCarloTest(KSDistance{Exponential}, pp_to_test, h_unknown)
+pp_to_test = TwoStateModel(20.0, 30.0, 1.0 / 30.0, NoMarks())
+````
+
+n_sims=100 for the sake of this example. In real applications, this should be higher
+
+````@example CustomProcesses
+test_result = MonteCarloTest(KSDistance{Exponential}, pp_to_test, h_unknown; n_sims=100)
 
 println("p-value for hypothesis test: $(pvalue(test_result))") # hide
 ````
@@ -235,6 +237,8 @@ function PointProcesses.mark_distribution(md::LinearTimeNormal, t, h::History)
 end
 ````
 
+> It is important to think of the case where the history `h` is empty. If your custom distribution depends on past events, there should be a specific branch covering the case `isempty(h)`.
+
 In our case `mark_distribution` returns a `Distribution`, so `sample_mark`, `eltype` and
 `densityof` are already take care of. To have all the functionality from the standard
 mark distributions, we would only need to implement `fit`.
@@ -242,8 +246,12 @@ mark distributions, we would only need to implement `fit`.
 ````@example CustomProcesses
 pp = TwoStateModel(1.0, 2.0, 3.0, LinearTimeNormal(2.0, 4.0))
 
-println("TwoStateModel(1.0, 2.0, 3.0, LinearTimeNormal(2.0, 4.0)) = $(TwoStateModel(1.0, 2.0, 3.0, LinearTimeNormal(2.0, 4.0)))")
-println("PoissonProcess(2.0, LinearTimeNormal(2.0, 4.0)) = $(PoissonProcess(2.0, LinearTimeNormal(2.0, 4.0)))")
+println(
+    "TwoStateModel(1.0, 2.0, 3.0, LinearTimeNormal(2.0, 4.0)) = $(TwoStateModel(1.0, 2.0, 3.0, LinearTimeNormal(2.0, 4.0)))",
+)
+println(
+    "PoissonProcess(2.0, LinearTimeNormal(2.0, 4.0)) = $(PoissonProcess(2.0, LinearTimeNormal(2.0, 4.0)))",
+)
 println("log_intensity(pp, m, t, h) = $(log_intensity(pp, 0.0, 0.0, h))")
 println("logdensityof(pp, h) = $(logdensityof(pp, h))")
 println("simulate(pp, 0.0, 10.0) = $(simulate(pp, 0.0, 10.0))")
@@ -260,17 +268,17 @@ dimension.
 
 ````@example CustomProcesses
 imp = IndependentMultivariateProcess([
-    TwoStateModel(1.2, 2.0, 0.3,  Normal()),
+    TwoStateModel(1.2, 2.0, 0.3, Normal()),
     TwoStateModel(0.8, 2.0, 0.4, NoMarks()),
     PoissonProcess(2.0), # Any type of process can be added
 ])
 
 sim = simulate(imp, 0.0, 10.0)
 
-print("ground_intensity(imp, 0.0, sim) → $(ground_intensity(imp, 0.0, sim))")
-print("ground_intensity(imp, 0.0, sim, 1) → $(ground_intensity(imp, 0.0, sim, 1))")
-print("intensity(imp, 0.0, 0.0, sim) → $(intensity(imp, 0.0, 0.0, sim))")
-print("intensity(imp, 0.0, nothing, sim, 3) → $(intensity(imp, 0.0, nothing, sim, 3))")
+println("ground_intensity(imp, 0.0, sim) → $(ground_intensity(imp, 0.0, sim))")
+println("ground_intensity(imp, 0.0, sim, 1) → $(ground_intensity(imp, 0.0, sim, 1))")
+println("intensity(imp, 0.0, 0.0, sim) → $(intensity(imp, 0.0, 0.0, sim))")
+println("intensity(imp, 0.0, nothing, sim, 3) → $(intensity(imp, nothing, 0.0, sim, 3))")
 ````
 
 Lets end this tutorial with a nice plot of this process.
@@ -280,23 +288,35 @@ Lets end this tutorial with a nice plot of this process.
 
 events_plot = scatter()
 for d in 1:ndims(sim)
-    scatter!(events_plot, event_times(sim, d), fill(d, nb_events(sim, d)), label=nothing, markersize=3)
+    scatter!(
+        events_plot,
+        event_times(sim, d),
+        fill(d, nb_events(sim, d));
+        label=nothing,
+        markersize=3,
+    )
 end
-plot!(events_plot, yaxis=false, xlabel="Time", xlim=(min_time(sim), max_time(sim)), ylim=(0.0, 3.2))
+plot!(
+    events_plot;
+    yaxis=false,
+    xlabel="Time",
+    xlim=(min_time(sim), max_time(sim)),
+    ylim=(0.0, 3.2),
+)
 
 xs = LinRange(min_time(sim), max_time(sim), 1000)
 intensities_plot = plot()
 for d in 1:ndims(sim)
-    plot!(intensities_plot, xs, getindex.(λ.(xs), d), label="Dimension $d")
+    plot!(intensities_plot, xs, getindex.(λ.(xs), d); label="Dimension $d")
 end
-plot!(intensities_plot, xs, sum.(λ.(xs)), label="Total ground intensity")
-plot!(intensities_plot, xaxis=false, xlim=(min_time(sim), max_time(sim)), legend=:topleft)
+plot!(intensities_plot, xs, sum.(λ.(xs)); label="Total ground intensity")
+plot!(intensities_plot; xaxis=false, xlim=(min_time(sim), max_time(sim)), legend=:topleft)
 
 plot(
     intensities_plot,
-    events_plot,
+    events_plot;
     title="Event times and ground intensities",
-    layout=grid(2, 1, heights=[0.7, 0.3]),
+    layout=grid(2, 1; heights=[0.7, 0.3]),
 )
 ````
 

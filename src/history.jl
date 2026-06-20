@@ -164,12 +164,12 @@ end
 
 function History(tmin::R1, tmax::R2, N::Int=1) where {R1<:Real,R2<:Real}
     R = promote_type(R1, R2)
-    History(R[], tmin, tmax, [], [], N)
+    return History(R[], tmin, tmax, [], [], N)
 end
 
 function History(h::History, d::Int)
     times = event_times(h, d)
-    marks = event_times(h, d)
+    marks = event_marks(h, d)
     return History(times, min_time(h), max_time(h), marks)
 end
 
@@ -191,8 +191,8 @@ event_times(h::History) = h.times
 
 Return the sorted vector of event times for `h` in dimension `d`.
 """
-function event_times(h::History, d::Int)
-    h.N == 1 && d == 1 ? h.times : (@view h.times[h.dims .== d])
+function event_times(h::History, d::Union{Int,Nothing})
+    return h.N == 1 ? h.times : (@view h.times[h.dims .== d])
 end
 
 """
@@ -230,8 +230,8 @@ event_marks(h::History) = h.marks
 
 Return the vector of event marks in dimension `d` of `h`, sorted according to their event times.
 """
-function event_marks(h::History, d::Int)
-    h.N == 1 && d == 1 ? h.marks : (@view h.marks[h.dims .== d])
+function event_marks(h::History, d::Union{Int,Nothing})
+    return h.N == 1 && d == 1 ? h.marks : (@view h.marks[h.dims .== d])
 end
 
 """
@@ -369,17 +369,37 @@ duration(h::History) = max_time(h) - min_time(h)
 
 Add event `(t, m)` inside the interval `[h.tmin, h.tmax)` at the end of history `h`.
 
-With `check_args=true` (the default), the event must satisfy
-`h.tmin <= t < h.tmax`, occur at or after the last existing event time, and
-(if `h` is multivariate) lie in dimension `d ∈ 1:h.N`. Violations throw an
-`AssertionError`. Pass `check_args=false` to skip these checks in trusted
-inner loops.
+With `check_args=true` (the default), the method checks if the event `t` satisfies
+`h.tmin <= t < h.tmax`, if it occurs after the last existing event time for that
+dimention, and (if `h` is multivariate) if the dimension lie in `d ∈ 1:h.N`.
+Pass `check_args=false` to skip these checks in trusted inner loops.
 """
 function Base.push!(h::History, t::Real, m=nothing, d=nothing; check_args=true)
     if check_args
-        @assert h.tmin <= t < h.tmax
-        @assert (length(h) == 0) || (h.times[end] < t)
-        @assert (d === nothing && h.N == 1) || 1 <= d <= h.N
+        if !(h.tmin <= t < h.tmax)
+            throw(
+                DomainError(
+                    (t, h.tmin, h.tmax),
+                    "Event time must lie in the half-open interval [tmin, tmax).",
+                ),
+            )
+        end
+        if !((d === nothing && h.N == 1) || (d isa Integer && 1 <= d <= h.N))
+            throw(
+                DomainError(
+                    d,
+                    "Event dimension must be between 1 and h.N for a multivariate history, or omitted for a univariate history.",
+                ),
+            )
+        end
+        if !(isempty(h) || event_times(h, d)[end] < t)
+            throw(
+                DomainError(
+                    (t, event_times(h, d)[end]),
+                    "Event time must be strictly greater than the previous event time in the same dimension.",
+                ),
+            )
+        end
     end
     push!(h.times, t)
     push!(h.marks, m)

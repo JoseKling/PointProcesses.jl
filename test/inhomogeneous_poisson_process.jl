@@ -508,9 +508,9 @@ end
         # λ(t) = exp(η(t))
         @test intensity_cov(0.0) ≈ exp(1.0) rtol = 1e-6
 
-        @test intensity_cov(1.0) ≈ exp(1.0 + 0.5*1.0) rtol = 1e-6
+        @test intensity_cov(1.0) ≈ exp(1.0 + 0.5 * 1.0) rtol = 1e-6
 
-        @test intensity_cov(0.25) ≈ exp(1.0 + 0.5*0.25 + 0.3*1.0) rtol = 1e-6
+        @test intensity_cov(0.25) ≈ exp(1.0 + 0.5 * 0.25 + 0.3 * 1.0) rtol = 1e-6
     end
 
     @testset "Simulation" begin
@@ -1120,7 +1120,7 @@ end
 
     @testset "InhomogeneousPoissonProcess with custom integration config" begin
         intensity = ExponentialIntensity(2.0, 0.1)
-        custom_config = IntegrationConfig(abstol=1e-10, reltol=1e-10, maxiters=5000)
+        custom_config = IntegrationConfig(; abstol=1e-10, reltol=1e-10, maxiters=5000)
         pp = InhomogeneousPoissonProcess(intensity; integration_config=custom_config)
 
         @test pp isa InhomogeneousPoissonProcess
@@ -1145,7 +1145,7 @@ end
     end
 
     @testset "Custom config" begin
-        config = IntegrationConfig(abstol=1e-12, reltol=1e-10, maxiters=10000)
+        config = IntegrationConfig(; abstol=1e-12, reltol=1e-10, maxiters=10000)
         config_str = string(config)
         @test occursin("IntegrationConfig", config_str)
         @test occursin("abstol=1.0e-12", config_str)
@@ -1396,7 +1396,7 @@ end
         h = simulate(rng, pp_true, 0.0, 20.0)
 
         # Fit with custom integration config
-        custom_config = IntegrationConfig(abstol=1e-10, reltol=1e-10, maxiters=5000)
+        custom_config = IntegrationConfig(; abstol=1e-10, reltol=1e-10, maxiters=5000)
         pp_est = fit(
             InhomogeneousPoissonProcess{PolynomialIntensity{Float64},NoMarks},
             h,

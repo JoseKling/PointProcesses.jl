@@ -82,7 +82,7 @@ raster
 # We can bin the data in small time windows to get a sense of the event rate over time. From the assumptions above, we expect the distribution of
 # counts to be roughly Poisson distributed with rate λ * Δt in each bin of width Δt.
 bin_width = 1.0
-bins = collect(h.tmin:bin_width:h.tmax)           # bin edges
+bins = collect((h.tmin):bin_width:(h.tmax))           # bin edges
 counts = fit(Histogram, h.times, bins).weights;    # counts per bin
 
 # Plot counts over time (counts/bin_width is a crude rate estimate)

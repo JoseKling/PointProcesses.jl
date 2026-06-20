@@ -47,7 +47,7 @@ end
 
 @testset "Simulation" begin
     pp0 = PoissonProcess([0.0, 1.0, 0.0])
-    bpp = BoundedPointProcess(pp1, 0, 1000)
+    bpp = BoundedPointProcess(pp1, 0.0, 1000.0)
     h1 = simulate(rng, pp1, 0.0, 1000.0)
     h2 = simulate(rng, pp0, 0.0, 1000.0)
     h3 = simulate(rng, bpp)
@@ -83,6 +83,13 @@ end
 
     @test λ_error1 < λ_error2
     @test l_est > l
+
+    pp_marks = PoissonProcess([1, 1], Normal())
+    h_marks = simulate(pp_marks, 0.0, 1000.0)
+    pp_est_marks = fit(fill(PoissonProcess{Float64,Normal}, 2), h_marks)
+    @test pp_est_marks isa MultivariatePoissonProcess
+    @test pp_est_marks.processes[1].mark_dist isa Normal
+    @test logdensityof(pp_est_marks, h_marks) >= logdensityof(pp_marks, h_marks)
 end
 
 @testset "Time change" begin

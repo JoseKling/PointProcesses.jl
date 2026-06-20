@@ -1,5 +1,5 @@
-h1 = History([1, 2, 3, 4], 0, 5)
-h_empty = History(Float64[], 0, 2)
+h1 = History([1.0, 2.0, 3.0, 4.0], 0.0, 5.0)
+h_empty = History(Float64[], 0.0, 2.0)
 PP = PoissonProcess{Float32,NoMarks}
 pp = PoissonProcess()
 
@@ -10,7 +10,7 @@ pp = PoissonProcess()
     @test statistic(KSDistance{Exponential}, pp, h_empty) ≈ 1
 end
 
-h2 = History(collect(0:999), 0, 1000)
+h2 = History(collect(0.0:999.0), 0.0, 1000.0)
 
 @testset "BootstrapTest" begin
     @test_throws ArgumentError BootstrapTest(KSDistance{Uniform}, PP, h_empty)
@@ -18,7 +18,7 @@ h2 = History(collect(0:999), 0, 1000)
     bt1 = BootstrapTest(KSDistance{Uniform}, PP, h2; n_sims=10000)
 
     @test bt1.n_sims == 10000
-    @test isapprox(bt1.stat, 1/1000, rtol=0.01);
+    @test isapprox(bt1.stat, 1 / 1000, rtol=0.01)
     @test pvalue(bt1) isa Float64
     @test pvalue(bt1) > 0.99
     @test string(bt1) == "BootstrapTest - pvalue = 1.0"
@@ -26,7 +26,7 @@ h2 = History(collect(0:999), 0, 1000)
     bt2 = BootstrapTest(KSDistance{Exponential}, PP, h2)
 
     @test bt2.n_sims == 1000
-    @test bt2.stat ≈ 1 - exp(-1);
+    @test bt2.stat ≈ 1 - exp(-1)
     @test pvalue(bt2) isa Float64
     @test pvalue(bt2) < 0.01
 
@@ -44,8 +44,8 @@ end
 
     @test nbt1.n_sims == 1000
     @test nbt2.n_sims == 10000
-    @test isapprox(nbt1.stat, 1/1000, rtol=0.01);
-    @test isapprox(nbt1.stat, nbt2.stat, rtol=0.01);
+    @test isapprox(nbt1.stat, 1 / 1000, rtol=0.01)
+    @test isapprox(nbt1.stat, nbt2.stat, rtol=0.01)
     @test pvalue(nbt1) isa Float64
     @test pvalue(nbt1) > 0.99
     @test pvalue(nbt2) > 0.99
@@ -56,8 +56,8 @@ end
 
     @test nbt3.n_sims == 1000
     @test nbt4.n_sims == 1000
-    @test nbt3.stat ≈ 1 - exp(-1);
-    @test nbt3.stat ≈ nbt4.stat;
+    @test nbt3.stat ≈ 1 - exp(-1)
+    @test nbt3.stat ≈ nbt4.stat
     @test pvalue(nbt3) isa Float64
     @test pvalue(nbt3) < 0.01
     @test pvalue(nbt4) < 0.01

@@ -56,7 +56,7 @@ function intensity_bound(
     f::PolynomialIntensity{R},
     t::T,
     h::History;
-    lookahead_factor::Real=1/100,
+    lookahead_factor::Real=1 / 100,
     n_samples::Int=10 * length(f.coefficients),
 ) where {R,T}
     dur = duration(h)             # or max_time(h) - min_time(h)
@@ -101,7 +101,7 @@ function intensity_bound(f::ExponentialIntensity{R}, t::T; lookahead::T=one(T)) 
 end
 
 function intensity_bound(
-    f::ExponentialIntensity{R}, t::T, h::History; lookahead_factor::Real=1/100
+    f::ExponentialIntensity{R}, t::T, h::History; lookahead_factor::Real=1 / 100
 ) where {R,T}
     dur = duration(h)
     lookahead = T(lookahead_factor * dur)
@@ -222,7 +222,7 @@ function intensity_bound(
     f::LinearCovariateIntensity{R},
     t::T,
     h::History;
-    lookahead_factor::Real=1/100,
+    lookahead_factor::Real=1 / 100,
     n_samples::Int=100,
 ) where {R,T}
     dur = duration(h)
@@ -255,7 +255,7 @@ function intensity_bound(f::F, t::T; lookahead::T=one(T), n_samples::Int=100) wh
 end
 
 function intensity_bound(
-    f::F, t::T, h::History; lookahead_factor::Real=1/100, n_samples::Int=100
+    f::F, t::T, h::History; lookahead_factor::Real=1 / 100, n_samples::Int=100
 ) where {F,T}
     dur = duration(h)
     lookahead = T(lookahead_factor * dur)

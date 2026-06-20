@@ -1,4 +1,3 @@
-
 # Type definition
 "Abstract type for defining mark distributions not in `Distributions.jl`"
 abstract type AbstractMarkDistribution end
@@ -10,11 +9,13 @@ const PointProcessMarkDistribution = Union{Distribution,AbstractMarkDistribution
     mark_distribution(md, t, h)
 
 Compute the distribution of marks at time `t` after history `h`.
+
+Remark: This method must work for empty histories.
 """
 function mark_distribution end
 
 function mark_distribution(md::AbstractMarkDistribution, t, h::History)
-    error(
+    return error(
         "Type $(typeof(md)) subtypes `AbstractMarkDistribution` but has " *
         "not implemented the required `mark_distribution(md, t, h)` method.",
     )
@@ -26,24 +27,22 @@ end
 Return one sample from the distribution of marks at time `t` after history `h`, using the random number generator `rng`.
 """
 function sample_mark(rng::AbstractRNG, md::PointProcessMarkDistribution, t, h::History)
-    rand(rng, mark_distribution(md, t, h))
+    return rand(rng, mark_distribution(md, t, h))
 end
 
 function sample_mark(md::PointProcessMarkDistribution, t, h::History)
-    sample_mark(default_rng(), md, t, h)
+    return sample_mark(default_rng(), md, t, h)
 end
 
 "The type of the marks returned by the mark distribution"
 function Base.eltype(md::AbstractMarkDistribution)
-    eltype(mark_distribution(md, 0.0, History(0.0, 1.0)))
+    return typeof(sample_mark(md, 0.0, History(0.0, 1.0)))
 end
 
 "The likelihood of a mark `m` occurring in an event at time `t` after history `h`"
 function DensityInterface.densityof(md::PointProcessMarkDistribution, t, h::History, m)
-    densityof(mark_distribution(md, t, h), m)
+    return densityof(mark_distribution(md, t, h), m)
 end
-
-StatsAPI.fit
 
 # Support for `Distributions.jl`
 mark_distribution(d::Distribution, t, h::History) = d

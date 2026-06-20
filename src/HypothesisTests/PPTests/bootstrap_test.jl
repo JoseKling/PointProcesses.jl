@@ -94,7 +94,7 @@ function BootstrapTest(
                 # Simulates a process and uses the process estimated from
                 # the simulation to calculate the test statistic
                 sim = simulate(local_rng, pp_est, h.tmin, h.tmax)
-                sim_est = fit(PP, sim, rng=local_rng)
+                sim_est = fit(PP, sim; rng=local_rng)
                 chunk[i] = statistic(S, sim_est, sim)
             end
         end

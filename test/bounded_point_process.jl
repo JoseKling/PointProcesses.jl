@@ -14,3 +14,20 @@ h = simulate(rng, bpp)
 
 @test all(ground_intensity_bound(bpp, 243.0, h, 1) .≈ (intensities[1], Inf))
 @test integrated_ground_intensity(bpp, h, 342, 598) ≈ intensities * (598 - 342)
+
+struct FakePoisson <: AbstractUnivariateProcess
+    λ::Float64
+    mark_dist::NoMarks
+end
+
+PointProcesses.ground_intensity(fp::FakePoisson, t, h::History) = fp.λ
+function PointProcesses.integrated_ground_intensity(fp::FakePoisson, h::History, a, b)
+    return fp.λ * (b - a)
+end
+PointProcesses.ground_intensity_bound(fp::FakePoisson, t, h::History) = (fp.λ, Inf)
+
+pp = BoundedPointProcess(FakePoisson(1.0, NoMarks()), 0.0, 10.0)
+h = History([1.0, 2.0], 0.0, 10.0)
+
+@test simulate(pp) isa History
+@test time_change(h, pp).times == h.times
