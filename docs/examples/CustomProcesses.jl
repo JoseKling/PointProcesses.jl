@@ -34,7 +34,6 @@ using Distributions
 using Plots
 using StatsAPI
 using Optim
-
 import PointProcesses: NoMarks, AbstractMarkDistribution, AbstractUnivariateProcess
 
 struct TwoStateModel{R<:Real,D<:PointProcessMarkDistribution} <: AbstractUnivariateProcess
@@ -147,7 +146,15 @@ function StatsAPI.fit(
 
     lower_bound = [0.0, 0.0, 0.0]
     upper_bound = [Inf, Inf, Inf]
-    result = optimize(objective, lower_bound, upper_bound, init_params)
+    result = optimize(
+        objective,
+        lower_bound,
+        upper_bound,
+        init_params,
+        NelderMead(),
+        Optim.Options(; x_reltol=1e-3),
+    )
+
     optimal = Optim.minimizer(result)
 
     return TwoStateModel(optimal..., NoMarks())

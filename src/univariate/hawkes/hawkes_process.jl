@@ -37,7 +37,7 @@ struct HawkesProcess{T<:Real,D<:PointProcessMarkDistribution} <: AbstractUnivari
             throw(DomainError((α, ω), "Parameter ω must be strictly smaller than α"))
         T = promote_type(T1, T2, T3)
         (μ_T, α_T, ω_T) = convert.(T, (μ, α, ω))
-        new{T,D}(μ_T, α_T, ω_T, mark_dist)
+        return new{T,D}(μ_T, α_T, ω_T, mark_dist)
     end
 end
 
