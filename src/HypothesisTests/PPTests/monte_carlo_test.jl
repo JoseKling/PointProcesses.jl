@@ -110,6 +110,6 @@ function MonteCarloTest(
         throw(ArgumentError("Test is not valid for empty event history."))
     end
 
-    pp_est = fit(PP, h)
+    pp_est = fit(PP, h)::AbstractPointProcess # JET complains if not specified
     return MonteCarloTest(S, pp_est, h; kwargs...)
 end

@@ -1,6 +1,6 @@
 # Constructor
-@test HawkesProcess(1, 1, 2) isa HawkesProcess{Int}
-@test HawkesProcess(1, 1, 2.0) isa HawkesProcess{Float64}
+@test HawkesProcess(1, 1, 2) isa HawkesProcess{Int,NoMarks}
+@test HawkesProcess(1, 1, 2.0, Normal()) isa HawkesProcess{Float64,Normal{Float64}}
 @test_throws DomainError HawkesProcess(1, 1, 1)
 @test_throws DomainError HawkesProcess(-1, 1, 2)
 
@@ -39,20 +39,29 @@ h_sim = simulate(hp, 0.0, 10.0)
 @test isa(h_sim, History{Float64,Nothing})
 @test isa(simulate(hp, BigFloat(0), BigFloat(10)), History{BigFloat,Nothing})
 
+hp_normal = HawkesProcess(1, 1, 2.0, Normal())
+h_sim2 = simulate(hp_normal, 0.0, 10.0)
+@test issorted(h_sim2.times)
+@test isa(h_sim2, History{Float64,Float64})
+@test isa(simulate(hp_normal, BigFloat(0), BigFloat(10)), History{BigFloat,Float64})
+
 # Fit
 Random.seed!(123)
 params_true = (100.0, 100.0, 200.0)
 model = HawkesProcess(params_true...)
 h_sim = simulate(model, 0.0, 50.0)
-model_est = fit(HawkesProcess, h_sim)
+model_est = fit(HawkesProcess{Float64,NoMarks}, h_sim)
 params_est = (model_est.μ, model_est.α, model_est.ω)
 @test isa(model_est, HawkesProcess)
 @test all((params_true .* 0.9) .<= params_est .<= (params_true .* 1.1))
-@test isa(fit(HawkesProcess, h_big), HawkesProcess{BigFloat})
-@test isa(fit(HawkesProcess{Float32}, h_big), HawkesProcess{Float32})
+@test isa(fit(HawkesProcess{BigFloat,NoMarks}, h_big), HawkesProcess{BigFloat})
+@test isa(
+    fit(HawkesProcess{Float64,Normal}, h_sim2), HawkesProcess{Float64,Normal{Float64}}
+)
 
 # logdensityof
-@test logdensityof(hp, h) ≈
+h_nomarks = History(h.times, h.tmin, h.tmax)
+@test logdensityof(hp, h_nomarks) ≈
     sum(log.(hp.μ .+ (hp.α .* [0, exp(-hp.ω), exp(-hp.ω * 2) + exp(-hp.ω * 3)]))) -
       integral
 

@@ -71,7 +71,7 @@ function BootstrapTest(
     end
 
     # Estimate process and calculate statistic from data
-    pp_est = fit(PP, h; rng=rng)
+    pp_est = fit(PP, h; rng=rng)::AbstractPointProcess # JET complains if not specified
     stat = statistic(S, pp_est, h)
 
     # Initialize vector with test statistics from simulations
