@@ -1,4 +1,9 @@
 ## Fit MLE
+function StatsAPI.fit(::Type{PoissonProcess{R,D}}, h::History; kwargs...) where {R,D}
+    mark_dist = fit(D, h.marks)
+    λ = nb_events(h) / duration(h)
+    return PoissonProcess(R(λ), mark_dist)
+end
 
 function StatsAPI.fit(
     ::Type{PoissonProcess{R,D}}, ss::PoissonProcessStats{R1,R2}; kwargs...
@@ -8,8 +13,10 @@ function StatsAPI.fit(
     return PoissonProcess(λ, mark_dist)
 end
 
-function StatsAPI.fit(pptype::Type{PoissonProcess{R,D}}, args...; kwargs...) where {R,D}
-    ss = suffstats(pptype, args...)
+function StatsAPI.fit(
+    pptype::Type{PoissonProcess{R,D}}, hs::AbstractVector{<:History}; kwargs...
+) where {R,D}
+    ss = suffstats(pptype, hs)
     return fit(pptype, ss)
 end
 

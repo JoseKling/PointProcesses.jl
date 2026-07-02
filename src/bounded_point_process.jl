@@ -39,3 +39,12 @@ end
 function integrated_ground_intensity(bpp::BoundedPointProcess, args...)
     return integrated_ground_intensity(bpp.pp, args...)
 end
+
+function time_change(h::History{T}, pp::BoundedPointProcess) where {T}
+    if min_time(h) < min_time(pp) || max_time(h) > max_time(pp)
+        throw(ArgumentError("History is defined outside the bounds of the process"))
+    end
+    return time_change(h, pp.pp)
+end
+
+simulate(pp::BoundedPointProcess) = simulate(pp.pp, pp.tmin, pp.tmax)

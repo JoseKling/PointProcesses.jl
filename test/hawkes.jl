@@ -23,8 +23,8 @@ integral =
 @test isa(time_change(h_big, hp), typeof(h_big))
 
 # Ground intensity
-@test ground_intensity(hp, h, 1) == 1
-@test ground_intensity(hp, h, 2) == 1 + hp.α * exp(-hp.ω * 1)
+@test ground_intensity(hp, 1, h) == 1
+@test ground_intensity(hp, 2, h) == 1 + hp.α * exp(-hp.ω * 1)
 
 # Integrated ground intensity
 @test integrated_ground_intensity(hp, h, h.tmin, h.tmax) ≈ integral

@@ -153,8 +153,13 @@ end
 function History(; times, tmin, tmax, marks=nothing, dims=nothing, check_args=true)
     if times isa Vector{<:Real}
         marks === nothing && (marks = fill(nothing, length(times)))
-        dims === nothing && (dims = fill(nothing, length(times)))
-        return History(times, tmin, tmax, marks, dims; check_args=check_args)
+        if dims === nothing
+            dims = fill(nothing, length(times))
+            N = 1
+        else
+            N = length(unique(dims))
+        end
+        return History(times, tmin, tmax, marks, dims, N; check_args=check_args)
     else
         marks === nothing &&
             (marks = [fill(nothing, length(times[i])) for i in 1:length(times)])
@@ -464,7 +469,7 @@ function Base.cat(h1::History, h2::History)
     )
 end
 
-function time_change(h::History, Λ)
+function time_change(h::History{T}, Λ) where {T}
     new_times = Λ.(event_times(h))
     new_marks = copy(event_marks(h))
     new_tmin = Λ(min_time(h))

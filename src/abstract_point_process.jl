@@ -93,17 +93,6 @@ integrated_ground_intensity(pp, h, a, b, d) computes the integrated ground inten
 function integrated_ground_intensity end
 
 """
-    logdensityof(pp, h)
-
-Compute the log probability density function for a temporal point process `pp` applied to history `h`:
-```
-ℓ(h) = Σₖ log λ(tₖ|hₖ) - Λ(h)
-```
-The default method uses a loop over events combined with `integrated_ground_intensity`, but it should be reimplemented for specific processes if faster computation is possible.
-"""
-DensityInterface.logdensityof
-
-"""
     fit(::Type{PP}, h)
     fit(::Type{PP}, histories)
 
@@ -122,11 +111,6 @@ Fit a point process of type `PP` to one or several histories using maximum a pos
 Not implemented by default.
 """
 function fit_map end
-
-function time_change(h::History, pp::AbstractPointProcess)
-    Λ(t) = integrated_ground_intensity(pp, h, min_time(h), t)
-    return time_change(h, Λ)
-end
 
 """
     simulate([rng,] pp, tmin, tmax)

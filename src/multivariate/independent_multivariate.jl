@@ -18,27 +18,25 @@ end
 Base.ndims(pp::IndependentMultivariateProcess) = length(pp.processes)
 
 ## AbstractPointProcess interface
-function ground_intensity(pp::IndependentMultivariateProcess, t, h::History, d)
+function ground_intensity(pp::IndependentMultivariateProcess, t, h::History, d::Int)
     return ground_intensity(pp.processes[d], t, History(h, d))
 end
 
-function intensity(pp::IndependentMultivariateProcess, m, t, h::History, d)
+function intensity(pp::IndependentMultivariateProcess, m, t, h::History, d::Int)
     return intensity(pp.processes[d], m, t, History(h, d))
 end
 
-function mark_distribution(pp::IndependentMultivariateProcess, t, h::History, d)
+function mark_distribution(pp::IndependentMultivariateProcess, t, h::History, d::Int)
     return mark_distribution(pp.processes[d], t, History(h, d))
 end
 
-function mark_distribution(pp::IndependentMultivariateProcess, t)
-    return [mark_distribution(pp.processes[d], t) for d in 1:ndims(pp)]
-end
-
-function ground_intensity_bound(pp::IndependentMultivariateProcess, t, h::History, d)
+function ground_intensity_bound(pp::IndependentMultivariateProcess, t, h::History, d::Int)
     return ground_intensity_bound(pp.processes[d], t, History(h, d))
 end
 
-function integrated_ground_intensity(pp::IndependentMultivariateProcess, h, a, b, d)
+function integrated_ground_intensity(
+    pp::IndependentMultivariateProcess, h::History, a, b, d::Int
+)
     return integrated_ground_intensity(pp.processes[d], History(h, d), a, b)
 end
 

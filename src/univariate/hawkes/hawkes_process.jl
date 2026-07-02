@@ -43,22 +43,22 @@ end
 
 HawkesProcess(μ, α, ω) = HawkesProcess(μ, α, ω, NoMarks())
 
-function ground_intensity(hp::HawkesProcess, h::History, t)
+function ground_intensity(hp::HawkesProcess, t, h::History)
     activation = sum(exp.(hp.ω .* (@view h.times[1:(searchsortedfirst(h.times, t) - 1)])))
     return hp.μ + (hp.α * activation / exp(hp.ω * t))
 end
 
-function integrated_ground_intensity(hp::HawkesProcess{T}, h::History, tmin, tmax) where {T}
-    U = promote_type(T, typeof(tmin), typeof(tmax))
-    times = event_times(h, h.tmin, tmax)
+function integrated_ground_intensity(hp::HawkesProcess{T}, h::History, a, b) where {T}
+    U = promote_type(T, typeof(a), typeof(b))
+    times = event_times(h, h.tmin, b)
     integral = zero(U)
     for ti in times
         # Integral of activation function. 'max(tmin - ti, 0)' corrects for events that occurred
         # inside or outside the interval [tmin, tmax].
-        integral += (exp(-hp.ω * max(tmin - ti, 0)) - exp(-hp.ω * (tmax - ti)))
+        integral += (exp(-hp.ω * max(a - ti, 0)) - exp(-hp.ω * (b - ti)))
     end
     integral *= hp.α / hp.ω
-    integral += hp.μ * (tmax - tmin) # Integral of base rate
+    integral += hp.μ * (b - a) # Integral of base rate
     return integral
 end
 
@@ -70,7 +70,7 @@ function DensityInterface.logdensityof(hp::HawkesProcess, h::History)
     return sum(log.(hp.μ .+ (hp.α .* A))) - # Value of intensity at each event
            (hp.μ * duration(h)) - # Integral of base rate
            ((hp.α / hp.ω) * sum(1 .- exp.(-hp.ω .* (duration(h) .- h.times)))) + # Integral of each kernel
-           sum(log.([densityof(hp.mark_dist, t, h, m) for (t, m) in zip(h.times, h.marks)])) # Lok likelihood of marks
+           sum(log.([densityof(hp.mark_dist, t, h, m) for (t, m) in zip(h.times, h.marks)])) # Loglikelihood of marks
 end
 
 function time_change(h::History{R,M}, hp::HawkesProcess) where {R<:Real,M}

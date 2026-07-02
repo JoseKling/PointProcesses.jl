@@ -61,9 +61,9 @@ end
 
 ## AbstractPointProcess interface
 
-ground_intensity(pp::InhomogeneousPoissonProcess, t, h) = pp.intensity_function(t)
+ground_intensity(pp::InhomogeneousPoissonProcess, t, h::History) = pp.intensity_function(t)
 
-function intensity(pp::InhomogeneousPoissonProcess, m, t, h)
+function intensity(pp::InhomogeneousPoissonProcess, m, t, h::History)
     return ground_intensity(pp, t, h) * densityof(pp.mark_dist, t, h, m)
 end
 

@@ -42,6 +42,10 @@ function simulate_ogata(
     return h
 end
 
+function simulate(rng::AbstractRNG, pp::AbstractUnivariateProcess, args...; kwargs...)
+    return simulate_ogata(rng, pp, args...; kwargs...)
+end
+
 function simulate(pp::AbstractPointProcess, args...; kwargs...)
     return simulate(default_rng(), pp, args...; kwargs...)
 end

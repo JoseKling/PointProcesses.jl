@@ -3,9 +3,11 @@ function simulate(rng::AbstractRNG, hp::HawkesProcess, tmin, tmax)
     sim_desc = generate_descendants(rng, sim, tmax, hp.α, hp.ω) # Recursively generates descendants from first events
     append!(sim, sim_desc)
     sort!(sim)
-    h_temp = History(sim, tmin, tmax)
-    marks = [sample_mark(hp.mark_dist, t, h_temp) for t in event_times(h_temp)]
-    return History(; times=sim, tmin=tmin, tmax=tmax, marks=marks)
+    h = History(eltype(sim)[], tmin, tmax, eltype(hp.mark_dist)[], Nothing[], 1)
+    for event in sim
+        push!(h, event, sample_mark(hp, event, h))
+    end
+    return h
 end
 
 #=
