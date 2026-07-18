@@ -5,7 +5,7 @@ function simulate(rng::AbstractRNG, hp::HawkesProcess, tmin, tmax)
     sort!(sim)
     h = History(eltype(sim)[], tmin, tmax, eltype(hp.mark_dist)[], Nothing[], 1)
     for event in sim
-        push!(h, event, sample_mark(hp, event, h))
+        push!(h, event, sample_mark(rng, hp, event, h))
     end
     return h
 end

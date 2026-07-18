@@ -20,7 +20,7 @@ function simulate_ogata(
     rng::AbstractRNG, pp::AbstractUnivariateProcess, tmin::T, tmax::T
 ) where {T<:Real}
     M = eltype(pp.mark_dist)
-    h = History(; times=T[], marks=M[], tmin=tmin, tmax=tmax)
+    h = History(tmin, tmax, M)
     t = tmin
     while t < tmax
         B, L = ground_intensity_bound(pp, t + eps(t), h)

@@ -25,6 +25,16 @@ function mark_distribution(pp::AbstractMultivariateProcess, t, h::History)
     return [mark_distribution(pp, t, h, d) for d in 1:ndims(pp)]
 end
 
+function sample_mark(
+    rng::AbstractRNG, pp::AbstractMultivariateProcess, t, h::History, d::Int
+)
+    return sample_mark(rng, pp.mark_dist[d], t, h)
+end
+
+function sample_mark(pp::AbstractMultivariateProcess, t, h::History, d::Int)
+    return sample_mark(default_rng(), pp, t, h, d)
+end
+
 function ground_intensity(pp::AbstractMultivariateProcess, t, h::History)
     return [ground_intensity(pp, t, h, d) for d in 1:ndims(pp)]
 end

@@ -30,7 +30,7 @@ end
         t::Float64
     end
 
-    h = History(0.0, 1.0)
+    h = History(0.0, 1.0, Float64)
     md = TestMark(1.0)
 
     @test_throws "not implemented" mark_distribution(md, 0.0, h)

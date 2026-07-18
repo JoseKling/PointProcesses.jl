@@ -173,7 +173,8 @@ function StatsAPI.fit(
             optimal = Optim.minimizer(result)
             solved = true
 
-        catch DomainError
+        catch e
+            e isa DomainError || rethrow()
             n_tries += 1
         end
     end

@@ -63,10 +63,6 @@ end
 
 ground_intensity(pp::InhomogeneousPoissonProcess, t, h::History) = pp.intensity_function(t)
 
-function intensity(pp::InhomogeneousPoissonProcess, m, t, h::History)
-    return ground_intensity(pp, t, h) * densityof(pp.mark_dist, t, h, m)
-end
-
 """
     ground_intensity_bound(pp::InhomogeneousPoissonProcess, t, h)
 

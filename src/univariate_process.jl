@@ -11,9 +11,10 @@ function mark_distribution(pp::AbstractUnivariateProcess, t, h::History)
     return mark_distribution(pp.mark_dist, t, h)
 end
 
-function sample_mark(rng::AbstractRNG, pp::AbstractPointProcess, t, h::History)
+function sample_mark(rng::AbstractRNG, pp::AbstractUnivariateProcess, t, h::History)
     return sample_mark(rng, pp.mark_dist, t, h)
 end
+
 sample_mark(pp::AbstractPointProcess, t, h::History) = sample_mark(default_rng(), pp, t, h)
 
 function intensity(pp::AbstractUnivariateProcess, m, t, h::History)

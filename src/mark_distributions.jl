@@ -36,7 +36,7 @@ end
 
 "The type of the marks returned by the mark distribution"
 function Base.eltype(md::AbstractMarkDistribution)
-    return typeof(sample_mark(md, 0.0, History(0.0, 1.0)))
+    return typeof(sample_mark(md, 0.0, History(0.0, 1.0, Nothing)))
 end
 
 "The likelihood of a mark `m` occurring in an event at time `t` after history `h`"

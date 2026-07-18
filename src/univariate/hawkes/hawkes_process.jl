@@ -31,10 +31,11 @@ struct HawkesProcess{T<:Real,D<:PointProcessMarkDistribution} <: AbstractUnivari
     function HawkesProcess(
         μ::T1, α::T2, ω::T3, mark_dist::D
     ) where {T1,T2,T3<:Real,D<:PointProcessMarkDistribution}
-        any((μ, α, ω) .< 0) &&
+        if any((μ, α, ω) .< 0)
             throw(DomainError((μ, α, ω), "All parameters must be non-negative."))
-        (α > 0 && α >= ω) &&
-            throw(DomainError((α, ω), "Parameter ω must be strictly smaller than α"))
+        elseif (α > 0 && α >= ω)
+            throw(DomainError((α, ω), "Parameter α must be strictly smaller than ω"))
+        end
         T = promote_type(T1, T2, T3)
         (μ_T, α_T, ω_T) = convert.(T, (μ, α, ω))
         return new{T,D}(μ_T, α_T, ω_T, mark_dist)
@@ -44,8 +45,9 @@ end
 HawkesProcess(μ, α, ω) = HawkesProcess(μ, α, ω, NoMarks())
 
 function ground_intensity(hp::HawkesProcess, t, h::History)
-    activation = sum(exp.(hp.ω .* (@view h.times[1:(searchsortedfirst(h.times, t) - 1)])))
-    return hp.μ + (hp.α * activation / exp(hp.ω * t))
+    past_times = event_times(h, h.tmin, t)
+    activation = sum(exp.(-hp.ω .* (t .- past_times)))
+    return hp.μ + hp.α * activation
 end
 
 function integrated_ground_intensity(hp::HawkesProcess{T}, h::History, a, b) where {T}
@@ -67,10 +69,13 @@ function DensityInterface.logdensityof(hp::HawkesProcess, h::History)
     for i in 2:nb_events(h)
         A[i] = exp(-hp.ω * (h.times[i] - h.times[i - 1])) * (1 + A[i - 1])
     end
-    return sum(log.(hp.μ .+ (hp.α .* A))) - # Value of intensity at each event
-           (hp.μ * duration(h)) - # Integral of base rate
-           ((hp.α / hp.ω) * sum(1 .- exp.(-hp.ω .* (duration(h) .- h.times)))) + # Integral of each kernel
-           sum(log.([densityof(hp.mark_dist, t, h, m) for (t, m) in zip(h.times, h.marks)])) # Loglikelihood of marks
+    sum_intensities_t = sum(log.(hp.μ .+ (hp.α .* A))) # Value of intensity at each event
+    integral_base = hp.μ * duration(h)
+    integral_kernels = (hp.α / hp.ω) * sum(1 .- exp.(-hp.ω .* (h.tmax .- h.times)))
+    loglike_marks = sum(
+        log(densityof(hp.mark_dist, t, h, m)) for (t, m) in zip(h.times, h.marks); init=0.0
+    )
+    return sum_intensities_t - integral_base - integral_kernels + loglike_marks
 end
 
 function time_change(h::History{R,M}, hp::HawkesProcess) where {R<:Real,M}
