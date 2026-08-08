@@ -1,15 +1,18 @@
 @testset "Univariate History" begin
     # Constructors
-    h_empty1 = History(0.0, 1.0)
-    h_empty2 = History(0.0, 1.0, 2)
+    h_empty1 = History(0.0, 1.0, Nothing)
+    h_empty2 = History(0.0, 1.0, Nothing, 2)
 
-    @test h_empty1 isa History{Float64,Any}
-    @test h_empty2 isa History{Float64,Any}
+    @test h_empty1 isa History{Float64,Nothing}
+    @test h_empty2 isa History{Float64,Nothing}
     @test ndims(h_empty1) == 1
     @test ndims(h_empty2) == 2
     @test isempty(h_empty1)
     @test isempty(h_empty2)
 
+    @test History(; times=sort(rand(3)), tmin=0.0, tmax=1.0) isa History{Float64,Nothing}
+    @test History(; times=[sort(rand(3)), sort(rand(5))], tmin=0.0, tmax=1.0) isa
+        History{Float64,Nothing}
     h = History([0.2, 0.8, 1.1], 0.0, 2.0, ["a", "b", "c"])
 
     @test h isa History{Float64,String}
@@ -26,6 +29,10 @@
     @test event_times(h, 0.2, 0.8) == [0.2]
     @test event_times(h, 0.8, 0.2) == []
     @test event_times(h, nothing) == h.times
+    # `event_times` and `event_marks` must agree on which dimensions exist
+    @test event_times(h, 1) == h.times
+    @test event_marks(h, 1) == h.marks
+    @test length(event_times(h, 2)) == length(event_marks(h, 2)) == 0
     @test event_marks(h) == ["a", "b", "c"]
     @test event_marks(h, 0.2, 0.8) == ["a"]
     @test event_marks(h, 0.8, 0.2) == []
@@ -42,13 +49,15 @@
 
     h2 = History(; times=[2.3], marks=["e"], tmin=2.0, tmax=2.5)
 
-    @test string(h2) == "History{Float64,String} with 1 events on interval [2.0, 2.5)"
+    @test string(h2) ==
+        "Univariate History{Float64,String} with 1 events on interval [2.0, 2.5)"
 
     h_cat = cat(h, h2)
 
     @test nb_events(h_cat) == 5
     @test duration(h_cat) == 2.5
     @test length(split_into_chunks(h_cat, 0.3)) == 9
+    @test_throws DomainError cat(h, h)
 
     h_exp = time_change(h_cat, exp)
 
@@ -59,9 +68,9 @@
     @test h2.times == [2.3, 2.4, 2.45]
     @test h2.marks == ["e", "f", "g"]
 
-    @test isa(History(rand(3), 0, BigFloat(1)), History{BigFloat,Nothing})
-    @test_throws DomainError History(rand(3), 1, 0)
-    @test_throws DimensionMismatch History(rand(3), 0, 1, ["a", "b"])
+    @test isa(History(sort(rand(3)), 0, BigFloat(1)), History{BigFloat,Nothing})
+    @test_throws DomainError History(sort(rand(3)), 1, 0)
+    @test_throws DimensionMismatch History(sort(rand(3)), 0, 1, ["a", "b"])
     # Strict validation: events outside [tmin, tmax) must throw, not silently
     # discard. Same for unsorted times and same-time-same-dim repeats.
     @test_throws DomainError History([0.1, 1.1], 0, 1)
@@ -90,8 +99,17 @@ end
     @test event_marks(h_multi1) == marks1
     @test event_marks(h_multi2) == marks2
 
-    @test_throws DomainError History(rand(3), 0, 1, rand(3), [1, 2, 3], 2)
+    @test_throws DomainError History(sort(rand(3)), 0, 1, rand(3), [1, 2, 3], 2)
     @test event_dims(History([[0.5]], 0, 1)) == [nothing]
+
+    # A univariate history must be built with `dims` filled with `nothing`
+    @test_throws DomainError History([0.1, 0.5], 0.0, 1.0, marks1, [1, 1], 1)
+
+    # `History(h, d)` must reject dimensions the history does not have, instead of
+    # returning times and marks of different lengths
+    @test_throws DomainError History(h_multi, 3)
+    @test_throws DomainError History(h_multi, 0)
+    @test_throws DomainError History(History([0.2, 0.8], 0.0, 1.0, marks1), 2)
 
     @test_throws DomainError History(
         [1.0, 1.0, 2.0, 3.0, 4.0], 0.0, 5.0, fill(nothing, 5), [1, 1, 1, 2, 1], 2
@@ -113,6 +131,18 @@ end
     @test event_marks(h_multi, 0.0, 0.3, 2) == ["c"]
     @test nb_events(h_multi, 0.0, 0.3, 1) == 1
     @test event_dims(h_multi, 0.0, 0.3) == [1, 2]
+
+    # Test cat with multiple dimension
+    h_multi_slide = History([times1 .+ 1.0, times2 .+ 1.0], 1.0, 2.0, [marks1, marks2])
+    h_multi_cat = cat(h_multi, h_multi_slide)
+    @test ndims(h_multi_cat) == 2
+    @test nb_events(h_multi_cat) == 8
+    @test min_time(h_multi_cat) == 0.0
+    @test max_time(h_multi_cat) == 2.0
+
+    h_uni = History(sort(rand(3)) .+ 1.0, 1.0, 2.0, ["a", "b", "c"])
+
+    @test_throws DimensionMismatch cat(h_multi, h_uni)
 
     # Test push! with dimension
     @test_throws DomainError push!(h_multi, 1.0, "d", nothing)

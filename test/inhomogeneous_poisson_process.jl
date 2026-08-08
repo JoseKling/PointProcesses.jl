@@ -973,7 +973,7 @@ end
         cov1 = t -> t
         cov2 = t -> sin(t)
         intensity_cov = LinearCovariateIntensity(1.0, [0.5, 0.2], [cov1, cov2])
-        h_empty = History(Float64[], 0.0, 5.0, Float64[])
+        h_empty = History(0.0, 5.0, Float64)
         pp = InhomogeneousPoissonProcess(intensity_cov, Normal())
 
         # This should use numerical integration
@@ -993,7 +993,7 @@ end
     @testset "Generic fallback for custom functions" begin
         # Test custom lambda function
         custom_func = t -> 2.0 + 0.5 * t^2
-        h_empty = History(Float64[], 0.0, 4.0, Float64[])
+        h_empty = History(0.0, 4.0, Float64)
         pp = InhomogeneousPoissonProcess(custom_func, Uniform())
 
         # ∫₀⁴ (2 + 0.5*t²) dt = [2t + 0.5*t³/3]₀⁴ = 8 + 0.5*64/3 = 8 + 32/3 ≈ 18.667
@@ -1014,7 +1014,7 @@ end
 @testset "Intensity bounds edge cases" begin
     @testset "ExponentialIntensity bound with b > 0 (increasing)" begin
         intensity_inc = ExponentialIntensity(2.0, 0.1)
-        h_empty = History(Float64[], 0.0, 10.0, Float64[])
+        h_empty = History(0.0, 10.0, Float64)
         pp = InhomogeneousPoissonProcess(intensity_inc, Normal())
 
         B, L = ground_intensity_bound(pp, 0.0, h_empty)
@@ -1029,7 +1029,7 @@ end
 
     @testset "ExponentialIntensity bound with b < 0 (decreasing)" begin
         intensity_dec = ExponentialIntensity(5.0, -0.2)
-        h_empty = History(Float64[], 0.0, 10.0, Float64[])
+        h_empty = History(0.0, 10.0, Float64)
         pp = InhomogeneousPoissonProcess(intensity_dec, Normal())
 
         B, L = ground_intensity_bound(pp, 2.0, h_empty)
@@ -1044,7 +1044,7 @@ end
 
     @testset "ExponentialIntensity bound with b ≈ 0 (constant)" begin
         intensity_const = ExponentialIntensity(3.0, 1e-12)
-        h_empty = History(Float64[], 0.0, 10.0, Float64[])
+        h_empty = History(0.0, 10.0, Float64)
         pp = InhomogeneousPoissonProcess(intensity_const, Normal())
 
         B, L = ground_intensity_bound(pp, 5.0, h_empty)
@@ -1062,7 +1062,7 @@ end
         intensity_func = PolynomialIntensity([2.0, 0.3])
         mark_dist = Normal(0.0, 1.0)
         pp = InhomogeneousPoissonProcess(intensity_func, mark_dist)
-        h_empty = History(Float64[], 0.0, 10.0, Float64[])
+        h_empty = History(0.0, 10.0, Float64)
 
         t = 5.0
         m = 1.5
@@ -1086,7 +1086,7 @@ end
         intensity_func = ExponentialIntensity(3.0, 0.05)
         mark_dist = Categorical([0.3, 0.5, 0.2])
         pp = InhomogeneousPoissonProcess(intensity_func, mark_dist)
-        h_empty = History(Float64[], 0.0, 10.0, Float64[])
+        h_empty = History(0.0, 10.0, Float64)
 
         t = 2.0
         # ground_intensity at t=2: λ(2) = 3*exp(0.05*2) = 3*exp(0.1)

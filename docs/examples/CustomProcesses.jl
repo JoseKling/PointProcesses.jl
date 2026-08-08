@@ -33,8 +33,8 @@ using PointProcesses
 using Distributions
 using Plots
 using StatsAPI
+using StatsBase
 using Optim
-
 import PointProcesses: NoMarks, AbstractMarkDistribution, AbstractUnivariateProcess
 
 struct TwoStateModel{R<:Real,D<:PointProcessMarkDistribution} <: AbstractUnivariateProcess
@@ -141,15 +141,46 @@ plot(
 # process parameters.
 
 function StatsAPI.fit(
-    ::Type{TwoStateModel{R1,NoMarks}}, h::History, init_params::Vector{R2}
-) where {R1<:Real,R2<:Real}
+    ::Type{TwoStateModel{R1,NoMarks}}, h::History; max_tries::Int=100
+) where {R1<:Real}
     objective(params) = -logdensityof(TwoStateModel(params..., NoMarks()), h)
 
     lower_bound = [0.0, 0.0, 0.0]
     upper_bound = [Inf, Inf, Inf]
-    result = optimize(objective, lower_bound, upper_bound, init_params)
-    optimal = Optim.minimizer(result)
+    mean_intensity = nb_events(h) / duration(h)
+    mean_interarrival = mean(diff(h.times))
+    solved = false
+    n_tries = 1
+    optimal = nothing
 
+    while !solved && n_tries <= max_tries
+        try # `Optmi.jl` may call the objective function with parameters outside of the constraints
+            init_params = [
+                0.25 * mean_intensity + rand() * 0.5 * mean_intensity,
+                0.25 * mean_intensity + rand() * 0.5 * mean_intensity,
+                0.1 * mean_interarrival + rand() * 0.8 * mean_interarrival,
+            ]
+
+            result = optimize(
+                objective,
+                lower_bound,
+                upper_bound,
+                init_params,
+                NelderMead(),
+                Optim.Options(; x_reltol=1e-3),
+            )
+
+            optimal = Optim.minimizer(result)
+            solved = true
+
+        catch e
+            e isa DomainError || rethrow()
+            n_tries += 1
+        end
+    end
+    if !solved
+        throw(ErrorException("Solver did not converge."))
+    end
     return TwoStateModel(optimal..., NoMarks())
 end
 
@@ -168,8 +199,7 @@ end
 true_params = random_params()
 h_unknown = simulate(TwoStateModel(true_params..., NoMarks()), 0.0, 100.0)
 
-init_params = random_params()
-pp_estimated = fit(TwoStateModel{Float64,NoMarks}, h_unknown, init_params)
+pp_estimated = fit(TwoStateModel{Float64,NoMarks}, h_unknown)
 estimated_params = [pp_estimated.λ, pp_estimated.Δ, pp_estimated.τ] # hide
 
 println("True and estimated parameters:") # hide

@@ -14,6 +14,18 @@ Linear event histories with temporal locations of type `T` and marks of type `M`
 
 # Construction
 
+```julia
+History(times, tmin, tmax[, marks])                  # univariate, one vector of times
+History([times_1, ..., times_N], tmin, tmax[, marks])  # multivariate, one vector per dimension
+History(times, tmin, tmax, marks, dims, N)             # generic, everything explicit
+History(tmin, tmax, M[, N])                            # empty history with marks of type `M`
+History(; times, tmin, tmax, marks=nothing)            # keyword form of the first two
+```
+
+A plain vector of `times` always builds a univariate history (`N == 1`); the number
+of dimensions is never deduced from `dims`. To build a multivariate history, pass
+either one vector of times per dimension or `dims` together with an explicit `N`.
+
 The constructor validates its inputs and throws on any violation rather than
 silently coercing them. With `check_args=true` (the default), it requires:
 
@@ -41,9 +53,9 @@ struct History{T<:Real,M,D}
         times::AbstractVector{R1},
         tmin::R2,
         tmax::R3,
-        marks::AbstractVector{M}=fill(nothing, length(times)),
-        dims::AbstractVector{D}=fill(nothing, length(times)),
-        N::Int=length(unique(dims));
+        marks::AbstractVector{M},
+        dims::AbstractVector{D},
+        N::Int;
         check_args=true,
     ) where {R1<:Real,R2<:Real,R3<:Real,M,D}
         if check_args
@@ -99,7 +111,14 @@ struct History{T<:Real,M,D}
                 end
             end
             if N == 1
-                dims .= nothing
+                if !all(isnothing, dims)
+                    throw(
+                        DomainError(
+                            dims,
+                            "A univariate history (`N == 1`) must have `dims` filled with `nothing`.",
+                        ),
+                    )
+                end
             else
                 if any(d -> d < 1 || d > N, dims)
                     throw(
@@ -146,37 +165,79 @@ end
 function History(
     times::AbstractVector{<:AbstractVector{R1}}, tmin::R2, tmax::R3; check_args=true
 ) where {R1<:Real,R2<:Real,R3<:Real}
-    nots = [fill(nothing, length(times[i])) for i in 1:length(times)]
-    return History(times, tmin, tmax, nots; check_args=check_args)
+    marks = [fill(nothing, length(times[i])) for i in eachindex(times)]
+    return History(times, tmin, tmax, marks; check_args=check_args)
 end
 
-function History(; times, tmin, tmax, marks=nothing, dims=nothing, check_args=true)
-    if times isa Vector{<:Real}
-        marks === nothing && (marks = fill(nothing, length(times)))
-        dims === nothing && (dims = fill(nothing, length(times)))
-        return History(times, tmin, tmax, marks, dims; check_args=check_args)
+function History(
+    times::AbstractVector{R1}, tmin::R2, tmax::R3, marks::AbstractVector; check_args=true
+) where {R1<:Real,R2<:Real,R3<:Real}
+    dims = fill(nothing, length(times))
+    return History(times, tmin, tmax, marks, dims, 1; check_args=check_args)
+end
+
+function History(
+    times::AbstractVector{R1}, tmin::R2, tmax::R3; check_args=true
+) where {R1<:Real,R2<:Real,R3<:Real}
+    marks = fill(nothing, length(times))
+    return History(times, tmin, tmax, marks; check_args=check_args)
+end
+
+function History(; times, tmin, tmax, marks=nothing, check_args=true)
+    if times isa AbstractVector{<:Real}
+        if isnothing(marks)
+            marks = fill(nothing, length(times))
+        end
+        dims = fill(nothing, length(times))
+        return History(times, tmin, tmax, marks, dims, 1; check_args=check_args)
     else
-        marks === nothing &&
-            (marks = [fill(nothing, length(times[i])) for i in 1:length(times)])
+        if isnothing(marks)
+            marks = [fill(nothing, length(times[i])) for i in eachindex(times)]
+        end
         return History(times, tmin, tmax, marks; check_args=check_args)
     end
 end
 
-function History(tmin::R1, tmax::R2, N::Int=1) where {R1<:Real,R2<:Real}
+function History(tmin::R1, tmax::R2, M::Type) where {R1,R2<:Real}
     R = promote_type(R1, R2)
-    return History(R[], tmin, tmax, [], [], N)
+    return History(R[], tmin, tmax, M[], Nothing[], 1; check_args=false)
+end
+
+function History(tmin::R1, tmax::R2, M::Type, N::Int) where {R1,R2<:Real}
+    if N == 1
+        return History(tmin, tmax, M)
+    else
+        R = promote_type(R1, R2)
+        return History(R[], tmin, tmax, M[], Int[], N; check_args=false)
+    end
 end
 
 function History(h::History, d::Int)
+    if d < 1 || d > ndims(h)
+        throw(
+            DomainError(
+                d, "Dimension `d` must be between 1 and $(ndims(h)) for this history."
+            ),
+        )
+    end
     times = event_times(h, d)
     marks = event_marks(h, d)
-    return History(times, min_time(h), max_time(h), marks)
+    dims = fill(nothing, length(times))
+    return History(times, min_time(h), max_time(h), marks, dims, 1; check_args=false)
 end
 
 function Base.show(io::IO, h::History{T,M}) where {T,M}
-    return print(
-        io, "History{$T,$M} with $(nb_events(h)) events on interval [$(h.tmin), $(h.tmax))"
-    )
+    if ndims(h) == 1
+        return print(
+            io,
+            "Univariate History{$T,$M} with $(nb_events(h)) events on interval [$(h.tmin), $(h.tmax))",
+        )
+    else
+        return print(
+            io,
+            "$(ndims(h))-dimensional History{$T,$M} with $(nb_events(h)) events on interval [$(h.tmin), $(h.tmax))",
+        )
+    end
 end
 
 """
@@ -192,7 +253,10 @@ event_times(h::History) = h.times
 Return the sorted vector of event times for `h` in dimension `d`.
 """
 function event_times(h::History, d::Union{Int,Nothing})
-    return h.N == 1 ? h.times : (@view h.times[h.dims .== d])
+    # For univariate histories `dims` is filled with `nothing`, so only `d == 1` (or
+    # an omitted `d`) refers to the events of this history. This condition must match
+    # the one in `event_marks(h, d)`, otherwise times and marks disagree in length.
+    return h.N == 1 && (isnothing(d) || d == 1) ? h.times : (@view h.times[h.dims .== d])
 end
 
 """
@@ -231,7 +295,7 @@ event_marks(h::History) = h.marks
 Return the vector of event marks in dimension `d` of `h`, sorted according to their event times.
 """
 function event_marks(h::History, d::Union{Int,Nothing})
-    return h.N == 1 && d == 1 ? h.marks : (@view h.marks[h.dims .== d])
+    return h.N == 1 && (isnothing(d) || d == 1) ? h.marks : (@view h.marks[h.dims .== d])
 end
 
 """
@@ -450,18 +514,21 @@ h1 coincides with the beginning of h2, then create a new event
 history by concatenating h1 and h2.
 """
 function Base.cat(h1::History, h2::History)
-    max_time(h1) ≈ min_time(h2) || throw(
-        DomainError(
-            (h1.tmax, h2.tmin),
-            "End of h1's interval must coincide with start of h2's interval",
-        ),
-    )
+    if !(max_time(h1) ≈ min_time(h2))
+        throw(
+            DomainError(
+                (h1.tmax, h2.tmin),
+                "End of h1's interval must coincide with start of h2's interval",
+            ),
+        )
+    end
+    if ndims(h1) != ndims(h2)
+        throw(DimensionMismatch("h1 and h2 must have the same number of dimensions"))
+    end
     times = [h1.times; h2.times]
     marks = [h1.marks; h2.marks]
     dims = [h1.dims; h2.dims]
-    return History(;
-        times=times, tmin=h1.tmin, tmax=h2.tmax, marks=marks, dims=dims, check_args=false
-    )
+    return History(times, h1.tmin, h2.tmax, marks, dims, ndims(h1); check_args=false)
 end
 
 """
@@ -469,7 +536,7 @@ end
 
 Apply the time rescaling `t -> Λ(t)` to history `h`.
 """
-function time_change(h::History, Λ)
+function time_change(h::History{T}, Λ) where {T}
     new_times = Λ.(event_times(h))
     new_marks = copy(event_marks(h))
     new_tmin = Λ(min_time(h))
@@ -492,9 +559,7 @@ function split_into_chunks(h::History{T,M,D}, chunk_duration) where {T,M,D}
         times = [t for t in event_times(h) if a <= t < b]
         marks = [m for (t, m) in zip(event_times(h), event_marks(h)) if a <= t < b]
         dims = [d for (t, d) in zip(event_times(h), event_dims(h)) if a <= t < b]
-        chunk = History(;
-            times=times, marks=marks, dims=dims, tmin=a, tmax=b, check_args=false
-        )
+        chunk = History(times, a, b, marks, dims, h.N; check_args=false)
         push!(chunks, chunk)
     end
     return chunks

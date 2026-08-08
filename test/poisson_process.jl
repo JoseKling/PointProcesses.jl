@@ -54,6 +54,22 @@ ppvec = PoissonProcess(1.0, MvNormal(Matrix(I, 2, 2)))
     @test nb_events(h2) > 0
     @test !has_events(h3)
     @test !has_events(h4)
+
+    # Events must lie inside [tmin, tmax), also for tmin != 0
+    h5 = simulate(rng, pp, 5.0, 10.0)
+    @test all(5.0 .<= event_times(h5) .< 10.0)
+    @test logdensityof(pp, h5) < 0
+
+    # Both the times and the marks must be reproducible from a seeded rng
+    h6 = simulate(Xoshiro(1), pp, 0.0, 100.0)
+    h7 = simulate(Xoshiro(1), pp, 0.0, 100.0)
+    @test event_times(h6) == event_times(h7)
+    @test event_marks(h6) == event_marks(h7)
+
+    h8 = simulate_ogata(Xoshiro(1), pp, 0.0, 100.0)
+    h9 = simulate_ogata(Xoshiro(1), pp, 0.0, 100.0)
+    @test event_times(h8) == event_times(h9)
+    @test event_marks(h8) == event_marks(h9)
 end
 
 @testset "Fitting" begin

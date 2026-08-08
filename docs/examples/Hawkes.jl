@@ -126,7 +126,7 @@ plot(
 # The goal of this analysis is to understand the self-exciting nature of the litter box entries. I.e., if one cat uses the litter box, 
 # does that increase the likelihood of another cat using it soon after? To do this, we can use the implementation in PointProcesses.jl
 full_history = History(sort(data.t), 0.0, maximum(data.t) + 1.0)
-hawkes_model = fit(HawkesProcess, full_history)
+hawkes_model = fit(HawkesProcess{Float64,NoMarks}, full_history)
 
 println("Fitted Hawkes Process Parameters:") # hide
 println("Base intensity (μ): ", hawkes_model.μ) # hide

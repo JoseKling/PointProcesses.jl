@@ -20,7 +20,7 @@ function simulate_ogata(
     rng::AbstractRNG, pp::AbstractUnivariateProcess, tmin::T, tmax::T
 ) where {T<:Real}
     M = eltype(pp.mark_dist)
-    h = History(; times=T[], marks=M[], tmin=tmin, tmax=tmax)
+    h = History(tmin, tmax, M)
     t = tmin
     while t < tmax
         B, L = ground_intensity_bound(pp, t + eps(t), h)
@@ -32,7 +32,7 @@ function simulate_ogata(
             U = rand(rng, typeof(U_max))
             if U < U_max
                 if t + τ < tmax
-                    m = sample_mark(pp.mark_dist, t + τ, h)
+                    m = sample_mark(rng, pp, t + τ, h)
                     push!(h, t + τ, m; check_args=false)
                 end
             end
@@ -40,6 +40,10 @@ function simulate_ogata(
         end
     end
     return h
+end
+
+function simulate(rng::AbstractRNG, pp::AbstractUnivariateProcess, args...; kwargs...)
+    return simulate_ogata(rng, pp, args...; kwargs...)
 end
 
 function simulate(pp::AbstractPointProcess, args...; kwargs...)

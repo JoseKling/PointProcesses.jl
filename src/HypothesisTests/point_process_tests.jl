@@ -26,12 +26,12 @@ end
 Internal function for performing the appropriate transformation
 on the event times according to the selected distribution.
 =#
-function transform(::Type{<:Uniform}, pp::AbstractPointProcess, h)
+function transform(::Type{<:Uniform}, pp::AbstractPointProcess, h::History)
     transf = time_change(h, pp) # transf → time re-scaled event times
     return transf.times, Uniform(transf.tmin, transf.tmax)
 end
 
-function transform(::Type{<:Exponential}, pp::AbstractPointProcess, h)
+function transform(::Type{<:Exponential}, pp::AbstractPointProcess, h::History)
     inter_transf = diff(time_change(h, pp).times) # inter_transf → sorted time transformed inter event times
     sort!(inter_transf)
     return inter_transf, Exponential(1)

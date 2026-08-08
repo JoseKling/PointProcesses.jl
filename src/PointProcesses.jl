@@ -86,6 +86,8 @@ export PointProcessTest, BootstrapTest, MonteCarloTest
 include("history.jl")
 include("mark_distributions.jl")
 include("abstract_point_process.jl")
+include("univariate_process.jl")
+include("multivariate_process.jl")
 include("simulation.jl")
 include("bounded_point_process.jl")
 
@@ -103,6 +105,8 @@ include("univariate/poisson/inhomogeneous/fit.jl")
 
 ### Hawkes
 include("univariate/hawkes/hawkes_process.jl")
+include("univariate/hawkes/fit.jl")
+include("univariate/hawkes/simulation.jl")
 
 ## Multivariate processes
 
