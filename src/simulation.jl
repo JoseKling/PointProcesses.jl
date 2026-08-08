@@ -32,7 +32,7 @@ function simulate_ogata(
             U = rand(rng, typeof(U_max))
             if U < U_max
                 if t + τ < tmax
-                    m = sample_mark(pp.mark_dist, t + τ, h)
+                    m = sample_mark(rng, pp, t + τ, h)
                     push!(h, t + τ, m; check_args=false)
                 end
             end

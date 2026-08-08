@@ -69,4 +69,10 @@ end
     h_transf = time_change(h, fmp)
     @test event_times(h_transf, 1) == event_times(h, 1)
     @test event_times(h_transf, 2) == event_times(h, 2) .* 2
+
+    # A history and a process with different numbers of dimensions must be rejected
+    # explicitly, instead of failing with a `BoundsError` deeper down
+    fmp3 = FakeMultivariatePoisson([1.0, 2.0, 3.0], fill(NoMarks(), 3))
+    @test_throws DimensionMismatch time_change(h, fmp3)
+    @test_throws DimensionMismatch time_change(History([sort(rand(10))], 0.0, 1.0), fmp)
 end

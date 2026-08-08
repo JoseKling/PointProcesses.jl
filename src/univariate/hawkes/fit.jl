@@ -1,5 +1,5 @@
 """
-    StatsAPI.fit(::Type{HawkesProcess{T}}, h::History; step_tol::Float64 = 1e-6, max_iter::Int = 1000, rng::AbstractRNG=default_rng()) where {T<:Real}
+    StatsAPI.fit(::Type{HawkesProcess{T,MD}}, h::History; step_tol::Float64 = 1e-6, max_iter::Int = 1000, rng::AbstractRNG=default_rng()) where {T<:Real,MD<:PointProcessMarkDistribution}
 
 Expectation-Maximization algorithm from [Lewis2011](@cite).
 The relevant calculations are in page 4, equations 6-13.

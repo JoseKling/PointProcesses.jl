@@ -29,6 +29,10 @@
     @test event_times(h, 0.2, 0.8) == [0.2]
     @test event_times(h, 0.8, 0.2) == []
     @test event_times(h, nothing) == h.times
+    # `event_times` and `event_marks` must agree on which dimensions exist
+    @test event_times(h, 1) == h.times
+    @test event_marks(h, 1) == h.marks
+    @test length(event_times(h, 2)) == length(event_marks(h, 2)) == 0
     @test event_marks(h) == ["a", "b", "c"]
     @test event_marks(h, 0.2, 0.8) == ["a"]
     @test event_marks(h, 0.8, 0.2) == []
@@ -97,6 +101,15 @@ end
 
     @test_throws DomainError History(sort(rand(3)), 0, 1, rand(3), [1, 2, 3], 2)
     @test event_dims(History([[0.5]], 0, 1)) == [nothing]
+
+    # A univariate history must be built with `dims` filled with `nothing`
+    @test_throws DomainError History([0.1, 0.5], 0.0, 1.0, marks1, [1, 1], 1)
+
+    # `History(h, d)` must reject dimensions the history does not have, instead of
+    # returning times and marks of different lengths
+    @test_throws DomainError History(h_multi, 3)
+    @test_throws DomainError History(h_multi, 0)
+    @test_throws DomainError History(History([0.2, 0.8], 0.0, 1.0, marks1), 2)
 
     @test_throws DomainError History(
         [1.0, 1.0, 2.0, 3.0, 4.0], 0.0, 5.0, fill(nothing, 5), [1, 1, 1, 2, 1], 2

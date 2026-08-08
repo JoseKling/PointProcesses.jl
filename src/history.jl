@@ -14,6 +14,18 @@ Linear event histories with temporal locations of type `T` and marks of type `M`
 
 # Construction
 
+```julia
+History(times, tmin, tmax[, marks])                  # univariate, one vector of times
+History([times_1, ..., times_N], tmin, tmax[, marks])  # multivariate, one vector per dimension
+History(times, tmin, tmax, marks, dims, N)             # generic, everything explicit
+History(tmin, tmax, M[, N])                            # empty history with marks of type `M`
+History(; times, tmin, tmax, marks=nothing)            # keyword form of the first two
+```
+
+A plain vector of `times` always builds a univariate history (`N == 1`); the number
+of dimensions is never deduced from `dims`. To build a multivariate history, pass
+either one vector of times per dimension or `dims` together with an explicit `N`.
+
 The constructor validates its inputs and throws on any violation rather than
 silently coercing them. With `check_args=true` (the default), it requires:
 
@@ -99,7 +111,14 @@ struct History{T<:Real,M,D}
                 end
             end
             if N == 1
-                dims .= nothing
+                if !all(isnothing, dims)
+                    throw(
+                        DomainError(
+                            dims,
+                            "A univariate history (`N == 1`) must have `dims` filled with `nothing`.",
+                        ),
+                    )
+                end
             else
                 if any(d -> d < 1 || d > N, dims)
                     throw(
@@ -194,6 +213,13 @@ function History(tmin::R1, tmax::R2, M::Type, N::Int) where {R1,R2<:Real}
 end
 
 function History(h::History, d::Int)
+    if d < 1 || d > ndims(h)
+        throw(
+            DomainError(
+                d, "Dimension `d` must be between 1 and $(ndims(h)) for this history."
+            ),
+        )
+    end
     times = event_times(h, d)
     marks = event_marks(h, d)
     dims = fill(nothing, length(times))
@@ -227,7 +253,10 @@ event_times(h::History) = h.times
 Return the sorted vector of event times for `h` in dimension `d`.
 """
 function event_times(h::History, d::Union{Int,Nothing})
-    return h.N == 1 ? h.times : (@view h.times[h.dims .== d])
+    # For univariate histories `dims` is filled with `nothing`, so only `d == 1` (or
+    # an omitted `d`) refers to the events of this history. This condition must match
+    # the one in `event_marks(h, d)`, otherwise times and marks disagree in length.
+    return h.N == 1 && (isnothing(d) || d == 1) ? h.times : (@view h.times[h.dims .== d])
 end
 
 """
@@ -266,7 +295,7 @@ event_marks(h::History) = h.marks
 Return the vector of event marks in dimension `d` of `h`, sorted according to their event times.
 """
 function event_marks(h::History, d::Union{Int,Nothing})
-    return h.N == 1 && d == 1 ? h.marks : (@view h.marks[h.dims .== d])
+    return h.N == 1 && (isnothing(d) || d == 1) ? h.marks : (@view h.marks[h.dims .== d])
 end
 
 """
@@ -502,6 +531,11 @@ function Base.cat(h1::History, h2::History)
     return History(times, h1.tmin, h2.tmax, marks, dims, ndims(h1); check_args=false)
 end
 
+"""
+    time_change(h, Λ)
+
+Apply the time rescaling `t -> Λ(t)` to history `h`.
+"""
 function time_change(h::History{T}, Λ) where {T}
     new_times = Λ.(event_times(h))
     new_marks = copy(event_marks(h))

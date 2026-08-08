@@ -4,16 +4,19 @@
 Abstract type for multivariate temporal point processes.
 
 To implement a multivariate process, one must subtype `AbstractMultivariateProcess` and provide
-implementations for the methods below. 
+implementations for the methods below.
 - `mark_distribution(pp, t, h, d)`
 - `ground_intensity(pp, t, h, d)`
-- `integrated_ground_intensity(pp, t, h, d)`
+- `integrated_ground_intensity(pp, h, a, b, d)`
 - `ground_intensity_bound(pp, t, h, d)`
-- `fit(Type{pp}, h)`
-- `simulate(pp, h)`
 In all the cases, `pp` is the point process being implemented, `t` is the instant in
-which the function will be evaluated, `h` is the history up to `t` and `d` is the dimension.
-Other methods should be implemented if permance is an issue.
+which the function will be evaluated, `h` is the history up to `t`, `[a, b)` is the interval
+over which the intensity is integrated and `d` is the dimension.
+Given those, this file provides the vector-valued versions of the methods above, plus
+`intensity`, `log_intensity`, `sample_mark` and `time_change`.
+There are no generic fallbacks for `fit(Type{pp}, h)`, `simulate(rng, pp, tmin, tmax)` and
+`logdensityof(pp, h)`, so those must be implemented for each process.
+Other methods should be implemented if performance is an issue.
 The process is expected to have a field `mark_dist::Vector{<:AbstractMarkDistribution}`. If this
 field is not present, `Base.ndims(pp)` must also be implemented.
 """
@@ -64,9 +67,16 @@ function log_intensity(pp::AbstractMultivariateProcess, m, t, h::History)
 end
 
 function time_change(h::History{T}, pp::AbstractMultivariateProcess) where {T}
+    if ndims(h) != ndims(pp)
+        throw(
+            DimensionMismatch(
+                "The history has $(ndims(h)) dimensions but the process has $(ndims(pp))."
+            ),
+        )
+    end
     tmin = typemax(T)
     tmax = typemin(T)
-    transformed_times = [zeros(T, nb_events(h, d)) for d in 1:ndims(h)]
+    transformed_times = [zeros(T, nb_events(h, d)) for d in 1:ndims(pp)]
     for d in 1:ndims(pp)
         Λ(t) = integrated_ground_intensity(pp, h, min_time(h), t, d)
         transformed_times[d] .= Λ.(event_times(h, d))
@@ -75,6 +85,6 @@ function time_change(h::History{T}, pp::AbstractMultivariateProcess) where {T}
         new_tmax = Λ(max_time(h))
         tmax = new_tmax > tmax ? new_tmax : tmax
     end
-    transformed_marks = [collect(event_marks(h, d)) for d in 1:ndims(h)]
+    transformed_marks = [collect(event_marks(h, d)) for d in 1:ndims(pp)]
     return History(transformed_times, tmin, tmax, transformed_marks)
 end

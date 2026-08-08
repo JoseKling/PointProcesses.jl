@@ -5,15 +5,8 @@ abstract type AbstractMarkDistribution end
 const PointProcessMarkDistribution = Union{Distribution,AbstractMarkDistribution}
 
 ## Standard implementations. Override as needed
-"""
-    mark_distribution(md, t, h)
-
-Compute the distribution of marks at time `t` after history `h`.
-
-Remark: This method must work for empty histories.
-"""
-function mark_distribution end
-
+# The docstring for `mark_distribution` lives in `abstract_point_process.jl`, which
+# documents both the process and the mark distribution methods of this function.
 function mark_distribution(md::AbstractMarkDistribution, t, h::History)
     return error(
         "Type $(typeof(md)) subtypes `AbstractMarkDistribution` but has " *
@@ -48,6 +41,13 @@ end
 mark_distribution(d::Distribution, t, h::History) = d
 
 StatsAPI.fit(D::Type{<:Distribution}, h::History) = fit(D, h.marks)
+
+# `Type{<:Distribution}` and `Type{<:AbstractPointProcess}` intersect at `Type{Union{}}`,
+# because `Union{}` is a subtype of every type. Without this method, inference of
+# `fit(PP, h)` for an abstract `PP::Type{<:AbstractPointProcess}` therefore includes the
+# return type of the method above (some `Distribution`) in its union, which makes JET
+# report a missing method for every call that passes the result on to a process method.
+StatsAPI.fit(::Type{Union{}}, ::History) = error("unreachable")
 
 # Struct for non-marked processes
 "Mark distribution for non-marked processes. Always return the mark `nothing`."
